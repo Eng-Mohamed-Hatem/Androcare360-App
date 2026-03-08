@@ -137,7 +137,8 @@ final adminPatientPackageWriteProvider =
 
 /// Stream of documents for a specific patient package.
 /// The parameter is a tuple: `(patientId, patientPackageId)`.
-final adminPackageDocumentsProvider =
+final StreamProviderFamily<List<PackageDocumentEntity>, (String, String)>
+adminPackageDocumentsProvider =
     StreamProvider.family<List<PackageDocumentEntity>, (String, String)>(
       (ref, args) {
         final patientId = args.$1;

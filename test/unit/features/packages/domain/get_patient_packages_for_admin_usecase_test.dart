@@ -1,6 +1,10 @@
+// test/unit/features/packages/domain/get_patient_packages_for_admin_usecase_test.dart
+//
+// Unit tests for [GetPatientPackagesForAdminUseCase] — T070.
+// Covers: happy path paginated, empty, and R2 assertion (notes field IS included).
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/domain/repositories/patient_package_repository.dart';
@@ -13,101 +17,130 @@ import 'get_patient_packages_for_admin_usecase_test.mocks.dart';
 
 @GenerateMocks([PatientPackageRepository, DocumentSnapshot])
 void main() {
-  late GetPatientPackagesForAdminUseCase usecase;
-  late MockPatientPackageRepository mockRepository;
+  late MockPatientPackageRepository mockRepo;
+  late GetPatientPackagesForAdminUseCase useCase;
+
+  const patientId = 'uid_patient_001';
+  final now = DateTime(2026, 3, 7, 12);
+
+  PatientPackageEntity makeEntity({
+    String id = 'pp_001',
+    PatientPackageStatus status = PatientPackageStatus.active,
+    DateTime? purchaseDate,
+    DateTime? expiryDate,
+    String? notes,
+  }) {
+    final pDate = purchaseDate ?? now.subtract(const Duration(days: 10));
+    final eDate = expiryDate ?? now.add(const Duration(days: 80));
+    return PatientPackageEntity(
+      id: id,
+      patientId: patientId,
+      packageId: 'pkg_001',
+      clinicId: 'andrology',
+      category: PackageCategory.andrologyInfertilityProstate,
+      status: status,
+      purchaseDate: pDate,
+      expiryDate: eDate,
+      totalServicesCount: 3,
+      usedServicesCount: 0,
+      createdAt: pDate,
+      updatedAt: pDate,
+      notes: notes,
+    );
+  }
 
   setUp(() {
-    mockRepository = MockPatientPackageRepository();
-    usecase = GetPatientPackagesForAdminUseCase(mockRepository);
+    mockRepo = MockPatientPackageRepository();
+    useCase = GetPatientPackagesForAdminUseCase(mockRepo);
   });
 
-  const tPatientId = 'patient_1';
-  final tEntity = PatientPackageEntity(
-    id: 'pp_1',
-    patientId: tPatientId,
-    packageId: 'pkg_1',
-    clinicId: 'clinic_1',
-    category: PackageCategory.andrologyInfertilityProstate,
-    status: PatientPackageStatus.active,
-    purchaseDate: DateTime.now(),
-    expiryDate: DateTime.now().add(const Duration(days: 30)),
-    totalServicesCount: 2,
-    usedServicesCount: 0,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-    notes: 'Internal admin note', // Notice notes IS present for admin R2
-  );
+  group('GetPatientPackagesForAdminUseCase', () {
+    // ── T070-a: happy path paginated ─────────────────────────────────────────
+    test('happy path: returns Right paginated', () async {
+      final p1 = makeEntity(id: 'pp_001', notes: 'admin note 1');
+      final p2 = makeEntity(id: 'pp_002');
+      final mockDoc = MockDocumentSnapshot<Object?>();
+      
+      when(mockRepo.listPatientPackagesForAdmin(
+        patientId: patientId,
+        lastDocument: mockDoc,
+        limit: 20,
+      )).thenAnswer((_) async => Right([p1, p2]));
 
-  final tList = [tEntity];
-  final tDocSnapshot = MockDocumentSnapshot();
-
-  test(
-    'should return paginated list from repository and check notes are included (R2)',
-    () async {
-      // arrange
-      when(
-        mockRepository.listPatientPackagesForAdmin(
-          patientId: anyNamed('patientId'),
-          lastDocument: anyNamed('lastDocument'),
-          limit: anyNamed('limit'),
-        ),
-      ).thenAnswer(
-        (_) async => Right<Failure, List<PatientPackageEntity>>(tList),
+      final result = await useCase(
+        patientId: patientId, 
+        lastDocument: mockDoc,
+        limit: 20,
+        now: now,
       );
 
-      // act
-      final result = await usecase(
-        patientId: tPatientId,
-        lastDocument: tDocSnapshot,
-        limit: 15,
-      );
+      expect(result.isRight(), isTrue);
+      result.fold((_) => fail('Expected right'), (list) {
+        expect(list.length, 2);
+        expect(list[0].id, 'pp_001');
+      });
+    });
 
-      // assert
-      expect(result, Right<Failure, List<PatientPackageEntity>>(tList));
-      verify(
-        mockRepository.listPatientPackagesForAdmin(
-          patientId: tPatientId,
-          lastDocument: tDocSnapshot,
-          limit: 15,
-        ),
-      ).called(1);
-      verifyNoMoreInteractions(mockRepository);
-
-      // Verify R2 requirement
-      final returnedList = result.getOrElse(() => []);
-      expect(
-        returnedList.first.notes,
-        'Internal admin note',
-        reason: 'R2 requires notes to be included in admin-facing queries',
-      );
-    },
-  );
-
-  test('should return empty list when repository returns empty', () async {
-    // arrange
-    when(
-      mockRepository.listPatientPackagesForAdmin(
-        patientId: anyNamed('patientId'),
-        lastDocument: anyNamed('lastDocument'),
-        limit: anyNamed('limit'),
-      ),
-    ).thenAnswer(
-      (_) async => const Right<Failure, List<PatientPackageEntity>>([]),
-    );
-
-    // act
-    final result = await usecase(
-      patientId: tPatientId,
-    ); // default limit 20
-
-    // assert
-    expect(result, const Right<Failure, List<PatientPackageEntity>>([]));
-    verify(
-      mockRepository.listPatientPackagesForAdmin(
-        patientId: tPatientId,
+    // ── T070-b: empty list ───────────────────────────────────────────────────
+    test('empty list: returns Right([])', () async {
+      when(mockRepo.listPatientPackagesForAdmin(
+        patientId: patientId,
         lastDocument: null,
         limit: 20,
-      ),
-    ).called(1);
+      )).thenAnswer((_) async => const Right([]));
+
+      final result = await useCase(patientId: patientId, now: now);
+
+      expect(result.isRight(), isTrue);
+      result.fold((_) => fail('Expected right'), (list) {
+        expect(list, isEmpty);
+      });
+    });
+
+    // ── T070-c: R2 notes field IS included ────────────────────────────────────
+    test('R2: notes field IS included in returned entity (admin-facing)', () async {
+      final notesValue = 'ملاحظات هامة جدا للأدمن';
+      final entityWithNotes = makeEntity(notes: notesValue);
+
+      when(mockRepo.listPatientPackagesForAdmin(
+        patientId: patientId,
+        lastDocument: null,
+        limit: 20,
+      )).thenAnswer((_) async => Right([entityWithNotes]));
+
+      final result = await useCase(patientId: patientId, now: now);
+
+      expect(result.isRight(), isTrue);
+      result.fold((_) => fail('Expected right'), (list) {
+        expect(list.length, 1);
+        expect(
+          list.first.notes, 
+          equals(notesValue),
+          reason: 'R2: notes must be visible to admin',
+        );
+      });
+    });
+
+    // ── Expiry re-derivation ─────────────────────────────────────────────────
+    test('expiry re-derivation: ACTIVE entity with expiryDate < now is EXPIRED', () async {
+      final expiredEntity = makeEntity(
+        id: 'pp_expired',
+        expiryDate: now.subtract(const Duration(days: 1)),
+      );
+
+      when(mockRepo.listPatientPackagesForAdmin(
+        patientId: patientId,
+        lastDocument: null,
+        limit: 20,
+      )).thenAnswer((_) async => Right([expiredEntity]));
+
+      final result = await useCase(patientId: patientId, now: now);
+
+      expect(result.isRight(), isTrue);
+      result.fold((_) => fail('Expected right'), (list) {
+        expect(list.length, 1);
+        expect(list[0].status, PatientPackageStatus.expired);
+      });
+    });
   });
 }

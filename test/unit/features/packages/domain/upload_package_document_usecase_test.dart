@@ -1,3 +1,9 @@
+// test/unit/features/packages/domain/upload_package_document_usecase_test.dart
+//
+// Unit tests for [UploadPackageDocumentUseCase] — T072.
+
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
@@ -14,63 +20,39 @@ import 'upload_package_document_usecase_test.mocks.dart';
 
 @GenerateMocks([PackageDocumentRepository, NotificationRepository])
 void main() {
-  late UploadPackageDocumentUseCase usecase;
-  late MockPackageDocumentRepository mockDocumentRepo;
-  late MockNotificationRepository mockNotificationRepo;
+  late MockPackageDocumentRepository mockDocRepo;
+  late MockNotificationRepository mockNotifRepo;
+  late UploadPackageDocumentUseCase useCase;
 
-  setUpAll(() {
-    provideDummy<NotificationModel>(
-      NotificationModel(
-        id: '',
-        userId: '',
-        title: '',
-        body: '',
-        type: NotificationType.general,
-        createdAt: DateTime.now(),
-      ),
-    );
-  });
+  final now = DateTime(2026, 3, 7, 12);
 
-  setUp(() {
-    provideDummy<Either<Failure, Unit>>(const Right<Failure, Unit>(unit));
-    mockDocumentRepo = MockPackageDocumentRepository();
-    mockNotificationRepo = MockNotificationRepository();
-    usecase = UploadPackageDocumentUseCase(
-      mockDocumentRepo,
-      mockNotificationRepo,
-    );
-  });
-
-  const tLocalPath = '/path/to/test.pdf';
-  const tPatientId = 'patient_1';
-  const tPatientPackageId = 'pp_1';
-  const tPackageId = 'pkg_1';
-  const tClinicId = 'clinic_1';
-  const tDocType = DocumentType.labResult;
-  const tTitle = 'Blood Test';
-  const tUserId = 'doctor_1';
-  const tRole = 'doctor';
-
-  final tDocument = PackageDocumentEntity(
-    id: 'doc_1',
-    patientId: tPatientId,
-    patientPackageId: tPatientPackageId,
-    packageId: tPackageId,
-    clinicId: tClinicId,
-    documentType: tDocType,
-    title: tTitle,
-    fileUrl: 'https://example.com/test.pdf',
-    uploadedByUserId: tUserId,
-    uploadedByRole: tRole,
-    uploadedAt: DateTime.now(),
+  final dummyEntity = PackageDocumentEntity(
+    id: 'doc_123',
+    patientId: 'pat_001',
+    patientPackageId: 'pp_001',
+    packageId: 'pkg_001',
+    clinicId: 'andrology',
+    documentType: DocumentType.labResult,
+    title: 'Test Lab',
+    fileUrl: 'path/to/doc.pdf',
+    uploadedByUserId: 'dr_001',
+    uploadedByRole: 'DOCTOR',
+    uploadedAt: now,
   );
 
-  test(
-    'happy path: should upload doc, return documentId/entity, and send notification best-effort',
-    () async {
-      // arrange
+  setUp(() {
+    mockDocRepo = MockPackageDocumentRepository();
+    mockNotifRepo = MockNotificationRepository();
+    useCase = UploadPackageDocumentUseCase(mockDocRepo, mockNotifRepo);
+  });
+
+  group('UploadPackageDocumentUseCase', () {
+    test('a) happy path -> documentId', () async {
+      final file = File('test_valid.pdf');
+      await file.writeAsBytes([1, 2, 3]);
+
       when(
-        mockDocumentRepo.uploadDocument(
+        mockDocRepo.uploadDocument(
           localFilePath: anyNamed('localFilePath'),
           patientId: anyNamed('patientId'),
           patientPackageId: anyNamed('patientPackageId'),
@@ -78,281 +60,224 @@ void main() {
           clinicId: anyNamed('clinicId'),
           documentType: anyNamed('documentType'),
           title: anyNamed('title'),
-          uploadedByUserId: anyNamed('uploadedByUserId'),
-          uploadedByRole: anyNamed('uploadedByRole'),
           serviceId: anyNamed('serviceId'),
           description: anyNamed('description'),
+          uploadedByUserId: anyNamed('uploadedByUserId'),
+          uploadedByRole: anyNamed('uploadedByRole'),
         ),
-      ).thenAnswer(
-        (_) async => Right<Failure, PackageDocumentEntity>(tDocument),
-      );
+      ).thenAnswer((_) async => Right(dummyEntity));
 
       when(
-        mockNotificationRepo.saveNotification(any),
-      ).thenAnswer((_) async => const Right<Failure, Unit>(unit));
+        mockNotifRepo.saveNotification(any),
+      ).thenAnswer((_) async => const Right(unit));
 
-      // act
-      final result = await usecase(
-        localFilePath: tLocalPath,
-        patientId: tPatientId,
-        patientPackageId: tPatientPackageId,
-        packageId: tPackageId,
-        clinicId: tClinicId,
-        documentType: tDocType,
-        title: tTitle,
-        uploadedByUserId: tUserId,
-        uploadedByRole: tRole,
+      final result = await useCase(
+        localFilePath: file.path,
+        patientId: 'pat_001',
+        patientPackageId: 'pp_001',
+        packageId: 'pkg_001',
+        clinicId: 'andrology',
+        documentType: DocumentType.labResult,
+        title: 'Test Lab',
+        uploadedByUserId: 'dr_001',
+        uploadedByRole: 'DOCTOR',
       );
 
-      // assert
-      expect(result, Right<Failure, PackageDocumentEntity>(tDocument));
-      verify(
-        mockDocumentRepo.uploadDocument(
-          localFilePath: tLocalPath,
-          patientId: tPatientId,
-          patientPackageId: tPatientPackageId,
-          packageId: tPackageId,
-          clinicId: tClinicId,
-          documentType: tDocType,
-          title: tTitle,
-          uploadedByUserId: tUserId,
-          uploadedByRole: tRole,
+      expect(result.isRight(), isTrue);
+      result.fold((_) => fail('Expected right'), (doc) {
+        expect(doc.id, 'doc_123');
+      });
+
+      verify(mockNotifRepo.saveNotification(any)).called(1);
+
+      if (file.existsSync()) file.deleteSync();
+    });
+
+    test('b) UploadFailure on Storage error', () async {
+      final file = File('test_error.png');
+      await file.writeAsBytes([1]);
+
+      when(
+        mockDocRepo.uploadDocument(
+          localFilePath: anyNamed('localFilePath'),
+          patientId: anyNamed('patientId'),
+          patientPackageId: anyNamed('patientPackageId'),
+          packageId: anyNamed('packageId'),
+          clinicId: anyNamed('clinicId'),
+          documentType: anyNamed('documentType'),
+          title: anyNamed('title'),
+          serviceId: anyNamed('serviceId'),
+          description: anyNamed('description'),
+          uploadedByUserId: anyNamed('uploadedByUserId'),
+          uploadedByRole: anyNamed('uploadedByRole'),
         ),
-      ).called(1);
-      // verify notification was sent
-      verify(mockNotificationRepo.saveNotification(any)).called(1);
-      verifyNoMoreInteractions(mockDocumentRepo);
-      verifyNoMoreInteractions(mockNotificationRepo);
-    },
-  );
+      ).thenAnswer((_) async => const Left(UploadFailure('Storage error')));
 
-  test('happy path with serviceId != null', () async {
-    // arrange
-    when(
-      mockDocumentRepo.uploadDocument(
-        localFilePath: anyNamed('localFilePath'),
-        patientId: anyNamed('patientId'),
-        patientPackageId: anyNamed('patientPackageId'),
-        packageId: anyNamed('packageId'),
-        clinicId: anyNamed('clinicId'),
-        documentType: anyNamed('documentType'),
-        title: anyNamed('title'),
-        uploadedByUserId: anyNamed('uploadedByUserId'),
-        uploadedByRole: anyNamed('uploadedByRole'),
-        serviceId: anyNamed('serviceId'),
-        description: anyNamed('description'),
-      ),
-    ).thenAnswer((_) async => Right<Failure, PackageDocumentEntity>(tDocument));
+      final result = await useCase(
+        localFilePath: file.path,
+        patientId: 'pat_001',
+        patientPackageId: 'pp_001',
+        packageId: 'pkg_001',
+        clinicId: 'andrology',
+        documentType: DocumentType.labResult,
+        title: 'Test Lab',
+        uploadedByUserId: 'dr_001',
+        uploadedByRole: 'DOCTOR',
+      );
 
-    when(
-      mockNotificationRepo.saveNotification(any),
-    ).thenAnswer((_) async => const Right<Failure, Unit>(unit));
+      expect(result.isLeft(), isTrue);
+      result.fold(
+        (f) => expect(f, isA<UploadFailure>()),
+        (_) => fail('Expected failure'),
+      );
 
-    // act
-    final result = await usecase(
-      localFilePath: tLocalPath,
-      patientId: tPatientId,
-      patientPackageId: tPatientPackageId,
-      packageId: tPackageId,
-      clinicId: tClinicId,
-      documentType: tDocType,
-      title: tTitle,
-      uploadedByUserId: tUserId,
-      uploadedByRole: tRole,
-      serviceId: 'srv_1',
-    );
+      verifyNever(mockNotifRepo.saveNotification(any));
 
-    // assert
-    expect(result, Right<Failure, PackageDocumentEntity>(tDocument));
-    verify(
-      mockDocumentRepo.uploadDocument(
-        localFilePath: tLocalPath,
-        patientId: tPatientId,
-        patientPackageId: tPatientPackageId,
-        packageId: tPackageId,
-        clinicId: tClinicId,
-        documentType: tDocType,
-        title: tTitle,
-        uploadedByUserId: tUserId,
-        uploadedByRole: tRole,
-        serviceId: 'srv_1',
-      ),
-    ).called(1);
-  });
+      if (file.existsSync()) file.deleteSync();
+    });
 
-  test('UploadFailure on Storage error', () async {
-    // arrange
-    when(
-      mockDocumentRepo.uploadDocument(
-        localFilePath: anyNamed('localFilePath'),
-        patientId: anyNamed('patientId'),
-        patientPackageId: anyNamed('patientPackageId'),
-        packageId: anyNamed('packageId'),
-        clinicId: anyNamed('clinicId'),
-        documentType: anyNamed('documentType'),
-        title: anyNamed('title'),
-        uploadedByUserId: anyNamed('uploadedByUserId'),
-        uploadedByRole: anyNamed('uploadedByRole'),
-        serviceId: anyNamed('serviceId'),
-        description: anyNamed('description'),
-      ),
-    ).thenAnswer(
-      (_) async => const Left<Failure, PackageDocumentEntity>(
-        UploadFailure('Storage failed'),
-      ),
-    );
+    test('c) file > 20 MB -> UploadFailure', () async {
+      final file = File('huge.pdf');
+      // Create a 21MB file
+      await file.writeAsBytes(List.filled(21 * 1024 * 1024, 0));
 
-    // act
-    final result = await usecase(
-      localFilePath: tLocalPath,
-      patientId: tPatientId,
-      patientPackageId: tPatientPackageId,
-      packageId: tPackageId,
-      clinicId: tClinicId,
-      documentType: tDocType,
-      title: tTitle,
-      uploadedByUserId: tUserId,
-      uploadedByRole: tRole,
-    );
+      final result = await useCase(
+        localFilePath: file.path,
+        patientId: 'pat_001',
+        patientPackageId: 'pp_001',
+        packageId: 'pkg_001',
+        clinicId: 'andrology',
+        documentType: DocumentType.labResult,
+        title: 'Test Lab',
+        uploadedByUserId: 'dr_001',
+        uploadedByRole: 'DOCTOR',
+      );
 
-    // assert
-    expect(
-      result,
-      const Left<Failure, PackageDocumentEntity>(
-        UploadFailure('Storage failed'),
-      ),
-    );
-    verifyZeroInteractions(
-      mockNotificationRepo,
-    ); // notification not sent on failure
-  });
+      expect(result.isLeft(), isTrue);
+      result.fold(
+        (f) {
+          expect(f, isA<UploadFailure>());
+          expect((f as UploadFailure).message, contains('20 MB'));
+        },
+        (_) => fail('Expected failure'),
+      );
 
-  test('UploadFailure on file > 20 MB', () async {
-    // arrange
-    when(
-      mockDocumentRepo.uploadDocument(
-        localFilePath: anyNamed('localFilePath'),
-        patientId: anyNamed('patientId'),
-        patientPackageId: anyNamed('patientPackageId'),
-        packageId: anyNamed('packageId'),
-        clinicId: anyNamed('clinicId'),
-        documentType: anyNamed('documentType'),
-        title: anyNamed('title'),
-        uploadedByUserId: anyNamed('uploadedByUserId'),
-        uploadedByRole: anyNamed('uploadedByRole'),
-        serviceId: anyNamed('serviceId'),
-        description: anyNamed('description'),
-      ),
-    ).thenAnswer(
-      (_) async => const Left<Failure, PackageDocumentEntity>(
-        UploadFailure('File too large'),
-      ),
-    );
+      verifyZeroInteractions(mockDocRepo);
 
-    // act
-    final result = await usecase(
-      localFilePath: 'huge_file.pdf',
-      patientId: tPatientId,
-      patientPackageId: tPatientPackageId,
-      packageId: tPackageId,
-      clinicId: tClinicId,
-      documentType: tDocType,
-      title: tTitle,
-      uploadedByUserId: tUserId,
-      uploadedByRole: tRole,
-    );
+      try {
+        if (file.existsSync()) file.deleteSync();
+      } catch (_) {}
+    });
 
-    // assert
-    expect(
-      result,
-      const Left<Failure, PackageDocumentEntity>(
-        UploadFailure('File too large'),
-      ),
-    );
-  });
+    test('d) unsupported type -> UploadFailure', () async {
+      final result = await useCase(
+        localFilePath: 'path/to/report.docx',
+        patientId: 'pat_001',
+        patientPackageId: 'pp_001',
+        packageId: 'pkg_001',
+        clinicId: 'andrology',
+        documentType: DocumentType.other,
+        title: 'Test Doc',
+        uploadedByUserId: 'dr_001',
+        uploadedByRole: 'DOCTOR',
+      );
 
-  test('UploadFailure on unsupported type', () async {
-    // arrange
-    when(
-      mockDocumentRepo.uploadDocument(
-        localFilePath: anyNamed('localFilePath'),
-        patientId: anyNamed('patientId'),
-        patientPackageId: anyNamed('patientPackageId'),
-        packageId: anyNamed('packageId'),
-        clinicId: anyNamed('clinicId'),
-        documentType: anyNamed('documentType'),
-        title: anyNamed('title'),
-        uploadedByUserId: anyNamed('uploadedByUserId'),
-        uploadedByRole: anyNamed('uploadedByRole'),
-        serviceId: anyNamed('serviceId'),
-        description: anyNamed('description'),
-      ),
-    ).thenAnswer(
-      (_) async => const Left<Failure, PackageDocumentEntity>(
-        UploadFailure('Unsupported type'),
-      ),
-    );
+      expect(result.isLeft(), isTrue);
+      result.fold(
+        (f) {
+          expect(f, isA<UploadFailure>());
+          expect((f as UploadFailure).message, contains('Unsupported'));
+        },
+        (_) => fail('Expected failure'),
+      );
 
-    // act
-    final result = await usecase(
-      localFilePath: 'test.docx',
-      patientId: tPatientId,
-      patientPackageId: tPatientPackageId,
-      packageId: tPackageId,
-      clinicId: tClinicId,
-      documentType: tDocType,
-      title: tTitle,
-      uploadedByUserId: tUserId,
-      uploadedByRole: tRole,
-    );
+      verifyZeroInteractions(mockDocRepo);
+    });
 
-    // assert
-    expect(
-      result,
-      const Left<Failure, PackageDocumentEntity>(
-        UploadFailure('Unsupported type'),
-      ),
-    );
-  });
+    test('e) serviceId = null is valid', () async {
+      final file = File('test_null_service.jpg');
+      await file.writeAsBytes([1]);
 
-  test('NetworkFailure on offline', () async {
-    // arrange
-    when(
-      mockDocumentRepo.uploadDocument(
-        localFilePath: anyNamed('localFilePath'),
-        patientId: anyNamed('patientId'),
-        patientPackageId: anyNamed('patientPackageId'),
-        packageId: anyNamed('packageId'),
-        clinicId: anyNamed('clinicId'),
-        documentType: anyNamed('documentType'),
-        title: anyNamed('title'),
-        uploadedByUserId: anyNamed('uploadedByUserId'),
-        uploadedByRole: anyNamed('uploadedByRole'),
-        serviceId: anyNamed('serviceId'),
-        description: anyNamed('description'),
-      ),
-    ).thenAnswer(
-      (_) async =>
-          const Left<Failure, PackageDocumentEntity>(NetworkFailure('Offline')),
-    );
+      when(
+        mockDocRepo.uploadDocument(
+          localFilePath: anyNamed('localFilePath'),
+          patientId: anyNamed('patientId'),
+          patientPackageId: anyNamed('patientPackageId'),
+          packageId: anyNamed('packageId'),
+          clinicId: anyNamed('clinicId'),
+          documentType: anyNamed('documentType'),
+          title: anyNamed('title'),
+          serviceId: anyNamed('serviceId'),
+          description: anyNamed('description'),
+          uploadedByUserId: anyNamed('uploadedByUserId'),
+          uploadedByRole: anyNamed('uploadedByRole'),
+        ),
+      ).thenAnswer((_) async => Right(dummyEntity));
 
-    // act
-    final result = await usecase(
-      localFilePath: tLocalPath,
-      patientId: tPatientId,
-      patientPackageId: tPatientPackageId,
-      packageId: tPackageId,
-      clinicId: tClinicId,
-      documentType: tDocType,
-      title: tTitle,
-      uploadedByUserId: tUserId,
-      uploadedByRole: tRole,
-    );
+      when(
+        mockNotifRepo.saveNotification(any),
+      ).thenAnswer((_) async => const Right(unit));
 
-    // assert
-    expect(
-      result,
-      const Left<Failure, PackageDocumentEntity>(NetworkFailure('Offline')),
+      final result = await useCase(
+        localFilePath: file.path,
+        patientId: 'pat_001',
+        patientPackageId: 'pp_001',
+        packageId: 'pkg_001',
+        clinicId: 'andrology',
+        documentType: DocumentType.labResult,
+        title: 'Test Lab',
+        uploadedByUserId: 'dr_001',
+        uploadedByRole: 'DOCTOR',
+        serviceId: null, // explicit null
+      );
+
+      expect(result.isRight(), isTrue);
+
+      if (file.existsSync()) file.deleteSync();
+    });
+
+    test(
+      'f) NetworkFailure if offline (repo returns NetworkFailure)',
+      () async {
+        final file = File('test_offline.pdf');
+        await file.writeAsBytes([1]);
+
+        when(
+          mockDocRepo.uploadDocument(
+            localFilePath: anyNamed('localFilePath'),
+            patientId: anyNamed('patientId'),
+            patientPackageId: anyNamed('patientPackageId'),
+            packageId: anyNamed('packageId'),
+            clinicId: anyNamed('clinicId'),
+            documentType: anyNamed('documentType'),
+            title: anyNamed('title'),
+            serviceId: anyNamed('serviceId'),
+            description: anyNamed('description'),
+            uploadedByUserId: anyNamed('uploadedByUserId'),
+            uploadedByRole: anyNamed('uploadedByRole'),
+          ),
+        ).thenAnswer((_) async => const Left(NetworkFailure()));
+
+        final result = await useCase(
+          localFilePath: file.path,
+          patientId: 'pat_001',
+          patientPackageId: 'pp_001',
+          packageId: 'pkg_001',
+          clinicId: 'andrology',
+          documentType: DocumentType.labResult,
+          title: 'Test Lab',
+          uploadedByUserId: 'dr_001',
+          uploadedByRole: 'DOCTOR',
+        );
+
+        expect(result.isLeft(), isTrue);
+        result.fold(
+          (f) => expect(f, isA<NetworkFailure>()),
+          (_) => fail('Expected failure'),
+        );
+
+        if (file.existsSync()) file.deleteSync();
+      },
     );
   });
 }

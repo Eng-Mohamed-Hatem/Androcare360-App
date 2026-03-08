@@ -18,6 +18,8 @@
 /// **Spec**: data-model.md §4.1, spec.md §7.4, §7.5, §7.8.
 library;
 
+import 'package:meta/meta.dart';
+
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/usecases/purchase_package_usecase.dart'
@@ -98,6 +100,7 @@ enum PatientPackageStatus {
 ///   // ...
 /// );
 /// ```
+@immutable
 class PatientPackageEntity {
   /// Creates a [PatientPackageEntity].
   ///

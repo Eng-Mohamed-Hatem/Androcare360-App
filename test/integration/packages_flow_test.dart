@@ -27,7 +27,7 @@ import 'packages_flow_test.mocks.dart';
 class _FakeAuthRepo implements AuthRepository {
   @override
   Future<Either<Failure, UserModel>> getCurrentUser() async {
-    return Left(ServerFailure('Not logged in'));
+    return const Left(ServerFailure('Not logged in'));
   }
 
   @override
@@ -95,7 +95,7 @@ void main() {
     getIt.allowReassignment = true;
     getIt.registerLazySingleton<PatientPackageRepository>(() => mockRepo);
     getIt.registerLazySingleton<PackagePaymentAdapter>(
-      () => FakePaymentService(),
+      FakePaymentService.new,
     );
   });
 

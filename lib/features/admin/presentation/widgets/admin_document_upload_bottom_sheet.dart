@@ -157,7 +157,7 @@ class _AdminDocumentUploadBottomSheetState
 
                 // Type
                 DropdownButtonFormField<DocumentType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'نوع المستند',
                     border: OutlineInputBorder(),
@@ -193,14 +193,13 @@ class _AdminDocumentUploadBottomSheetState
                 // Service ID
                 if (availableServiceIds.isNotEmpty)
                   DropdownButtonFormField<String?>(
-                    value: _selectedServiceId,
+                    initialValue: _selectedServiceId,
                     decoration: const InputDecoration(
                       labelText: 'ربط بخدمة (اختياري)',
                       border: OutlineInputBorder(),
                     ),
                     items: [
                       const DropdownMenuItem<String?>(
-                        value: null,
                         child: Text('بدون ربط بخدمة'),
                       ),
                       ...availableServiceIds.map(

@@ -129,7 +129,7 @@ class AdminPatientPackageContextPage extends ConsumerWidget {
                     if (docs.isEmpty) {
                       return const Center(
                         child: Padding(
-                          padding: EdgeInsets.all(32.0),
+                          padding: EdgeInsets.all(32),
                           child: Text('لا توجد مستندات لهذه الباقة'),
                         ),
                       );

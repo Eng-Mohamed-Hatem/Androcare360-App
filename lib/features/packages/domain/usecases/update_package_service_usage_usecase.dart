@@ -15,9 +15,8 @@ import 'package:injectable/injectable.dart';
 /// - Requires fetching the original package definition to read `quantity` because it is not copied into `ServiceUsageItem`.
 @lazySingleton
 class UpdatePackageServiceUsageUseCase {
-  final FirebaseFirestore _firestore;
-
   UpdatePackageServiceUsageUseCase(this._firestore);
+  final FirebaseFirestore _firestore;
 
   Future<Either<Failure, Unit>> call({
     required String patientId,
@@ -31,7 +30,7 @@ class UpdatePackageServiceUsageUseCase {
           .collection('packages')
           .doc(patientPackageId);
 
-      await _firestore.runTransaction((transaction) async {
+      await _firestore.runTransaction<dynamic>((transaction) async {
         // 1. Read PatientPackage
         final ppSnapshot = await transaction.get(patientPackageRef);
         if (!ppSnapshot.exists || ppSnapshot.data() == null) {
@@ -104,7 +103,7 @@ class UpdatePackageServiceUsageUseCase {
         }
 
         // 4. Recompute usedServicesCount
-        int newUsedServicesCount = 0;
+        var newUsedServicesCount = 0;
         for (final usage in servicesUsageList) {
           final uId = usage['serviceId'] as String?;
           final uCount = (usage['usedCount'] as num?)?.toInt() ?? 0;

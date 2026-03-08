@@ -99,6 +99,8 @@ import 'package:elajtech/features/packages/domain/usecases/toggle_package_status
     as _i799;
 import 'package:elajtech/features/packages/domain/usecases/update_clinic_package_usecase.dart'
     as _i793;
+import 'package:elajtech/features/packages/domain/usecases/update_package_service_usage_usecase.dart'
+    as _i674;
 import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart'
     as _i1063;
 import 'package:elajtech/features/patient/home/data/repositories/medical_screening_repository_impl.dart'
@@ -232,6 +234,10 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i220.FirestorePackageDatasource>(
       () => _i220.FirestorePackageDatasource(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i674.UpdatePackageServiceUsageUseCase>(
+      () =>
+          _i674.UpdatePackageServiceUsageUseCase(gh<_i974.FirebaseFirestore>()),
     );
     gh.lazySingleton<_i563.NutritionEMRRepository>(
       () => _i772.NutritionEMRRepositoryImpl(gh<_i974.FirebaseFirestore>()),

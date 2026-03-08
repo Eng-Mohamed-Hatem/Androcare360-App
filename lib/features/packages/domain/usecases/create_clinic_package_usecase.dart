@@ -14,17 +14,17 @@ class CreatePackageParams {
     required this.category,
     required this.name,
     required this.shortDescription,
-    this.description,
     required this.services,
     required this.validityDays,
-    this.termsAndConditions,
     required this.price,
     required this.currency,
-    this.discountPercentage,
     required this.type,
     required this.status,
-    this.displayOrder,
     required this.isFeatured,
+    this.description,
+    this.termsAndConditions,
+    this.discountPercentage,
+    this.displayOrder,
   });
   final String clinicId;
   final PackageCategory category;

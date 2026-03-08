@@ -10,6 +10,8 @@
 /// **Spec**: data-model.md §3.1, spec.md §7.9, §8.1.
 library;
 
+import 'package:meta/meta.dart';
+
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,6 +186,7 @@ enum PackageCategory {
 ///   // ...
 /// );
 /// ```
+@immutable
 class PackageEntity {
   /// Creates a [PackageEntity].
   ///
@@ -206,7 +209,9 @@ class PackageEntity {
     required this.isFeatured,
     required this.createdAt,
     required this.updatedAt,
-    required this.includesVideoConsultation, required this.includesPhysicalVisit, this.description,
+    required this.includesVideoConsultation,
+    required this.includesPhysicalVisit,
+    this.description,
     this.termsAndConditions,
     this.discountPercentage,
   });
