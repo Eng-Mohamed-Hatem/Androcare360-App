@@ -1,0 +1,46 @@
+﻿00:00 +0: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/services/notification_service_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: NotificationService - Singleton Pattern should return same instance on multiple calls
+00:00 +1: NotificationService - Singleton Pattern should maintain state across instances
+00:00 +2: NotificationService - Singleton Pattern should have single plugin instance
+00:00 +3: NotificationService - Service Structure should have flutter local notifications plugin
+00:00 +4: NotificationService - Service Structure should have init method
+00:00 +5: NotificationService - Service Structure should have showNotification method
+00:00 +6: NotificationService - Service Structure should have scheduleNotification method
+00:00 +7: NotificationService - Service Structure should have cancelNotification method
+00:00 +8: NotificationService - Service Structure should have cancelAll method
+00:00 +9: NotificationService - Parameter Validation should accept valid notification ID
+00:00 +10: NotificationService - Parameter Validation should accept valid notification titles
+00:00 +11: NotificationService - Parameter Validation should accept valid notification bodies
+00:00 +12: NotificationService - Parameter Validation should validate future dates for scheduling
+00:00 +13: NotificationService - Parameter Validation should identify past dates
+00:00 +14: NotificationService - Channel Configuration should use correct channel ID for incoming calls
+00:00 +15: NotificationService - Channel Configuration should use correct channel ID for main notifications
+00:00 +16: NotificationService - Channel Configuration should use correct channel ID for scheduled notifications
+00:00 +17: NotificationService - Channel Configuration should use max importance for incoming calls
+00:00 +18: NotificationService - Channel Configuration should use high priority for notifications
+00:00 +19: NotificationService - Channel Configuration should validate channel names are descriptive
+00:00 +20: NotificationService - Timezone Configuration should use Riyadh timezone
+00:00 +21: NotificationService - Timezone Configuration should validate timezone format
+00:00 +22: NotificationService - Notification IDs should support sequential IDs
+00:00 +23: NotificationService - Notification IDs should support large notification IDs
+00:00 +24: NotificationService - Notification IDs should support zero as notification ID
+00:00 +25: NotificationService - Notification IDs should handle unique IDs
+00:00 +26: NotificationService - Content Validation should handle short titles
+00:00 +27: NotificationService - Content Validation should handle long titles
+00:00 +28: NotificationService - Content Validation should handle short bodies
+00:00 +29: NotificationService - Content Validation should handle long bodies
+00:00 +30: NotificationService - Content Validation should handle empty strings
+00:00 +31: NotificationService - Content Validation should handle special characters
+00:00 +32: NotificationService - Content Validation should handle emojis
+00:00 +33: NotificationService - Content Validation should handle Arabic text
+00:00 +34: NotificationService - Content Validation should handle mixed language text
+00:00 +35: NotificationService - Date and Time Validation should validate immediate future scheduling
+00:00 +36: NotificationService - Date and Time Validation should validate short-term scheduling
+00:00 +37: NotificationService - Date and Time Validation should validate long-term scheduling
+00:00 +38: NotificationService - Date and Time Validation should reject past dates
+00:00 +39: NotificationService - Date and Time Validation should handle edge case of current time
+00:00 +40: NotificationService - Integration Documentation should document platform-specific testing requirements
+00:00 +41: NotificationService - Integration Documentation should list required manual testing scenarios
+00:00 +42: (tearDownAll)
+00:00 +42: All tests passed!

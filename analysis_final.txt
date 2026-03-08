@@ -1,0 +1,212 @@
+﻿Analyzing elajtech...                                           
+
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - backups\task18_20260216_115143\add_internal_medicine_emr_screen.dart:400:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - backups\task18_20260216_115143\add_internal_medicine_emr_screen.dart:401:17 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - backups\task18_20260216_115143\add_internal_medicine_emr_screen_before_18.2.dart:400:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - backups\task18_20260216_115143\add_internal_medicine_emr_screen_before_18.2.dart:401:17 - deprecated_member_use
+   info - Invalid use of 'default' member in a switch - backups\task18_20260216_115143\agora_video_call_screen.dart:141:7 - no_default_cases
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - backups\task18_20260216_115143\agora_video_call_screen.dart:241:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - backups\task18_20260216_115143\agora_video_call_screen.dart:285:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - backups\task18_20260216_115143\agora_video_call_screen.dart:391:27 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - backups\task18_20260216_115143\agora_video_call_screen.dart:474:50 - deprecated_member_use
+   info - Angle brackets will be interpreted as HTML - lib\core\models\call_log_model.dart:164:20 - unintended_html_in_doc_comment
+   info - The method '==' should not be overridden in classes not annotated with '@immutable' - lib\core\models\call_log_model.dart:219:3 - avoid_equals_and_hash_code_on_mutable_classes
+   info - The method 'hashCode' should not be overridden in classes not annotated with '@immutable' - lib\core\models\call_log_model.dart:234:3 - avoid_equals_and_hash_code_on_mutable_classes
+   info - Angle brackets will be interpreted as HTML - lib\core\models\device_info_model.dart:94:20 - unintended_html_in_doc_comment
+   info - The method '==' should not be overridden in classes not annotated with '@immutable' - lib\core\models\device_info_model.dart:147:3 - avoid_equals_and_hash_code_on_mutable_classes
+   info - The method 'hashCode' should not be overridden in classes not annotated with '@immutable' - lib\core\models\device_info_model.dart:163:3 - avoid_equals_and_hash_code_on_mutable_classes
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:191:16 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:919:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:919:24 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:920:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:920:21 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:921:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:921:32 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\agora_service.dart:922:8 - comment_references
+   info - Static method should be a constructor - lib\core\services\appointment_conflict_validation_service.dart:232:51 - prefer_constructors_over_static_methods
+   info - The referenced name isn't visible in scope - lib\core\services\appointment_conflict_validation_service.dart:263:37 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\appointment_conflict_validation_service.dart:264:35 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\appointment_conflict_validation_service.dart:265:46 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\appointment_conflict_validation_service.dart:266:39 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\background_service.dart:36:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\background_service.dart:37:8 - comment_references
+   info - Static method should be a constructor - lib\core\services\connection_service.dart:18:32 - prefer_constructors_over_static_methods
+   info - Static method should be a constructor - lib\core\services\encryption_service.dart:58:32 - prefer_constructors_over_static_methods
+   info - Missing documentation explaining why the diagnostic is ignored - lib\core\services\fcm_service.dart:139:3 - document_ignores
+   info - Missing documentation explaining why the diagnostic is ignored - lib\core\services\fcm_service.dart:356:3 - document_ignores
+   info - Missing documentation explaining why the diagnostic is ignored - lib\core\services\fcm_service.dart:363:3 - document_ignores
+   info - Missing documentation explaining why the diagnostic is ignored - lib\core\services\fcm_service.dart:365:3 - document_ignores
+   info - Missing documentation explaining why the diagnostic is ignored - lib\core\services\fcm_service.dart:367:3 - document_ignores
+   info - The code block is missing a specified language - lib\core\services\file_upload_service.dart:23:4 - missing_code_block_language_in_doc_comment
+   info - Static method should be a constructor - lib\core\services\file_upload_service.dart:88:32 - prefer_constructors_over_static_methods
+   info - Use of an async 'dart:io' method - lib\core\services\file_upload_service.dart:178:18 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method - lib\core\services\file_upload_service.dart:247:18 - avoid_slow_async_io
+   info - Static method should be a constructor - lib\core\services\id_generator_service.dart:73:33 - prefer_constructors_over_static_methods
+   info - Angle brackets will be interpreted as HTML - lib\core\services\pdf_service.dart:111:15 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\core\services\pdf_service.dart:188:15 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\core\services\pdf_service.dart:249:15 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\core\services\pdf_service.dart:310:15 - unintended_html_in_doc_comment
+   info - The code block is missing a specified language - lib\core\services\permission_service.dart:745:4 - missing_code_block_language_in_doc_comment
+   info - The code block is missing a specified language - lib\core\services\storage_service.dart:21:4 - missing_code_block_language_in_doc_comment
+   info - Invalid use of 'default' member in a switch - lib\core\services\voip_call_service.dart:260:7 - no_default_cases
+   info - Method invocation or property access on a 'dynamic' target - lib\core\services\voip_call_service.dart:454:20 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - lib\core\services\voip_call_service.dart:469:21 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - lib\core\services\voip_call_service.dart:484:25 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - lib\core\services\voip_call_service.dart:516:20 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - lib\core\services\voip_call_service.dart:546:20 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - lib\core\services\voip_call_service.dart:572:20 - avoid_dynamic_calls
+   info - The referenced name isn't visible in scope - lib\core\services\voip_call_service.dart:939:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\voip_call_service.dart:940:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\voip_call_service.dart:941:8 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\voip_call_service.dart:941:19 - comment_references
+   info - The referenced name isn't visible in scope - lib\core\services\voip_call_service.dart:941:27 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\appointments\data\repositories\appointment_repository_impl.dart:176:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\appointments\data\repositories\appointment_repository_impl.dart:217:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\appointments\data\repositories\appointment_repository_impl.dart:622:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\appointments\data\repositories\appointment_repository_impl.dart:688:19 - unintended_html_in_doc_comment
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:37:5 - cascade_invocations
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:48:5 - cascade_invocations
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\auth\providers\auth_provider.dart:129:15 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\auth\providers\auth_provider.dart:184:15 - avoid_catches_without_on_clauses
+   info - Angle brackets will be interpreted as HTML - lib\features\device_requests\data\repositories\device_request_repository_impl.dart:157:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\device_requests\data\repositories\device_request_repository_impl.dart:196:19 - unintended_html_in_doc_comment
+   info - Unnecessary duplication of receiver - lib\features\doctor\dashboard\presentation\screens\doctor_dashboard_screen.dart:113:5 - cascade_invocations
+   info - Angle brackets will be interpreted as HTML - lib\features\doctor\data\repositories\doctor_repository_impl.dart:88:19 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\doctor\data\repositories\doctor_repository_impl.dart:94:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\doctor\data\repositories\doctor_repository_impl.dart:148:15 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\doctor\data\repositories\doctor_repository_impl.dart:200:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\doctor\medical_records\data\models\physiotherapy_emr_model.dart:97:26 - unintended_html_in_doc_comment
+   info - 'bool' parameters should be named parameters - lib\features\doctor\medical_records\presentation\providers\physiotherapy_emr_provider.dart:282:20 - avoid_positional_boolean_parameters
+   info - To-do comment doesn't follow the Flutter style - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:80:17 - flutter_style_todos
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\emr_repository_impl.dart:117:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\emr_repository_impl.dart:117:38 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\emr_repository_impl.dart:124:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\emr_repository_impl.dart:225:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:114:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:114:38 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:120:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:227:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:343:19 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:350:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:109:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:109:38 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:116:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:219:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:322:19 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:329:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\lab_requests\data\repositories\lab_request_repository_impl.dart:151:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\lab_requests\data\repositories\lab_request_repository_impl.dart:190:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\notifications\data\repositories\notification_repository_impl.dart:128:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\notifications\data\repositories\notification_repository_impl.dart:169:15 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:132:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:132:38 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:140:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:298:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:406:19 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:413:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:524:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:595:29 - comment_references
+   info - Angle brackets will be interpreted as HTML - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:697:21 - unintended_html_in_doc_comment
+   info - The referenced name isn't visible in scope - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:704:29 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:18:10 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:22:20 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:23:42 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:79:66 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:92:70 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:97:41 - comment_references
+   info - Unnecessary duplication of receiver - lib\features\nutrition\presentation\widgets\wizard\comprehensive_nutrition_checklist.dart:598:13 - cascade_invocations
+   info - Invalid use of 'default' member in a switch - lib\features\patient\consultation\presentation\screens\agora_video_call_screen.dart:141:7 - no_default_cases
+   info - Unnecessary use of multiple underscores - lib\features\patient\consultation\presentation\screens\incoming_call_screen.dart:182:51 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\features\patient\consultation\presentation\screens\incoming_call_screen.dart:182:55 - unnecessary_underscores
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\medical_records\presentation\widgets\medical_record_card.dart:57:9 - flutter_style_todos
+   info - Missing a newline at the end of the file - lib\features\patient\navigation\presentation\screens\patient_main_screen.dart:129:2 - eol_at_end_of_file
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\notifications\presentation\widgets\notification_card.dart:61:9 - flutter_style_todos
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\screens\medical_devices_shop_screen.dart:22:15 - flutter_style_todos
+   info - 'bool' parameters should be named parameters - lib\features\patient\shop\presentation\screens\medical_devices_shop_screen.dart:82:35 - avoid_positional_boolean_parameters
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\widgets\device_card.dart:13:7 - flutter_style_todos
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\widgets\device_card.dart:115:29 - flutter_style_todos
+   info - Angle brackets will be interpreted as HTML - lib\features\prescriptions\data\repositories\prescription_repository_impl.dart:156:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\prescriptions\data\repositories\prescription_repository_impl.dart:197:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\prescriptions\data\repositories\prescription_repository_impl.dart:238:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\radiology_requests\data\repositories\radiology_request_repository_impl.dart:156:19 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\features\radiology_requests\data\repositories\radiology_request_repository_impl.dart:194:19 - unintended_html_in_doc_comment
+   info - Missing documentation explaining why the diagnostic is ignored - lib\features\register\presentation\screens\doctor_register_screen.dart:279:17 - document_ignores
+   info - Angle brackets will be interpreted as HTML - lib\features\user\data\repositories\user_repository_impl.dart:112:19 - unintended_html_in_doc_comment
+   info - Invalid use of 'default' member in a switch - lib\firebase_options.dart:31:7 - no_default_cases
+   info - Use 'late' for private members with a non-nullable type - lib\main.dart:369:9 - use_late_for_private_fields_and_variables
+   info - To-do comment doesn't follow the Flutter style - lib\main.dart:609:7 - flutter_style_todos
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\appointment_model.dart:222:20 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\doctor_model.dart:165:20 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\internal_medicine_emr_model.dart:178:20 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\notification_model.dart:101:20 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\nutrition_emr_model.dart:239:33 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\nutrition_emr_model.dart:263:20 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\physiotherapy_emr_model.dart:105:33 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\physiotherapy_emr_model.dart:223:20 - unintended_html_in_doc_comment
+   info - Angle brackets will be interpreted as HTML - lib\shared\models\user_model.dart:241:20 - unintended_html_in_doc_comment
+   info - Missing documentation explaining why the diagnostic is ignored - plans\nutrition_emr_model_enhanced.dart:1:1 - document_ignores
+   info - Missing documentation explaining why the diagnostic is ignored - plans\nutrition_emr_simplified_code.dart:1:1 - document_ignores
+   info - Unnecessary duplication of receiver - test\helpers\firebase_emulator_helper.dart:61:7 - cascade_invocations
+   info - 'bool' parameters should be named parameters - test\helpers\test_helpers.dart:183:36 - avoid_positional_boolean_parameters
+   info - 'bool' parameters should be named parameters - test\helpers\test_helpers.dart:188:39 - avoid_positional_boolean_parameters
+   info - Method invocation or property access on a 'dynamic' target - test\helpers\widget_test_helper.dart:106:26 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\helpers\widget_test_helper.dart:115:26 - avoid_dynamic_calls
+warning - The diagnostic 'must_be_immutable' doesn't need to be ignored here because it's already being ignored - test\mocks\mocks.mocks.dart:539:12 - duplicate_ignore
+warning - The diagnostic 'must_be_immutable' doesn't need to be ignored here because it's already being ignored - test\mocks\mocks.mocks.dart:675:12 - duplicate_ignore
+warning - The diagnostic 'must_be_immutable' doesn't need to be ignored here because it's already being ignored - test\mocks\mocks.mocks.dart:1242:12 - duplicate_ignore
+   info - 'alpha' is deprecated and shouldn't be used. Use (*.a * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:16:21 - deprecated_member_use
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:17:21 - deprecated_member_use
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:17:36 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:18:21 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:18:38 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:19:21 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:19:37 - deprecated_member_use
+   info - Unnecessary use of a 'double' literal - test\unit\core\extensions\color_extensions_test.dart:26:52 - prefer_int_literals
+   info - 'alpha' is deprecated and shouldn't be used. Use (*.a * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:27:26 - deprecated_member_use
+   info - Unnecessary use of a 'double' literal - test\unit\core\extensions\color_extensions_test.dart:30:47 - prefer_int_literals
+   info - 'alpha' is deprecated and shouldn't be used. Use (*.a * 255.0).round().clamp(0, 255) - test\unit\core\extensions\color_extensions_test.dart:31:21 - deprecated_member_use
+   info - 'Future'-returning calls in a non-'async' function - test\unit\providers\auth_provider_test.dart:48:13 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - test\unit\providers\doctors_list_provider_test.dart:40:13 - discarded_futures
+   info - Assignment to a variable of type 'void' - test\unit\providers\nutrition_emr_notifier_test.dart:289:45 - void_checks
+   info - Assignment to a variable of type 'void' - test\unit\providers\nutrition_emr_notifier_test.dart:384:45 - void_checks
+   info - Unnecessary duplication of receiver - test\unit\repositories\auth_repository_test.dart:699:7 - cascade_invocations
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:487:24 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:487:47 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:530:46 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:531:46 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:657:24 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:658:21 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:659:21 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:660:21 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\repositories\nutrition_emr_repository_test.dart:661:21 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:208:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:229:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:230:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:392:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:456:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:471:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:530:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:566:14 - avoid_dynamic_calls
+   info - Method invocation or property access on a 'dynamic' target - test\unit\services\call_monitoring_service_test.dart:567:14 - avoid_dynamic_calls
+   info - Unnecessary duplication of receiver - test\unit\services\device_info_service_test.dart:27:5 - cascade_invocations
+   info - Unnecessary duplication of receiver - test\unit\services\device_info_service_test.dart:347:7 - cascade_invocations
+   info - Unnecessary duplication of receiver - test\unit\services\notification_service_test.dart:237:7 - cascade_invocations
+   info - Catch clause should use 'on' to specify the type of exception being caught - test\unit\services\voip_call_service_test.dart:283:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - test\unit\services\voip_call_service_test.dart:299:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - test\unit\services\voip_call_service_test.dart:313:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - test\unit\services\voip_call_service_test.dart:328:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - test\unit\services\voip_call_service_test.dart:354:9 - avoid_catches_without_on_clauses
+   info - Unnecessary duplication of receiver - test\unit\services\voip_call_service_test.dart:432:7 - cascade_invocations
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - test\widget\screens\agora_video_call_screen_test.dart:372:23 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - test\widget\screens\agora_video_call_screen_test.dart:372:45 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - test\widget\screens\agora_video_call_screen_test.dart:372:62 - deprecated_member_use
+
+flutter : 200 issues found. (ran in 37.6s)
+At line:1 char:1
++ flutter analyze --no-fatal-infos 2>&1 | Out-File -FilePath 
+"analysis_ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (200 issues found 
+   . (ran in 37.6s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

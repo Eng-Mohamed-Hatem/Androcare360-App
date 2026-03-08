@@ -1,0 +1,4 @@
+// Shared widgets for the Packages feature.
+// Widgets: PackageCard, PackageStatusBadge, PackageProgressWidget,
+//          PackageDocumentCard, DocumentUploadBottomSheet
+// Created in Phase 3–6.

@@ -1,0 +1,9 @@
+// Domain use cases for the Packages feature.
+// Use cases: ListCategoryPackagesUseCase, GetPackageDetailsUseCase,
+//            PurchasePackageUseCase, GetPatientPackagesUseCase,
+//            GetPatientPackageDetailsUseCase, CreateClinicPackageUseCase,
+//            UpdateClinicPackageUseCase, TogglePackageStatusUseCase,
+//            ListClinicPackagesForAdminUseCase, DuplicatePackageUseCase,
+//            GetPatientPackagesForAdminUseCase, UploadPackageDocumentUseCase,
+//            UpdatePackageServiceUsageUseCase
+// Created in Phase 3–6.

@@ -1,0 +1,161 @@
+Analyzing elajtech...                                           
+
+   info - Static method should be a constructor - lib\core\services\appointment_conflict_validation_service.dart:72:51 - prefer_constructors_over_static_methods
+   info - Unreachable member 'BackgroundService' in an executable library - lib\core\services\background_service.dart:71:7 - unreachable_from_main
+   info - Unreachable member 'init' in an executable library - lib\core\services\background_service.dart:72:23 - unreachable_from_main
+   info - Unreachable member 'registerPeriodicTask' in an executable library - lib\core\services\background_service.dart:76:23 - unreachable_from_main
+   info - Static method should be a constructor - lib\core\services\connection_service.dart:18:32 - prefer_constructors_over_static_methods
+   info - Assignment could be inlined in 'return' statement - lib\core\services\connection_service.dart:85:7 - join_return_with_assignment
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\connection_service.dart:87:7 - avoid_catches_without_on_clauses
+   info - 'Future'-returning calls in a non-'async' function - lib\core\services\connection_service.dart:121:27 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\core\services\connection_service.dart:122:29 - discarded_futures
+   info - Static method should be a constructor - lib\core\services\encryption_service.dart:20:32 - prefer_constructors_over_static_methods
+   info - Unreachable member 'FCMService' in an executable library - lib\core\services\fcm_service.dart:13:7 - unreachable_from_main
+   info - Unreachable member 'FCMService.new' in an executable library - lib\core\services\fcm_service.dart:14:11 - unreachable_from_main
+   info - Unreachable member 'init' in an executable library - lib\core\services\fcm_service.dart:21:16 - unreachable_from_main
+   info - Unreachable member 'getToken' in an executable library - lib\core\services\fcm_service.dart:63:19 - unreachable_from_main
+   info - Static method should be a constructor - lib\core\services\file_upload_service.dart:22:32 - prefer_constructors_over_static_methods
+   info - Use of an async 'dart:io' method - lib\core\services\file_upload_service.dart:55:18 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method - lib\core\services\file_upload_service.dart:109:18 - avoid_slow_async_io
+   info - 'Future'-returning calls in a non-'async' function - lib\core\services\file_upload_service.dart:200:16 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\file_upload_service.dart:277:11 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\file_upload_service.dart:295:11 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\file_upload_service.dart:301:7 - avoid_catches_without_on_clauses
+   info - Static method should be a constructor - lib\core\services\id_generator_service.dart:17:33 - prefer_constructors_over_static_methods
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:43:5 - cascade_invocations
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:64:5 - cascade_invocations
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:73:5 - cascade_invocations
+   info - 'Future'-returning calls in a non-'async' function - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:348:20 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:376:20 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\auth\data\repositories\auth_repository_impl.dart:58:11 - avoid_catches_without_on_clauses
+   info - Unnecessary duplication of receiver - lib\features\doctor\dashboard\presentation\screens\doctor_dashboard_screen.dart:113:5 - cascade_invocations
+   info - Angle brackets will be interpreted as HTML - lib\features\doctor\medical_records\data\models\physiotherapy_emr_model.dart:97:26 - unintended_html_in_doc_comment
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\data\repositories\physiotherapy_emr_repository.dart:56:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\data\repositories\physiotherapy_emr_repository.dart:84:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\data\repositories\physiotherapy_emr_repository.dart:111:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\data\repositories\physiotherapy_emr_repository.dart:137:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\data\repositories\physiotherapy_emr_repository.dart:162:7 - avoid_catches_without_on_clauses
+   info - 'bool' parameters should be named parameters - lib\features\doctor\medical_records\presentation\providers\physiotherapy_emr_provider.dart:282:20 - avoid_positional_boolean_parameters
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart:188:7 - avoid_catches_without_on_clauses
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart:400:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart:401:17 - deprecated_member_use
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_requests\presentation\screens\add_medical_request_screen.dart:168:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\prescriptions\presentation\screens\add_prescription_screen.dart:116:7 - avoid_catches_without_on_clauses
+   info - To-do comment doesn't follow the Flutter style - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:78:17 - flutter_style_todos
+   info - 'Future'-returning calls in a non-'async' function - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:176:25 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:418:27 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:22:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:48:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:71:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\nutrition_emr_repository_impl.dart:34:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\nutrition_emr_repository_impl.dart:58:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\nutrition_emr_repository_impl.dart:81:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:40:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:64:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:87:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\models\nutrition_emr_model.dart:171:11 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:128:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:200:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:236:15 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:266:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:309:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:369:7 - avoid_catches_without_on_clauses
+   info - Don't throw instances of classes that don't extend either 'Exception' or 'Error' - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:397:17 - only_throw_errors
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:417:7 - avoid_catches_without_on_clauses
+  error - Missing concrete implementations of 'getter mixin _$NutritionEMREntity on Object.allergiesDocumented', 'getter mixin _$NutritionEMREntity on Object.appetiteAssessed', 'getter mixin _$NutritionEMREntity on Object.appointmentId', 'getter mixin _$NutritionEMREntity on Object.auditLog', and 42 more - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:21:7 - non_abstract_class_inherits_abstract_member
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:65:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:68:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:71:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:75:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:80:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:88:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:92:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:97:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:102:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:111:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:116:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:120:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:124:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:133:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:138:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:143:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:152:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:157:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:162:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:167:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:176:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:181:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:185:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:188:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:192:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:200:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:204:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:208:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:212:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:221:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:225:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:228:22 - invalid_annotation_target
+  error - Missing concrete implementations of 'getter mixin _$AuditLogEntry on Object.action', 'getter mixin _$AuditLogEntry on Object.fieldChanged', 'getter mixin _$AuditLogEntry on Object.newValue', 'getter mixin _$AuditLogEntry on Object.previousValue', and 4 more - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:549:7 - non_abstract_class_inherits_abstract_member
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:18:10 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:22:20 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:23:42 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:79:66 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:92:70 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:97:41 - comment_references
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:359:5 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\presentation\state\nutrition_emr_notifier.dart:138:7 - avoid_catches_without_on_clauses
+warning - The value of the field '_repository' isn't used - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:33:32 - unused_field
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:422:7 - avoid_catches_without_on_clauses
+  error - Missing concrete implementations of 'getter mixin _$NutritionWizardState on Object.canProceed', 'getter mixin _$NutritionWizardState on Object.currentStep', 'getter mixin _$NutritionWizardState on Object.lastSavedStep', 'getter mixin _$NutritionWizardState on Object.stepStatuses', and 2 more - lib\features\nutrition\presentation\state\nutrition_wizard_state.dart:43:7 - non_abstract_class_inherits_abstract_member
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:195:68 - deprecated_member_use
+   info - Unnecessary duplication of receiver - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:269:5 - cascade_invocations
+warning - The return type of ' Function(int)' can't be inferred - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:23:9 - inference_failure_on_function_return_type
+warning - The value of the local variable 'hasError' isn't used - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:89:11 - unused_local_variable
+warning - The value of the local variable 'inProgress' isn't used - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:90:11 - unused_local_variable
+   info - To-do comment doesn't follow the Flutter style - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:692:7 - flutter_style_todos
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\appointments\presentation\screens\book_appointment_screen.dart:151:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\appointments\presentation\screens\book_appointment_screen.dart:167:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\consultation\presentation\screens\video_consultation_screen.dart:60:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:365:19 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:423:19 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:484:19 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:544:19 - avoid_catches_without_on_clauses
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\medical_records\presentation\widgets\medical_record_card.dart:57:9 - flutter_style_todos
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\notifications\presentation\screens\notifications_screen.dart:54:17 - avoid_catches_without_on_clauses
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\notifications\presentation\widgets\notification_card.dart:61:9 - flutter_style_todos
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:36:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:93:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:149:7 - avoid_catches_without_on_clauses
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:288:27 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:290:27 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\self_assessment\presentation\screens\quiz_screen.dart:33:23 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\self_assessment\presentation\screens\quiz_screen.dart:44:23 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\self_assessment\presentation\screens\quiz_screen.dart:52:15 - discarded_futures
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\screens\medical_devices_shop_screen.dart:22:15 - flutter_style_todos
+   info - 'bool' parameters should be named parameters - lib\features\patient\shop\presentation\screens\medical_devices_shop_screen.dart:82:35 - avoid_positional_boolean_parameters
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\widgets\device_card.dart:13:7 - flutter_style_todos
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\widgets\device_card.dart:115:29 - flutter_style_todos
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient_profile_screen.dart:176:62 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient_profile_screen.dart:375:35 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient_profile_screen.dart:519:11 - avoid_catches_without_on_clauses
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient_profile_screen.dart:532:31 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient_profile_screen.dart:635:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\register\presentation\screens\doctor_register_screen.dart:146:9 - avoid_catches_without_on_clauses
+   info - Missing documentation explaining why the diagnostic is ignored - lib\features\register\presentation\screens\doctor_register_screen.dart:279:17 - document_ignores
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\register\presentation\screens\patient_register_screen.dart:100:9 - avoid_catches_without_on_clauses
+   info - Invalid use of 'default' member in a switch - lib\firebase_options.dart:31:7 - no_default_cases
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:59:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:84:7 - avoid_catches_without_on_clauses
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\main.dart:99:5 - unawaited_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:107:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:113:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:126:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:134:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:142:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:150:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:159:7 - avoid_catches_without_on_clauses
+   info - Use 'late' for private members with a non-nullable type - lib\main.dart:171:9 - use_late_for_private_fields_and_variables
+   info - Missing documentation explaining why the diagnostic is ignored - plans\nutrition_emr_model_enhanced.dart:1:1 - document_ignores
+   info - Missing documentation explaining why the diagnostic is ignored - plans\nutrition_emr_simplified_code.dart:1:1 - document_ignores
+
+157 issues found. (ran in 19.3s)

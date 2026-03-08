@@ -1,0 +1,51 @@
+Task 18: Deprecated API Migration - Backup Manifest
+====================================================
+
+Backup Created: 2026-02-16 11:51:43
+Purpose: Pre-migration backup for Task 18 (Deprecated API Migration)
+Spec: code-quality-and-testing-improvement
+
+Files Backed Up:
+----------------
+
+1. agora_video_call_screen.dart
+   Source: lib/features/patient/consultation/presentation/screens/agora_video_call_screen.dart
+   Reason: Contains 4 deprecated withOpacity() calls
+   Migration: Subtask 18.1
+
+2. add_internal_medicine_emr_screen.dart
+   Source: lib/features/doctor/medical_records/presentation/screens/add_internal_medicine_emr_screen.dart
+   Reason: Contains 2 deprecated Radio widget properties (groupValue, onChanged)
+   Migration: Subtask 18.2
+
+Deprecated API Count:
+---------------------
+- withOpacity(): 4 instances
+- Radio groupValue/onChanged: 2 instances
+- Total: 6 instances in source files
+
+Restoration Instructions:
+-------------------------
+To restore files from this backup:
+
+Windows (PowerShell):
+  Copy-Item "backups/task18_20260216_115143/agora_video_call_screen.dart" "lib/features/patient/consultation/presentation/screens/" -Force
+  Copy-Item "backups/task18_20260216_115143/add_internal_medicine_emr_screen.dart" "lib/features/doctor/medical_records/presentation/screens/" -Force
+
+Or use the automated rollback script:
+  .\scripts\rollback-task18.sh
+
+Verification:
+-------------
+After restoration, run:
+  flutter test
+  flutter analyze
+
+All 627+ tests should pass.
+
+Notes:
+------
+- This backup is part of Phase D: Performance & Polish
+- Task 18 is part of the code-quality-and-testing-improvement spec
+- Backup created before any code modifications
+- Keep this backup until Task 18 is verified complete

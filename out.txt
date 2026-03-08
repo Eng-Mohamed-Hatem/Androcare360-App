@@ -1,0 +1,25 @@
+﻿00:00 +0: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart
+00:00 +0 -1: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart [E]
+  Failed to load "C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart":
+  Compilation failed for testPath=C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart: test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart:23:5: Error: No named parameter with the name 'uid'.
+      uid: 'patient_1',
+      ^^^
+  lib/shared/models/user_model.dart:59:3: Context: Found this candidate, but the arguments don't match.
+    UserModel({
+    ^^^^^^^^^
+  test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart:45:7: Error: A value of type 'Map<String, Object>' can't be assigned to a variable of type 'ServiceUsageItem'.
+   - 'Map' is from 'dart:core'.
+   - 'Object' is from 'dart:core'.
+   - 'ServiceUsageItem' is from 'package:elajtech/features/packages/domain/entities/package_service_item.dart' ('lib/features/packages/domain/entities/package_service_item.dart').
+        {
+        ^
+  test/widget/features/admin/presentation/screens/admin_patient_packages_page_test.dart:57:51: Error: The method 'overrideWith' isn't defined for the type 'FamilyAsyncNotifierProviderImpl<AdminPatientPackagesNotifier, List<PatientPackageEntity>, String>'.
+   - 'FamilyAsyncNotifierProviderImpl' is from 'package:riverpod/src/async_notifier.dart' ('../../../../AppData/Local/Pub/Cache/hosted/pub.dev/riverpod-2.6.1/lib/src/async_notifier.dart').
+   - 'AdminPatientPackagesNotifier' is from 'package:elajtech/features/packages/presentation/providers/admin_patient_packages_provider.dart' ('lib/features/packages/presentation/providers/admin_patient_packages_provider.dart').
+   - 'List' is from 'dart:core'.
+   - 'PatientPackageEntity' is from 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart' ('lib/features/packages/domain/entities/patient_package_entity.dart').
+  Try correcting the name to the name of an existing method, or defining a method named 'overrideWith'.
+          adminPatientPackagesProvider('patient_1').overrideWith(
+                                                    ^^^^^^^^^^^^
+  .
+00:00 +0 -1: Some tests failed.

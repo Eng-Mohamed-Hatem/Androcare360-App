@@ -1,0 +1,11 @@
+﻿Analyzing 3 items...                                            
+
+   info - 'Future'-returning calls in a non-'async' function - lib\features\packages\presentation\pages\admin_packages_list_page.dart:128:23 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\packages\presentation\pages\admin_packages_list_page.dart:211:35 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\packages\presentation\pages\admin_packages_list_page.dart:236:30 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\packages\presentation\pages\admin_packages_list_page.dart:254:5 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\packages\presentation\pages\admin_packages_list_page.dart:269:20 - discarded_futures
+   info - The value of the argument is redundant because it matches the default value - test\unit\features\packages\domain\update_clinic_package_usecase_test.dart:26:36 - avoid_redundant_argument_values
+   info - The value of the argument is redundant because it matches the default value - test\unit\features\packages\domain\update_clinic_package_usecase_test.dart:70:31 - avoid_redundant_argument_values
+   info - The value of the argument is redundant because it matches the default value - test\unit\features\packages\domain\update_clinic_package_usecase_test.dart:162:35 - avoid_redundant_argument_values
+

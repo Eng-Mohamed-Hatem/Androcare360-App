@@ -1,0 +1,6 @@
+// Data layer repository implementations for the Packages feature.
+// Implementations: AndrologyPackageRepositoryImpl, PhysiotherapyPackageRepositoryImpl,
+//                  InternalFamilyPackageRepositoryImpl, ObesityNutritionPackageRepositoryImpl,
+//                  ChronicDiseasesPackageRepositoryImpl, PatientPackageRepositoryImpl,
+//                  PackageDocumentRepositoryImpl
+// Created in Phase 2 (T017–T023).

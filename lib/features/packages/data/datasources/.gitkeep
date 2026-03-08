@@ -1,0 +1,4 @@
+// Data layer datasources for the Packages feature (R5: split into two).
+// FirestorePackageDatasource  — Firestore reads/writes only (T016a)
+// FirebaseStoragePackageDatasource — Storage upload/download only (T016b)
+// Created in Phase 2.

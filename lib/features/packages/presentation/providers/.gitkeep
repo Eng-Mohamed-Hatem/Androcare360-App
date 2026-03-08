@@ -1,0 +1,4 @@
+// Riverpod providers and notifiers for the Packages feature.
+// Files: packages_provider.dart, my_packages_provider.dart,
+//        admin_packages_provider.dart, admin_patient_packages_provider.dart
+// Created in Phase 3–6.

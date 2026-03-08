@@ -1,0 +1,3 @@
+// Data layer adapter implementations for the Packages feature.
+// PackagePaymentAdapterImpl — wraps existing PaymentService (R6)
+// Created in Phase 2 (T003b).

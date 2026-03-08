@@ -1,0 +1,82 @@
+# important rules.md
+
+Rule description here...
+
+## Guidelines
+
+---
+trigger: always_on
+---
+
+Elajtech Project:  Null Safety & Stability Rules
+1. Authentication & User Identity (Auth Safety)
+
+    Rule: Never use the null-check operator (!) on the user object obtained from authProvider.
+
+    Requirement: Always perform a null check before accessing user properties (e.g., id, fullName). In the build method, use ref.watch(authProvider) to ensure the UI updates correctly when the authentication state changes.
+
+    Safe Pattern: final user = ref.watch(authProvider).user; if (user == null) return const LoadingWidget();
+
+2. Firestore Data Mapping (Data Access Safety)
+
+    Rule: Strict validation of Firestore snapshots in fromFirestore methods.
+
+    Requirement: Always verify that snapshot.exists is true and snapshot.data() is not null before parsing. Wrap the parsing logic in a try-catch block and use debugPrint to output the StackTrace if an error occurs.
+
+    Objective: Prevent app crashes caused by malformed or missing documents in the database.
+
+3. Object Initialization (Initialization Safety)
+
+    Rule: Avoid using late final for variables that can be initialized immediately.
+
+    Requirement: Prefer using the constructor initializer list for services like FirebaseFirestore. This prevents LateInitializationError and ensures all dependencies are ready before the class instance is used.
+
+4. Diagnostic Logging (Logging Protocol)
+
+    Rule: Mandatory debug logging for all Write/Update operations.
+
+    Requirement: Every function performing a Save or Update in Firestore must include debugPrint statements wrapped in if (kDebugMode).
+
+    Logged Data: Must include User ID, Patient ID, Appointment ID, and current Permissions status to facilitate real-time debugging in the console.
+
+5. Collection & List Management (Specialization Safety)
+
+    Rule: Safe access to the specializations list in UserModel.
+
+    Requirement: Never call .first on a list without checking if it isNotEmpty. Always provide a fallback default value (e.g., ?? 'General') to prevent StateError on empty lists.
+
+
+
+1. Firestore Database Identification Rule
+
+Strict Rule for 'elajtech' Project: The authorized Firestore database is NOT the default one; it uses the specific ID databaseId: 'elajtech'. It is strictly forbidden to use FirebaseFirestore.instance. Always use FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'elajtech') or rely on the injected instance via GetIt.
+
+2. Build Runner Execution Rule
+
+Build Runner Requirement: Whenever a new Repository or Service is added using @injectable, @module, or @lazySingleton in the 'elajtech' project, the user must be notified to immediately run the build_runner command (flutter pub run build_runner build --delete-conflicting-outputs) to update the dependency injection bindings.
+
+3. Clinic Isolation Rule
+
+Clinic Isolation Principle: Every specialty clinic (e.g., Nutrition, Physiotherapy) must have its own completely independent Model and Repository. Do not merge the logic of different clinics into a single file. This is mandatory to maintain the Single Responsibility Principle (SRP) and project scalability.
+
+4. Text Directionality (LTR/RTL) Rule
+
+UI Layout & Directionality: When designing clinic interfaces that contain English content or questions, always wrap the content with Directionality(textDirection: TextDirection.ltr). This ensures that input fields, checkboxes, and alignment are formatted correctly regardless of the app's global RTL setting.
+
+5. Cloud Functions Region Rule
+
+Cloud Functions Deployment & Invocation: All Cloud Functions for the 'elajtech' project are deployed in the europe-west1 region. It is strictly required to specify this region whenever calling a function from the Flutter app using FirebaseFunctions.instanceFor(region: 'europe-west1'). Never use the default region as it will result in a "Not Found" error.
+
+MCP & Code Generation Rules
+
+    Project Identity: You are now working on the 'elajtech' project. You have full authorized access to the Dart MCP (Model Context Protocol) tools.
+
+    Operational Instructions:
+
+        Real-File Access: Always use the MCP tools to read the actual content of the files. Never guess or assume the content of a file; verify it through the MCP to ensure accuracy.
+
+        Build Runner Execution: Whenever modifications are made to Entities or Classes that utilize @freezed, @injectable, or @JsonSerializable, you must immediately use the MCP to execute the build_runner command: flutter pub run build_runner build --delete-conflicting-outputs.
+
+        Integrity Checks: After every substantial modification, use the MCP to run flutter analyze. This is mandatory to ensure there are no Type Errors or broken dependencies introduced by the changes.
+
+        Generated Code Inspection: In case of generation errors or unexpected behavior, use the MCP to inspect the content of the generated files (e.g., .freezed.dart or .g.dart) to verify the integrity and formatting of the generated code.

@@ -1,0 +1,88 @@
+name: Deprecated API Check
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'lib/**/*.dart'
+      - 'pubspec.yaml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'lib/**/*.dart'
+      - 'pubspec.yaml'
+
+jobs:
+  check-deprecated-apis:
+    name: Check for Deprecated APIs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0'  # Minimum version for current APIs
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run Flutter Analyzer
+        id: analyze
+        run: |
+          echo "Running flutter analyze..."
+          flutter analyze lib/ > analysis_output.txt 2>&1 || true
+          cat analysis_output.txt
+
+      - name: Check for deprecated API warnings
+        run: |
+          echo "Checking for deprecated_member_use warnings in lib/..."
+          
+          # Count deprecated warnings in source code (lib/)
+          DEPRECATED_COUNT=$(grep -c "deprecated_member_use.*lib/" analysis_output.txt || echo "0")
+          
+          echo "Found $DEPRECATED_COUNT deprecated API warning(s) in source code"
+          
+          if [ "$DEPRECATED_COUNT" -gt 0 ]; then
+            echo "❌ FAILED: Deprecated API usage detected in source code"
+            echo ""
+            echo "Deprecated APIs found:"
+            grep "deprecated_member_use.*lib/" analysis_output.txt
+            echo ""
+            echo "Please migrate these deprecated APIs before merging."
+            echo "See TASK_18_COMPLETION_REPORT.md for migration patterns."
+            exit 1
+          fi
+          
+          echo "✅ PASSED: No deprecated API usage in source code"
+
+      - name: Upload analysis results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: analysis_output.txt
+          retention-days: 30
+
+      - name: Comment on PR (if failed)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('analysis_output.txt', 'utf8');
+            const deprecatedLines = output.split('\n')
+              .filter(line => line.includes('deprecated_member_use') && line.includes('lib/'))
+              .join('\n');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ❌ Deprecated API Check Failed\n\nDeprecated API usage detected in source code:\n\n\`\`\`\n${deprecatedLines}\n\`\`\`\n\nPlease migrate these deprecated APIs before merging.\nSee \`TASK_18_COMPLETION_REPORT.md\` for migration patterns.`
+            });

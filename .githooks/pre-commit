@@ -1,0 +1,43 @@
+#!/bin/sh
+# Pre-commit hook to detect deprecated API usage
+# 
+# This hook prevents commits that introduce deprecated API warnings
+# in source code (lib/ directory).
+#
+# Installation:
+#   git config core.hooksPath .githooks
+#
+# Or manually:
+#   cp .githooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+
+echo "🔍 Checking for deprecated API usage..."
+
+# Run flutter analyze on staged files in lib/ directory
+STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep "^lib/.*\.dart$")
+
+if [ -z "$STAGED_DART_FILES" ]; then
+  echo "✅ No Dart source files to check"
+  exit 0
+fi
+
+# Run analyzer on the entire lib/ directory
+# (analyzing individual files may miss context-dependent issues)
+ANALYSIS_OUTPUT=$(flutter analyze lib/ 2>&1)
+
+# Check for deprecated_member_use warnings in lib/
+DEPRECATED_COUNT=$(echo "$ANALYSIS_OUTPUT" | grep -c "deprecated_member_use.*lib/")
+
+if [ "$DEPRECATED_COUNT" -gt 0 ]; then
+  echo "❌ COMMIT REJECTED: Found $DEPRECATED_COUNT deprecated API usage(s) in source code"
+  echo ""
+  echo "Deprecated APIs found:"
+  echo "$ANALYSIS_OUTPUT" | grep "deprecated_member_use.*lib/"
+  echo ""
+  echo "Please fix these deprecated API warnings before committing."
+  echo "See TASK_18_COMPLETION_REPORT.md for migration patterns."
+  exit 1
+fi
+
+echo "✅ No deprecated API usage detected"
+exit 0

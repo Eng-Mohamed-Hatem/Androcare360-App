@@ -1,0 +1,266 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // -- Helper Functions --
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    /// ✅ تحقق من أن المستخدم الحالي هو Admin
+    /// Verify the current user is an admin
+    function isAdmin() {
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isAuthenticated()
+        && exists(userPath)
+        && get(userPath).data.userType == 'admin';
+    }
+
+    /// ✅ تحقق من دور الطبيب مباشرة من وثيقة المستخدم
+    /// Verify doctor role directly from user document
+    function isDoctor() {
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isAuthenticated() &&
+        exists(userPath) &&
+        get(userPath).data.userType == 'doctor';
+    }
+
+    /// ✅ تحقق من أن الطبيب المرتبط بالموعد هو الوحيد الذي يملك صلاحية الكتابة
+    /// Verify that the doctor associated with the appointment is the only one with write permission
+    function canEditByAppointment(appointmentId) {
+       let apptPath = /databases/$(database)/documents/appointments/$(appointmentId);
+       return exists(apptPath) && get(apptPath).data.doctorId == request.auth.uid;
+    }
+
+    /// ✅ الحقول المقيدة للأطباء — لا يجوز للطبيب تعديلها مباشرة
+    /// Admin-only fields for doctors — doctors cannot write these directly
+    function writesAdminOnlyDoctorFields() {
+      let adminOnly = [
+        'licenseNumber', 'specialization', 'specializations',
+        'yearsOfExperience', 'workingHours', 'biography',
+        'consultationFee', 'consultationTypes', 'clinicName',
+        'clinicAddress', 'education', 'certificates', 'profileImage',
+        'isActive', 'userType'
+      ];
+      return request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(adminOnly);
+    }
+
+    // -- Users Collection --
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Admin can update any user document (no field restrictions).
+      allow update: if isAdmin() || request.auth.uid == 'R4UWWD59hmYxOiaEuVlapUSZZSA2';
+      // Doctor / patient can only update their own doc AND must NOT
+      // touch admin-only protected fields.
+      allow update: if isOwner(userId) && !writesAdminOnlyDoctorFields();
+      allow delete: if isOwner(userId);
+
+      // ✅ Allow patients to manage their own Medical Screening data
+      // Doctors and Admins can also read this data
+      match /medicalScreening/{docId} {
+        allow read: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+        allow write: if isOwner(userId);
+      }
+    }
+    
+    // -- Appointments Collection --
+    match /appointments/{appointmentId} {
+      // قواعد الموعد نفسه
+      allow read: if isAuthenticated() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId == request.auth.uid ||
+        isDoctor() ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId == request.auth.uid
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId == request.auth.uid
+      );
+      
+      // ✅ إضافة: قواعد للمجموعات الفرعية تحت appointments
+      // Subcollections under appointments (medical_records, prescriptions, etc.)
+      match /{path=**} {
+        // السماح للطبيب بقراءة وكتابة جميع المجموعات الفرعية
+        // Allow doctor to read/write all subcollections
+        allow read, write: if isDoctor() && canEditByAppointment(appointmentId);
+        
+        // السماح للمريض بقراءة المجموعات الفرعية
+        // Allow patient to read subcollections
+        allow read: if isAuthenticated() &&
+          exists(/databases/$(database)/documents/appointments/$(appointmentId)) &&
+          get(/databases/$(database)/documents/appointments/$(appointmentId)).data.patientId == request.auth.uid;
+      }
+    }
+    
+    // -- Medical Records (Prescriptions, Lab, EMR, etc) --
+    match /{collection}/{docId} {
+      // السماح بالقراءة
+      // Allow read
+      allow read: if isAuthenticated() && (
+        // 1. Admin (Global Access)
+        isAdmin() ||
+        // 2. Doctor (Global Access)
+        isDoctor() ||
+        // 3. Patient (Owner) - EXCEPT for EMR Records
+        (resource.data.patientId == request.auth.uid && collection != 'emr_records')
+      );
+      
+      // السماح بالإنشاء والتحديث
+      // Allow create and update
+      allow create, update: if isAuthenticated() &&
+        collection in ['prescriptions', 'lab_requests', 'radiology_requests', 'device_requests', 'emr_records', 'internal_medicine_emrs'] &&
+        isDoctor();
+      
+      // ✅ إضافة: السماح للمجموعات الفرعية على مستوى الجذر
+      // Allow subcollections at root level
+      match /{subcollection=**} {
+        allow read, write: if isDoctor();
+      }
+    }
+
+    // -- Notifications --
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if isAuthenticated();
+    }
+
+    // -- Audit Logs (Admin only) --
+    match /audit_logs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // -- Notification Logs & Errors (System only) --
+    match /notification_logs/{logId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.receiverId || 
+        request.auth.uid == resource.data.senderId
+      );
+      allow write: if false; // Cloud Functions only
+    }
+
+    match /notification_errors/{errorId} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);
+      allow write: if false; // Cloud Functions only
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PHYSIOTHERAPY EMR COLLECTION
+    // Stores physical therapy assessment records with 24-hour edit window
+    // ═══════════════════════════════════════════════════════════════════════════
+    match /physiotherapy_emrs/{emrId} {
+      // Helper: Check if within 24-hour edit window from creation
+      function isWithin24Hours() {
+        let createdAt = resource.data.createdAt;
+        let now = request.time;
+        let diff = now.toMillis() - createdAt.toMillis();
+        let twentyFourHours = 24 * 60 * 60 * 1000; // milliseconds
+        return diff <= twentyFourHours;
+      }
+      
+      // CREATE: Only doctors can create EMRs for their own appointments
+      allow create: if isAuthenticated()
+        && isDoctor()
+        && request.resource.data.doctorId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'id', 'patientId', 'doctorId', 'doctorName', 'appointmentId',
+          'visitDate', 'createdAt', 'basics', 'painAssessment',
+          'functionalAssessment', 'systemsReview', 'rangeOfMotion',
+          'strengthAssessment', 'devicesEquipment', 'treatmentPlan'
+        ]);
+      
+      // READ: Doctors can read their own EMRs, patients can read their own EMRs
+      allow read: if isAuthenticated()
+        && (
+          isAdmin()
+          || (isDoctor() && resource.data.doctorId == request.auth.uid)
+          || (resource.data.patientId == request.auth.uid)
+        );
+      
+      // UPDATE: Only the creating doctor can update within 24 hours
+      allow update: if isAuthenticated()
+        && isDoctor()
+        && resource.data.doctorId == request.auth.uid
+        && request.resource.data.doctorId == resource.data.doctorId // Prevent doctorId change
+        && request.resource.data.patientId == resource.data.patientId // Prevent patientId change
+        && isWithin24Hours();
+      
+      // DELETE: Not allowed (soft delete only via status field if needed)
+      allow delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // NUTRITION EMR COLLECTION
+    // Stores nutrition assessment records with 24-hour edit window
+    // Database: elajtech
+    // ═══════════════════════════════════════════════════════════════════════════
+    match /nutrition_emrs/{emrId} {
+      // Helper: Check if within 24 hours from visit date (not creation date)
+      function isWithin24HoursFromVisit() {
+        let visitDate = resource.data.visitDate;
+        let now = request.time;
+        let diff = now.toMillis() - visitDate.toMillis();
+        let twentyFourHours = 24 * 60 * 60 * 1000; // milliseconds
+        return diff <= twentyFourHours;
+      }
+      
+      // Helper: Check if user is a nutritionist (doctor with nutrition specialty)
+      function isNutritionist() {
+        let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+        return isAuthenticated()
+          && isDoctor()
+          && exists(userPath)
+          && get(userPath).data.specializations != null
+          && 'عيادة السمنة والتغذية العلاجية' in get(userPath).data.specializations;
+      }
+      
+      // CREATE: Only nutritionists can create EMRs for their own appointments
+      allow create: if isAuthenticated()
+        && isNutritionist()
+        && request.resource.data.nutritionistId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'id', 'patientId', 'nutritionistId', 'nutritionistName',
+          'appointmentId', 'visitDate', 'createdAt', 'updatedAt'
+        ]);
+      
+      // READ: Nutritionists can read their own EMRs, patients can read their own EMRs
+      allow read: if isAuthenticated()
+        && (
+          isAdmin()
+          || (isNutritionist() && resource.data.nutritionistId == request.auth.uid)
+          || (resource.data.patientId == request.auth.uid)
+        );
+      
+      // UPDATE: Only the creating nutritionist can update within 24 hours from visit date
+      // AND the record must not be manually locked
+      allow update: if isAuthenticated()
+        && isNutritionist()
+        && resource.data.nutritionistId == request.auth.uid
+        && request.resource.data.nutritionistId == resource.data.nutritionistId // Prevent nutritionistId change
+        && request.resource.data.patientId == resource.data.patientId // Prevent patientId change
+        && request.resource.data.appointmentId == resource.data.appointmentId // Prevent appointmentId change
+        && !resource.data.get('isLocked', false) // Prevent updates to locked records
+        && isWithin24HoursFromVisit();
+      
+      // DELETE: Not allowed (soft delete only via status field if needed)
+      allow delete: if false;
+    }
+
+    // -- Default Deny --
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

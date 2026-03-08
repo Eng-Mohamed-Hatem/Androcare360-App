@@ -1,0 +1,4 @@
+// Domain repository interfaces for the Packages feature.
+// Repositories: PackageRepository, PatientPackageRepository,
+//               PackageDocumentRepository
+// Created in Phase 2 (T010–T012).

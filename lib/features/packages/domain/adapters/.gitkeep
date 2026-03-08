@@ -1,0 +1,4 @@
+// Domain adapter interfaces for the Packages feature.
+// Adapters: PackagePaymentAdapter (interface — R6)
+// Implementation lives in data/adapters/package_payment_adapter_impl.dart
+// Created in Phase 2 (T003).

@@ -1,0 +1,4 @@
+// Patient-facing pages for the Packages feature.
+// Screens: PackageCategoriesPage, CategoryPackagesListPage, PackageDetailsPage,
+//          MyPackagesPage, MyPackagesDetailPage
+// Created in Phase 3 (US1) and Phase 4 (US2).

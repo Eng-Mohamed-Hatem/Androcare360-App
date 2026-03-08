@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "firebase-functions": "^7.0.5",
+    "functions": "^1.0.9"
+  }
+}

@@ -1,0 +1,28 @@
+Deprecated API Locations - Task 18 Baseline
+
+=== Radio Widget (2 instances in 1 file) ===
+File: lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart
+- Line 400: 'groupValue' is deprecated - Use RadioGroup ancestor to manage group value instead
+- Line 401: 'onChanged' is deprecated - Use RadioGroup to handle value change instead
+
+=== Color.withOpacity() (4 instances in 1 file) ===
+File: lib\features\patient\consultation\presentation\screens\agora_video_call_screen.dart
+- Line 241: Colors.withOpacity() - Use .withValues(alpha:) instead
+- Line 285: Colors.withOpacity() - Use .withValues(alpha:) instead
+- Line 391: Colors.withOpacity() - Use .withValues(alpha:) instead
+- Line 474: Colors.withOpacity() - Use .withValues(alpha:) instead
+
+=== Test File Deprecated Usage (3 instances in 1 file) ===
+File: test\widget\screens\agora_video_call_screen_test.dart
+- Line 372: Color.value is deprecated (appears 2 times)
+- Line 372: withOpacity() is deprecated
+
+TOTAL DEPRECATED WARNINGS: 9
+- Radio widget: 2
+- withOpacity in source: 4
+- Test file issues: 3
+
+Priority for Migration:
+1. HIGH: agora_video_call_screen.dart - 4 withOpacity instances (Subtask 18.1)
+2. HIGH: add_internal_medicine_emr_screen.dart - 2 Radio instances (Subtask 18.2)
+3. MEDIUM: agora_video_call_screen_test.dart - 3 test issues (update after source migration)

@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules — elajtech project
+//
+// Profile pictures: Only admins can WRITE. All authenticated users can READ.
+// This enforces that doctors cannot update their own profile photo from the
+// client app; only an admin can do so via the Admin panel.
+//
+// Note: Firestore user type check uses the 'elajtech' named database.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Helper function: check if the caller is an admin
+    //    by reading userType from the elajtech Firestore database.
+    function isAdmin() {
+      return request.auth != null
+        && firestore.get(
+             /databases/elajtech/documents/users/$(request.auth.uid)
+           ).data.userType == 'admin';
+    }
+
+    // ── Profile pictures
+    //    Path: profilepictures/{userId}/{fileName}
+    //    - READ:  any authenticated user (needed to display photos in the app)
+    //    - WRITE: admin only (upload from Admin panel)
+    match /profilepictures/{userId}/{file} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || request.auth.uid == 'R4UWWD59hmYxOiaEuVlapUSZZSA2';
+    }
+
+    // ── Profile images (legacy path used by StorageService)
+    //    Path: profile_images/{userId}.jpg
+    //    - READ:  any authenticated user
+    //    - WRITE: admin only
+    match /profile_images/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin() || request.auth.uid == 'R4UWWD59hmYxOiaEuVlapUSZZSA2';
+    }
+
+    // ── Default deny: everything else is blocked
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

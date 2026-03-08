@@ -1,0 +1,18 @@
+---
+description: 
+alwaysApply: true
+---
+
+# AndroCare360 Project Rules
+
+- Architecture: Clean Architecture (lib/core, lib/features, lib/shared).
+- State Management: Riverpod 2.5.1.
+- Backend: Firebase (Firestore database: "elajtech", Functions region: "europe-west1").
+- Video Engine: Agora RTC (Generated tokens via Cloud Functions).
+- VoIP: flutter_callkit_incoming (iOS: CallKit, Android: ConnectionService).
+- Logging: All call events must be logged to 'call_logs' collection via CallMonitoringService.
+- Device Info: Use DeviceInfoService for any hardware-related logs.
+- Constraints: 
+  1. No Force Unwrap (!) operators on nullable fields.
+  2. Always handle BuildContext safely across async gaps.
+  3. Cloud Functions must be called with europe-west1 region.

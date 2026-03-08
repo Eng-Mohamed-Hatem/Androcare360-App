@@ -1,0 +1,4 @@
+﻿00:00 +0: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/firestore_rules_test.dart
+00:00 +0 -1: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/firestore_rules_test.dart [E]
+  Failed to load "C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/firestore_rules_test.dart": Does not exist.
+00:00 +0 -1: Some tests failed.

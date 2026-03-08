@@ -1,0 +1,16 @@
+version: "3.8" # تحديد إصدار تنسيق ملف Docker Compose
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest # جلب أحدث نسخة رسمية من صورة Qdrant
+    container_name: kilo_code_qdrant # تسمية الحاوية لسهولة التعرف عليها
+    ports:
+      - "6333:6333" # ربط المنفذ 6333 من الجهاز المضيف بالحاوية (للتواصل مع Kilo Code)
+      - "6334:6334" # منفذ إضافي لبروتوكول gRPC إذا لزم الأمر مستقبلاً
+    volumes:
+      # ربط مجلد محلي لتخزين البيانات بشكل دائم (Persistence)
+      # هذا يضمن عدم فقدان الفهرسة عند إعادة تشغيل Docker
+      - ./qdrant_storage:/qdrant/storage
+    restart: always # إعادة تشغيل الحاوية تلقائياً في حال توقفها أو إعادة تشغيل الجهاز
+    environment:
+      - QDRANT__SERVICE__ENABLE_STATIC_CONTENT=true # اختياري: لتفعيل واجهة لوحة التحكم المتصفح

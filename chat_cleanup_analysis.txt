@@ -1,0 +1,99 @@
+Analyzing elajtech...                                           
+
+   info - Static method should be a constructor - lib\core\services\appointment_conflict_validation_service.dart:72:51 - prefer_constructors_over_static_methods
+   info - Unreachable member 'BackgroundService' in an executable library - lib\core\services\background_service.dart:71:7 - unreachable_from_main
+   info - Unreachable member 'init' in an executable library - lib\core\services\background_service.dart:72:23 - unreachable_from_main
+   info - Unreachable member 'registerPeriodicTask' in an executable library - lib\core\services\background_service.dart:76:23 - unreachable_from_main
+   info - Static method should be a constructor - lib\core\services\connection_service.dart:19:32 - prefer_constructors_over_static_methods
+   info - Assignment could be inlined in 'return' statement - lib\core\services\connection_service.dart:86:7 - join_return_with_assignment
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\connection_service.dart:88:7 - avoid_catches_without_on_clauses
+   info - 'Future'-returning calls in a non-'async' function - lib\core\services\connection_service.dart:122:27 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\core\services\connection_service.dart:123:29 - discarded_futures
+   info - Static method should be a constructor - lib\core\services\encryption_service.dart:21:32 - prefer_constructors_over_static_methods
+   info - Unreachable member 'FCMService' in an executable library - lib\core\services\fcm_service.dart:13:7 - unreachable_from_main
+   info - Unreachable member 'FCMService.new' in an executable library - lib\core\services\fcm_service.dart:14:11 - unreachable_from_main
+   info - Unreachable member 'init' in an executable library - lib\core\services\fcm_service.dart:21:16 - unreachable_from_main
+   info - Unreachable member 'getToken' in an executable library - lib\core\services\fcm_service.dart:63:19 - unreachable_from_main
+   info - Static method should be a constructor - lib\core\services\file_upload_service.dart:23:32 - prefer_constructors_over_static_methods
+   info - Use of an async 'dart:io' method - lib\core\services\file_upload_service.dart:56:18 - avoid_slow_async_io
+   info - Use of an async 'dart:io' method - lib\core\services\file_upload_service.dart:110:18 - avoid_slow_async_io
+   info - 'Future'-returning calls in a non-'async' function - lib\core\services\file_upload_service.dart:201:16 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\file_upload_service.dart:278:11 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\file_upload_service.dart:296:11 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\core\services\file_upload_service.dart:302:7 - avoid_catches_without_on_clauses
+   info - Static method should be a constructor - lib\core\services\id_generator_service.dart:18:33 - prefer_constructors_over_static_methods
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:43:5 - cascade_invocations
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:64:5 - cascade_invocations
+   info - Unnecessary duplication of receiver - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:73:5 - cascade_invocations
+   info - 'Future'-returning calls in a non-'async' function - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:348:20 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\appointments\presentation\screens\doctor_appointments_screen.dart:376:20 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\auth\data\repositories\auth_repository_impl.dart:58:11 - avoid_catches_without_on_clauses
+   info - Missing a newline at the end of the file - lib\features\debug\presentation\screens\debug_ids_screen.dart:191:2 - eol_at_end_of_file
+   info - Unnecessary duplication of receiver - lib\features\doctor\dashboard\presentation\screens\doctor_dashboard_screen.dart:113:5 - cascade_invocations
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart:163:7 - avoid_catches_without_on_clauses
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart:375:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\features\doctor\medical_records\presentation\screens\add_internal_medicine_emr_screen.dart:376:17 - deprecated_member_use
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\medical_requests\presentation\screens\add_medical_request_screen.dart:168:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\doctor\prescriptions\presentation\screens\add_prescription_screen.dart:116:7 - avoid_catches_without_on_clauses
+   info - To-do comment doesn't follow the Flutter style - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:78:17 - flutter_style_todos
+   info - 'Future'-returning calls in a non-'async' function - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:176:25 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\doctor\profile\presentation\screens\doctor_profile_screen.dart:418:27 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:22:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:48:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\internal_medicine_emr_repository_impl.dart:71:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\nutrition_emr_repository_impl.dart:34:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\nutrition_emr_repository_impl.dart:58:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\nutrition_emr_repository_impl.dart:81:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:40:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:64:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\emr\data\repositories\physiotherapy_emr_repository_impl.dart:87:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\appointments\presentation\screens\book_appointment_screen.dart:124:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\appointments\presentation\screens\book_appointment_screen.dart:166:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\consultation\presentation\screens\video_consultation_screen.dart:59:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:365:19 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:423:19 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:484:19 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\medical_records\presentation\screens\medical_records_screen.dart:544:19 - avoid_catches_without_on_clauses
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\medical_records\presentation\widgets\medical_record_card.dart:58:9 - flutter_style_todos
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\notifications\presentation\screens\notifications_screen.dart:54:17 - avoid_catches_without_on_clauses
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\notifications\presentation\widgets\notification_card.dart:62:9 - flutter_style_todos
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:36:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:93:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:149:7 - avoid_catches_without_on_clauses
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:288:29 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\profile\presentation\screens\edit_profile_screen.dart:290:29 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\self_assessment\presentation\screens\quiz_screen.dart:33:23 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\self_assessment\presentation\screens\quiz_screen.dart:44:23 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient\self_assessment\presentation\screens\quiz_screen.dart:52:15 - discarded_futures
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\screens\medical_devices_shop_screen.dart:22:15 - flutter_style_todos
+   info - 'bool' parameters should be named parameters - lib\features\patient\shop\presentation\screens\medical_devices_shop_screen.dart:82:35 - avoid_positional_boolean_parameters
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\widgets\device_card.dart:14:9 - flutter_style_todos
+   info - To-do comment doesn't follow the Flutter style - lib\features\patient\shop\presentation\widgets\device_card.dart:115:31 - flutter_style_todos
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient_profile_screen.dart:176:62 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient_profile_screen.dart:375:35 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient_profile_screen.dart:519:11 - avoid_catches_without_on_clauses
+   info - 'Future'-returning calls in a non-'async' function - lib\features\patient_profile_screen.dart:532:31 - discarded_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\patient_profile_screen.dart:635:9 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\register\presentation\screens\doctor_register_screen.dart:146:9 - avoid_catches_without_on_clauses
+   info - Missing documentation explaining why the diagnostic is ignored - lib\features\register\presentation\screens\doctor_register_screen.dart:279:19 - document_ignores
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\register\presentation\screens\patient_register_screen.dart:100:9 - avoid_catches_without_on_clauses
+   info - Invalid use of 'default' member in a switch - lib\firebase_options.dart:31:7 - no_default_cases
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:59:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:84:7 - avoid_catches_without_on_clauses
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\main.dart:99:5 - unawaited_futures
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:107:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:113:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:126:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:134:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:142:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:150:5 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\main.dart:159:7 - avoid_catches_without_on_clauses
+   info - Use 'late' for private members with a non-nullable type - lib\main.dart:171:9 - use_late_for_private_fields_and_variables
+   info - Missing a newline at the end of the file - lib\shared\widgets\biometric_switch.dart:63:2 - eol_at_end_of_file
+   info - Use 'const' for final variables initialized to a constant value - test\appointment_flow_integration_test.dart:15:7 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - test\appointment_flow_integration_test.dart:16:7 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - test\appointment_flow_integration_test.dart:25:7 - prefer_const_declarations
+   info - Missing a newline at the end of the file - test\appointment_flow_integration_test.dart:66:2 - eol_at_end_of_file
+   info - Missing a newline at the end of the file - test\testfirestore_rules_test.dart:63:2 - eol_at_end_of_file
+
+95 issues found. (ran in 12.1s)

@@ -1,0 +1,240 @@
+Analyzing nutrition...                                          
+
+   info - Closure should be a tearoff - lib\features\nutrition\data\models\nutrition_emr_model.dart:117:16 - unnecessary_lambdas
+warning - Unnecessary cast - lib\features\nutrition\data\models\nutrition_emr_model.dart:167:19 - unnecessary_cast
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\models\nutrition_emr_model.dart:173:11 - avoid_catches_without_on_clauses
+   info - Constructor declarations should be before non-constructor declarations - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:33:3 - sort_constructors_first
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:68:16 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:79:16 - prefer_const_constructors
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:129:7 - avoid_catches_without_on_clauses
+   info - Don't cast a nullable value to a non-nullable type - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:175:20 - cast_nullable_to_non_nullable
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:201:7 - avoid_catches_without_on_clauses
+   info - Don't cast a nullable value to a non-nullable type - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:235:17 - cast_nullable_to_non_nullable
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:237:15 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:267:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:310:7 - avoid_catches_without_on_clauses
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:370:7 - avoid_catches_without_on_clauses
+   info - Don't throw instances of classes that don't extend either 'Exception' or 'Error' - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:398:17 - only_throw_errors
+   info - Don't cast a nullable value to a non-nullable type - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:401:11 - cast_nullable_to_non_nullable
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\data\repositories\nutrition_emr_repository_impl.dart:418:7 - avoid_catches_without_on_clauses
+  error - Missing concrete implementations of 'getter mixin _$NutritionEMREntity on Object.allergiesDocumented', 'getter mixin _$NutritionEMREntity on Object.appetiteAssessed', 'getter mixin _$NutritionEMREntity on Object.appointmentId', 'getter mixin _$NutritionEMREntity on Object.auditLog', and 42 more - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:21:7 - non_abstract_class_inherits_abstract_member
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:65:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:68:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:71:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:75:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:80:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:88:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:92:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:97:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:102:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:111:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:116:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:120:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:124:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:133:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:138:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:143:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:152:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:157:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:162:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:167:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:176:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:181:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:185:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:188:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:192:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:200:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:204:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:208:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:212:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:221:6 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:225:22 - invalid_annotation_target
+warning - The annotation 'JsonKey.new' can only be used on fields or getters - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:228:22 - invalid_annotation_target
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:256:5 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:374:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:383:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:391:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:399:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:406:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:414:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:423:9 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:431:9 - omit_local_variable_types
+   info - Constructor declarations should be before non-constructor declarations - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:514:11 - sort_constructors_first
+   info - The value of the argument is redundant because it matches the default value - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:533:7 - avoid_redundant_argument_values
+  error - Missing concrete implementations of 'getter mixin _$AuditLogEntry on Object.action', 'getter mixin _$AuditLogEntry on Object.fieldChanged', 'getter mixin _$AuditLogEntry on Object.newValue', 'getter mixin _$AuditLogEntry on Object.previousValue', and 4 more - lib\features\nutrition\domain\entities\nutrition_emr_entity.dart:550:7 - non_abstract_class_inherits_abstract_member
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:18:10 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:22:20 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:23:42 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:79:66 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:92:70 - comment_references
+   info - The referenced name isn't visible in scope - lib\features\nutrition\domain\repositories\nutrition_emr_repository.dart:97:41 - comment_references
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:11:8 - always_use_package_imports
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:35:5 - discarded_futures
+   info - Use an if-null operator to convert a 'null' to a 'bool' - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:64:11 - use_if_null_to_convert_nulls_to_bools
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:149:37 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:178:21 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:180:22 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:181:13 - prefer_const_constructors
+   info - Unnecessary use of parentheses - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:202:22 - unnecessary_parenthesis
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:275:5 - omit_local_variable_types
+  error - The method 'maybeMap' isn't defined for the type 'NutritionEMRState' - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:277:11 - undefined_method
+warning - The type of errorState can't be inferred; a type must be explicitly provided - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:278:15 - inference_failure_on_untyped_parameter
+   info - Method invocation or property access on a 'dynamic' target - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:279:24 - avoid_dynamic_calls
+  error - A value of type 'dynamic' can't be assigned to a variable of type 'String' - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:279:24 - invalid_assignment
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:294:40 - deprecated_member_use
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:361:5 - discarded_futures
+warning - The type argument(s) of the function 'showDialog' can't be inferred - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:361:5 - inference_failure_on_function_invocation
+   info - Unnecessary escape of ''' - lib\features\nutrition\presentation\screens\nutrition_clinic_screen.dart:396:16 - avoid_escaping_inner_quotes
+   info - Constructor declarations should be before non-constructor declarations - lib\features\nutrition\presentation\state\nutrition_emr_notifier.dart:35:3 - sort_constructors_first
+   info - The value of the argument is redundant because it matches the default value - lib\features\nutrition\presentation\state\nutrition_emr_notifier.dart:95:13 - avoid_redundant_argument_values
+   info - The value of the argument is redundant because it matches the default value - lib\features\nutrition\presentation\state\nutrition_emr_notifier.dart:119:15 - avoid_redundant_argument_values
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\presentation\state\nutrition_emr_notifier.dart:141:7 - avoid_catches_without_on_clauses
+   info - The value of the argument is redundant because it matches the default value - lib\features\nutrition\presentation\state\nutrition_emr_notifier.dart:149:9 - avoid_redundant_argument_values
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:165:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:181:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:197:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:218:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:234:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:253:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:271:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:288:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:306:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:323:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:339:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:353:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:367:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:383:1 - specify_nonobvious_property_types
+   info - A type annotation is needed because it isn't obvious - lib\features\nutrition\presentation\state\nutrition_state_providers.dart:400:1 - specify_nonobvious_property_types
+warning - The value of the field '_repository' isn't used - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:31:32 - unused_field
+   info - Constructor declarations should be before non-constructor declarations - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:33:3 - sort_constructors_first
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:67:5 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:69:10 - omit_local_variable_types
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:83:10 - omit_local_variable_types
+   info - Catch clause should use 'on' to specify the type of exception being caught - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:423:7 - avoid_catches_without_on_clauses
+   info - Unnecessary type annotation on a local variable - lib\features\nutrition\presentation\state\nutrition_wizard_notifier.dart:450:10 - omit_local_variable_types
+  error - Missing concrete implementations of 'getter mixin _$NutritionWizardState on Object.canProceed', 'getter mixin _$NutritionWizardState on Object.currentStep', 'getter mixin _$NutritionWizardState on Object.lastSavedStep', 'getter mixin _$NutritionWizardState on Object.stepStatuses', and 2 more - lib\features\nutrition\presentation\state\nutrition_wizard_state.dart:43:7 - non_abstract_class_inherits_abstract_member
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:2:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:3:8 - always_use_package_imports
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:19:11 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:49:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:52:42 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:57:17 - prefer_const_constructors
+   info - The value of the argument is redundant because it matches the default value - lib\features\nutrition\presentation\widgets\dialogs\unsaved_changes_dialog.dart:78:54 - avoid_redundant_argument_values
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:5:8 - always_use_package_imports
+   info - The value of the argument is redundant because it matches the default value - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:45:20 - avoid_redundant_argument_values
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:71:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:162:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:165:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:167:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:169:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:178:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:181:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:183:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\auto_save_indicator.dart:185:32 - deprecated_member_use
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:6:8 - always_use_package_imports
+   info - Unnecessary use of a 'double' literal - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:79:44 - prefer_int_literals
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:94:20 - discarded_futures
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:97:27 - discarded_futures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:121:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:128:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:135:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:151:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_checkbox_tile.dart:195:68 - deprecated_member_use
+warning - Unused import: 'package:animate_do/animate_do.dart' - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:3:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:9:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:10:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:11:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:12:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:13:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:14:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:15:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:16:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:17:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:18:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:19:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:20:8 - always_use_package_imports
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:49:5 - discarded_futures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:92:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:94:63 - deprecated_member_use
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:152:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:155:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:158:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:161:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:164:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:167:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:170:9 - unnecessary_breaks
+   info - Unnecessary 'break' statement - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:173:9 - unnecessary_breaks
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:195:19 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:197:20 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:198:11 - prefer_const_constructors
+   info - Unnecessary duplication of receiver - lib\features\nutrition\presentation\widgets\wizard\nutrition_wizard_view.dart:276:5 - cascade_invocations
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:4:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:6:8 - always_use_package_imports
+warning - The return type of ' Function(int)' can't be inferred - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:23:9 - inference_failure_on_function_return_type
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:32:19 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:34:20 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:35:11 - prefer_const_constructors
+warning - The value of the local variable 'hasError' isn't used - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:89:11 - unused_local_variable
+warning - The value of the local variable 'inProgress' isn't used - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:90:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\step_indicator.dart:140:58 - deprecated_member_use
+warning - Unused import: 'dart:math' - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:1:8 - unused_import
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:8:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:9:8 - always_use_package_imports
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:162:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:409:27 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:411:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:516:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:558:27 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:560:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:623:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:625:53 - deprecated_member_use
+   info - To-do comment doesn't follow the Flutter style - lib\features\nutrition\presentation\widgets\wizard\steps\anthropometric_step.dart:694:7 - flutter_style_todos
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\clinical_assessment_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\clinical_assessment_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\clinical_assessment_step.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\dietary_assessment_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\dietary_assessment_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\dietary_assessment_step.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\documentation_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\documentation_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\documentation_step.dart:7:8 - always_use_package_imports
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\documentation_step.dart:91:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\documentation_step.dart:94:43 - deprecated_member_use
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\lab_results_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\lab_results_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\lab_results_step.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\monitoring_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\monitoring_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\monitoring_step.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\nutrition_diagnosis_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\nutrition_diagnosis_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\nutrition_diagnosis_step.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\nutrition_intervention_step.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\nutrition_intervention_step.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\nutrition_intervention_step.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:5:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:6:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:7:8 - always_use_package_imports
+   info - Use 'package:' imports for files in the 'lib' directory - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:8:8 - always_use_package_imports
+   info - 'Future'-returning calls in a non-'async' function - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:30:20 - discarded_futures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:54:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:94:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:96:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:120:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:122:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\nutrition\presentation\widgets\wizard\steps\wizard_step_base.dart:146:38 - deprecated_member_use
+
+236 issues found. (ran in 13.1s)

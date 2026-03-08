@@ -1,0 +1,216 @@
+﻿00:00 +0: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/repositories/nutrition_emr_repository_test.dart
+00:00 +0: NutritionEMRRepository - Save EMR should save new EMR successfully
+[NutritionEMRRepo] Operation: saveEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_minimal_001 | Appointment ID: apt_test_002
+[NutritionEMRRepo] Patient ID: patient_test_001 | Nutritionist ID: doctor_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_002
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success | Result: null (not found)
+[NutritionEMRRepo] Operation: saveEMR | Status: success
+[NutritionEMRRepo] Action: created (Create)
+[NutritionEMRRepo] Audit log entries: 1
+00:00 +1: NutritionEMRRepository - Save EMR should update existing EMR successfully
+[NutritionEMRRepo] Operation: saveEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_minimal_001 | Appointment ID: apt_test_002
+[NutritionEMRRepo] Patient ID: patient_test_001 | Nutritionist ID: doctor_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_002
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success
+[NutritionEMRRepo] EMR ID: nutrition_emr_minimal_001 | Patient ID: patient_test_001
+[NutritionEMRRepo] Completion: 9.4%
+[NutritionEMRRepo] Operation: saveEMR | Status: success
+[NutritionEMRRepo] Action: updated (Update)
+[NutritionEMRRepo] Audit log entries: 1
+[NutritionEMRRepo] Edit count: 1 | Last edited by: Dr. Test Nutritionist
+00:00 +2: NutritionEMRRepository - Save EMR should return failure when appointment ID is empty
+[NutritionEMRRepo] Operation: saveEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_minimal_001 | Appointment ID: 
+[NutritionEMRRepo] Patient ID: patient_test_001 | Nutritionist ID: doctor_test_001
+[NutritionEMRRepo] Operation: saveEMR | Status: failed | Reason: Empty appointment ID
+00:00 +3: NutritionEMRRepository - Save EMR should return failure when EMR is locked
+[NutritionEMRRepo] Operation: saveEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_locked_001 | Appointment ID: apt_test_001
+[NutritionEMRRepo] Patient ID: patient_test_001 | Nutritionist ID: doctor_test_001
+[NutritionEMRRepo] Operation: saveEMR | Status: failed | Reason: Record is locked
+00:00 +4: NutritionEMRRepository - Save EMR should return failure on Firestore error
+[NutritionEMRRepo] Operation: saveEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_minimal_001 | Appointment ID: apt_test_002
+[NutritionEMRRepo] Patient ID: patient_test_001 | Nutritionist ID: doctor_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_002
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success | Result: null (not found)
+[NutritionEMRRepo] Operation: saveEMR | Status: error
+[NutritionEMRRepo] Exception: Exception: Firestore error
+[NutritionEMRRepo] StackTrace: #0      PostExpectation.thenThrow.<anonymous closure> (package:mockito/src/mock.dart:598:7)
+#1      Mock.noSuchMethod (package:mockito/src/mock.dart:194:47)
+#2      MockDocumentReference.set (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/mocks/mocks.mocks.dart:686:14)
+#3      NutritionEMRRepositoryImpl.saveEMR (package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart:231:12)
+<asynchronous suspension>
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/repositories/nutrition_emr_repository_test.dart:164:22)
+<asynchronous suspension>
+#5      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:9)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#7      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:00 +5: NutritionEMRRepository - Get EMR By Appointment ID should return EMR when found
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success
+[NutritionEMRRepo] EMR ID: nutrition_emr_001 | Patient ID: patient_test_001
+[NutritionEMRRepo] Completion: 15.6%
+00:00 +6: NutritionEMRRepository - Get EMR By Appointment ID should return null when EMR not found
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success | Result: null (not found)
+00:00 +7: NutritionEMRRepository - Get EMR By Appointment ID should return failure on Firestore error
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: error
+[NutritionEMRRepo] Exception: Exception: Firestore error
+[NutritionEMRRepo] StackTrace: #0      PostExpectation.thenThrow.<anonymous closure> (package:mockito/src/mock.dart:598:7)
+#1      Mock.noSuchMethod (package:mockito/src/mock.dart:194:47)
+#2      MockQuery.get (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/mocks/mocks.mocks.dart:1360:14)
+#3      NutritionEMRRepositoryImpl.getEMRByAppointmentId (package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart:330:12)
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/repositories/nutrition_emr_repository_test.dart:240:39)
+#5      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#7      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:00 +8: NutritionEMRRepository - Get EMRs By Patient ID should return list of EMRs for patient
+[NutritionEMRRepo] Operation: getEMRsByPatientId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Patient ID: patient_test_001
+[NutritionEMRRepo] Operation: getEMRsByPatientId | Status: success
+[NutritionEMRRepo] Found 3 EMR records
+00:00 +9: NutritionEMRRepository - Get EMRs By Patient ID should return empty list when no EMRs found
+[NutritionEMRRepo] Operation: getEMRsByPatientId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Patient ID: patient_test_001
+[NutritionEMRRepo] Operation: getEMRsByPatientId | Status: success
+[NutritionEMRRepo] Found 0 EMR records
+00:00 +10: NutritionEMRRepository - Get EMRs By Patient ID should return failure on Firestore error
+[NutritionEMRRepo] Operation: getEMRsByPatientId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Patient ID: patient_test_001
+[NutritionEMRRepo] Operation: getEMRsByPatientId | Status: error
+[NutritionEMRRepo] Exception: Exception: Firestore error
+[NutritionEMRRepo] StackTrace: #0      PostExpectation.thenThrow.<anonymous closure> (package:mockito/src/mock.dart:598:7)
+#1      Mock.noSuchMethod (package:mockito/src/mock.dart:194:47)
+#2      MockQuery.get (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/mocks/mocks.mocks.dart:1360:14)
+#3      NutritionEMRRepositoryImpl.getEMRsByPatientId (package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart:445:12)
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/repositories/nutrition_emr_repository_test.dart:329:39)
+#5      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#7      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:00 +11: NutritionEMRRepository - Lock EMR should lock EMR successfully
+[NutritionEMRRepo] Operation: lockEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_001
+[NutritionEMRRepo] Operation: lockEMR | Status: success
+00:00 +12: NutritionEMRRepository - Lock EMR should return failure on Firestore error
+[NutritionEMRRepo] Operation: lockEMR | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] EMR ID: nutrition_emr_001
+[NutritionEMRRepo] Operation: lockEMR | Status: error
+[NutritionEMRRepo] Exception: Exception: Firestore error
+[NutritionEMRRepo] StackTrace: #0      PostExpectation.thenThrow.<anonymous closure> (package:mockito/src/mock.dart:598:7)
+#1      Mock.noSuchMethod (package:mockito/src/mock.dart:194:47)
+#2      MockDocumentReference.update (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/mocks/mocks.mocks.dart:650:14)
+#3      NutritionEMRRepositoryImpl.lockEMR (package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart:543:36)
+#4      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/repositories/nutrition_emr_repository_test.dart:369:39)
+#5      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#7      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+00:00 +13: NutritionEMRRepository - Is Appointment Expired should return true when EMR is locked
+[NutritionEMRRepo] Operation: isAppointmentExpired | Status: started
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success
+[NutritionEMRRepo] EMR ID: nutrition_emr_locked_001 | Patient ID: patient_test_001
+[NutritionEMRRepo] Completion: 15.6%
+[NutritionEMRRepo] Operation: isAppointmentExpired | Status: success
+[NutritionEMRRepo] Is Locked: true | Is Expired: true
+[NutritionEMRRepo] Remaining Hours: 0
+00:00 +14: NutritionEMRRepository - Is Appointment Expired should return false when EMR not found
+[NutritionEMRRepo] Operation: isAppointmentExpired | Status: started
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: success | Result: null (not found)
+[NutritionEMRRepo] Operation: isAppointmentExpired | Status: success | Result: false (no EMR found)
+00:00 +15: NutritionEMRRepository - Is Appointment Expired should return failure on Firestore error
+[NutritionEMRRepo] Operation: isAppointmentExpired | Status: started
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: started
+[NutritionEMRRepo] DatabaseId: elajtech
+[NutritionEMRRepo] Appointment ID: apt_test_001
+[NutritionEMRRepo] Operation: getEMRByAppointmentId | Status: error
+[NutritionEMRRepo] Exception: Exception: Firestore error
+[NutritionEMRRepo] StackTrace: #0      PostExpectation.thenThrow.<anonymous closure> (package:mockito/src/mock.dart:598:7)
+#1      Mock.noSuchMethod (package:mockito/src/mock.dart:194:47)
+#2      MockQuery.get (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/mocks/mocks.mocks.dart:1360:14)
+#3      NutritionEMRRepositoryImpl.getEMRByAppointmentId (package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart:330:12)
+#4      NutritionEMRRepositoryImpl.isAppointmentExpired (package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart:623:31)
+#5      main.<anonymous closure>.<anonymous closure> (file:///C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/unit/repositories/nutrition_emr_repository_test.dart:446:39)
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+
+[NutritionEMRRepo] Operation: isAppointmentExpired | Status: error
+00:00 +16: NutritionEMRRepository - Watch EMR (Stream) should return stream that emits EMR updates
+[NutritionEMRRepo] Operation: watchEMR | Status: started
+[NutritionEMRRepo] EMR ID: nutrition_emr_001
+[NutritionEMRRepo] Operation: watchEMR | Status: success
+00:00 +17: NutritionEMRRepository - Watch EMR (Stream) should emit multiple updates from stream
+[NutritionEMRRepo] Operation: watchEMR | Status: started
+[NutritionEMRRepo] EMR ID: nutrition_emr_001
+[NutritionEMRRepo] Operation: watchEMR | Status: success
+00:00 +18: NutritionEMRRepository - Watch EMR (Stream) should handle stream error when EMR not found
+[NutritionEMRRepo] Operation: watchEMR | Status: started
+[NutritionEMRRepo] EMR ID: nutrition_emr_001
+[NutritionEMRRepo] Operation: watchEMR | Status: success
+00:00 +19: NutritionEMRRepository - Watch EMR (Stream) should handle stream error when data is null
+[NutritionEMRRepo] Operation: watchEMR | Status: started
+[NutritionEMRRepo] EMR ID: nutrition_emr_001
+00:00 +20: NutritionEMRRepository - Watch EMR (Stream) should return failure on FirebaseException
+00:00 +21: NutritionEMRRepository - Watch EMR (Stream) should return failure on generic exception
+00:00 +22: NutritionEMRRepository - Watch EMR (Stream) should preserve EMR data integrity through stream
+00:00 +23: NutritionEMRRepository - Additional Edge Cases saveEMR should handle FirebaseException correctly
+00:00 +24: NutritionEMRRepository - Additional Edge Cases getEMRByAppointmentId should handle FirebaseException
+00:00 +25: NutritionEMRRepository - Additional Edge Cases getEMRsByPatientId should handle FirebaseException
+00:00 +26: NutritionEMRRepository - Additional Edge Cases lockEMR should handle FirebaseException
+00:00 +27: NutritionEMRRepository - Additional Edge Cases getEMRsByPatientId should filter out invalid documents
+00:00 +28: NutritionEMRRepository - Additional Edge Cases saveEMR should verify audit log is updated
+00:00 +29: NutritionEMRRepository - Additional Edge Cases saveEMR should increment edit count on update
+00:00 +30: All tests passed!

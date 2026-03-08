@@ -1,0 +1,4 @@
+// Domain entities for the Packages feature.
+// Entities: PackageEntity, PatientPackageEntity, PackageDocumentEntity,
+//           PackageServiceItem, ServiceUsageItem
+// Created in Phase 2.

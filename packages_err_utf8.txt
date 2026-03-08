@@ -1,0 +1,54 @@
+﻿00:00 +0: loading C:/Users/moham/Desktop/androcare/elajtech/elajtech/test/integration/packages_flow_test.dart
+00:00 +0: Packages Full Flow ΓÇö T053 T053-a: purchase succeeds with FakePaymentService; myPackagesProvider reflects ACTIVE package afterward
+[PurchasePackageNotifier] purchase userId=uid_patient_it_001 pkgId=pkg_it_001 clinicId=andrology
+00:00 +0 -1: Packages Full Flow ΓÇö T053 T053-a: purchase succeeds with FakePaymentService; myPackagesProvider reflects ACTIVE package afterward [E]
+  NoSuchMethodError: Class '_FakeAuthRepo' has no instance method 'getCurrentUser' with matching arguments.
+  Receiver: Instance of '_FakeAuthRepo'
+  Tried calling: getCurrentUser()
+  Found: getCurrentUser() => Future<Either<Failure, UserModel>>
+  dart:core                                                                                Object.noSuchMethod
+  test\integration\packages_flow_test.dart 28:56                                           _FakeAuthRepo.noSuchMethod
+  test\integration\packages_flow_test.dart 26:7                                            _FakeAuthRepo.getCurrentUser
+  package:elajtech/features/auth/providers/auth_provider.dart 152:42                       AuthNotifier._checkCurrentUser
+  package:elajtech/features/auth/providers/auth_provider.dart 143:17                       new AuthNotifier
+  test\integration\packages_flow_test.dart 32:43                                           new _FakeAuthNotifier
+  test\integration\packages_flow_test.dart 142:24                                          main.<fn>.<fn>.<fn>
+  package:riverpod/src/state_notifier_provider/base.dart 119:21                            StateNotifierProvider._create
+  package:riverpod/src/state_notifier_provider/base.dart 172:64                            StateNotifierProviderElement.create.<fn>
+  package:riverpod/src/result.dart 21:28                                                   Result.guard
+  package:riverpod/src/state_notifier_provider/base.dart 172:43                            StateNotifierProviderElement.create
+  package:riverpod/src/framework/element.dart 426:7                                        ProviderElementBase.buildState
+  package:riverpod/src/framework/element.dart 228:5                                        ProviderElementBase.mount
+  package:riverpod/src/framework/container.dart 47:11                                      _StateReader._create
+  package:riverpod/src/framework/container.dart 35:52                                      _StateReader.getElement
+  package:riverpod/src/framework/container.dart 440:40                                     ProviderContainer.readProviderElement.<fn>
+  package:riverpod/src/framework/container.dart 475:8                                      ProviderContainer.readProviderElement
+  package:riverpod/src/framework/element.dart 624:42                                       ProviderElementBase._debugAssertCanDependOn.<fn>
+  package:riverpod/src/framework/element.dart 667:8                                        ProviderElementBase._debugAssertCanDependOn
+  package:riverpod/src/framework/element.dart 691:12                                       ProviderElementBase.read
+  package:elajtech/features/packages/presentation/providers/packages_provider.dart 232:23  PurchasePackageNotifier.purchase
+  test\integration\packages_flow_test.dart 157:32                                          main.<fn>.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                                               Future._asyncCompleteError
+  package:elajtech/features/auth/providers/auth_provider.dart 143:17                       new AuthNotifier
+  test\integration\packages_flow_test.dart 32:43                                           new _FakeAuthNotifier
+  test\integration\packages_flow_test.dart 142:24                                          main.<fn>.<fn>.<fn>
+  package:riverpod/src/state_notifier_provider/base.dart 119:21                            StateNotifierProvider._create
+  package:riverpod/src/state_notifier_provider/base.dart 172:64                            StateNotifierProviderElement.create.<fn>
+  package:riverpod/src/result.dart 21:28                                                   Result.guard
+  package:riverpod/src/state_notifier_provider/base.dart 172:43                            StateNotifierProviderElement.create
+  package:riverpod/src/framework/element.dart 426:7                                        ProviderElementBase.buildState
+  package:riverpod/src/framework/element.dart 228:5                                        ProviderElementBase.mount
+  package:riverpod/src/framework/container.dart 47:11                                      _StateReader._create
+  package:riverpod/src/framework/container.dart 35:52                                      _StateReader.getElement
+  package:riverpod/src/framework/container.dart 440:40                                     ProviderContainer.readProviderElement.<fn>
+  package:riverpod/src/framework/container.dart 475:8                                      ProviderContainer.readProviderElement
+  package:riverpod/src/framework/element.dart 624:42                                       ProviderElementBase._debugAssertCanDependOn.<fn>
+  package:riverpod/src/framework/element.dart 667:8                                        ProviderElementBase._debugAssertCanDependOn
+  package:riverpod/src/framework/element.dart 691:12                                       ProviderElementBase.read
+  package:elajtech/features/packages/presentation/providers/packages_provider.dart 232:23  PurchasePackageNotifier.purchase
+  test\integration\packages_flow_test.dart 157:32                                          main.<fn>.<fn>
+  
+[PurchasePackageNotifier] purchase OK ppId=pp_it_001
+00:00 +0 -1: Packages Full Flow ΓÇö T053 T053-b: getPatientPackages returns ACTIVE entry with 0 / 0 progress after purchase
+00:01 +1 -1: Some tests failed.

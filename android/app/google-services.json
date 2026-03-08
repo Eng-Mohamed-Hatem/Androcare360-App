@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "375824242048",
+    "project_id": "elajtech-fc804",
+    "storage_bucket": "elajtech-fc804.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:375824242048:android:1db0ad1ed58dd565ea5d65",
+        "android_client_info": {
+          "package_name": "com.example.elajtech"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9LzRlJtQuzv8Z5DiY2bLvRuW8eB49P2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
