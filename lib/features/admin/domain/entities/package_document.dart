@@ -25,6 +25,8 @@
 ///   note: 'First prescription',
 /// );
 /// ```
+library;
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'package_document.freezed.dart';
@@ -32,8 +34,6 @@ part 'package_document.g.dart';
 
 @freezed
 abstract class PackageDocument with _$PackageDocument {
-  const PackageDocument._();
-
   /// Creates a new PackageDocument instance.
   /// ينشئ مثيلاً جديدًا لـ PackageDocument.
   ///
@@ -56,6 +56,7 @@ abstract class PackageDocument with _$PackageDocument {
     required DateTime uploadedAt,
     String? note,
   }) = _PackageDocument;
+  const PackageDocument._();
 
   /// Creates a PackageDocument from JSON map.
   /// ينشئ PackageDocument من خريطة JSON.
@@ -73,7 +74,7 @@ abstract class PackageDocument with _$PackageDocument {
   /// ```
   String formatFileSize(int fileSizeInBytes) {
     if (fileSizeInBytes < 1024) {
-      return '${fileSizeInBytes} B';
+      return '$fileSizeInBytes B';
     } else if (fileSizeInBytes < 1024 * 1024) {
       return '${(fileSizeInBytes / 1024).toStringAsFixed(1)} KB';
     } else {

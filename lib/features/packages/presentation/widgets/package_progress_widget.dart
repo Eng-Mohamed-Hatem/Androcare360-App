@@ -9,7 +9,7 @@
 /// mirroring of the progress bar and western digits.
 ///
 /// **Spec**: tasks.md T049, spec.md §9.4, §9.14.
-library package_progress_widget;
+library;
 
 import 'package:flutter/material.dart';
 
@@ -77,7 +77,7 @@ class PackageProgressWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: fraction,
-              backgroundColor: color.withOpacity(0.2),
+              backgroundColor: color.withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation<Color?>(color),
               minHeight: 6,
             ),

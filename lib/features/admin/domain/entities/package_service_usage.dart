@@ -13,6 +13,8 @@
 ///   note: 'First consultation completed',
 /// );
 /// ```
+library;
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'package_service_usage.freezed.dart';
@@ -20,8 +22,6 @@ part 'package_service_usage.g.dart';
 
 @freezed
 abstract class PackageServiceUsage with _$PackageServiceUsage {
-  const PackageServiceUsage._();
-
   /// Creates a new PackageServiceUsage instance.
   /// ينشئ مثيلاً جديدًا لـ PackageServiceUsage.
   ///
@@ -34,6 +34,7 @@ abstract class PackageServiceUsage with _$PackageServiceUsage {
     required DateTime usedAt,
     String? note,
   }) = _PackageServiceUsage;
+  const PackageServiceUsage._();
 
   /// Creates a PackageServiceUsage from JSON map.
   /// ينشئ PackageServiceUsage من خريطة JSON.

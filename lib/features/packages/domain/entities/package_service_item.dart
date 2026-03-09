@@ -90,6 +90,23 @@ class PackageServiceItem {
     'quantity': quantity,
   };
 
+  /// Creates a copy of this [PackageServiceItem] with the given fields replaced.
+  ///
+  /// إنشاء نسخة من الكائن مع استبدال الحقول المحددة.
+  PackageServiceItem copyWith({
+    String? serviceId,
+    ServiceType? serviceType,
+    String? displayName,
+    int? quantity,
+  }) {
+    return PackageServiceItem(
+      serviceId: serviceId ?? this.serviceId,
+      serviceType: serviceType ?? this.serviceType,
+      displayName: displayName ?? this.displayName,
+      quantity: quantity ?? this.quantity,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

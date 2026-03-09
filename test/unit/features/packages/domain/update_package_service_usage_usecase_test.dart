@@ -91,7 +91,7 @@ void main() {
       mockClinicPackagesCollection.doc(packageId),
     ).thenReturn(mockClinicPackageDoc);
 
-    when(mockFirestore.runTransaction(any)).thenAnswer((inv) async {
+    when(mockFirestore.runTransaction<void>(any)).thenAnswer((inv) async {
       final action = inv.positionalArguments[0] as Function;
       return await action(mockTransaction);
     });
@@ -119,7 +119,7 @@ void main() {
         when(mockPpSnapshot.data()).thenReturn({
           'clinicId': clinicId,
           'packageId': packageId,
-          'servicesUsage': [],
+          'servicesUsage': <Map<String, dynamic>>[],
         });
         when(mockPkgSnapshot.data()).thenReturn({
           'services': [
@@ -226,7 +226,7 @@ void main() {
         when(mockPpSnapshot.data()).thenReturn({
           'clinicId': clinicId,
           'packageId': packageId,
-          'servicesUsage': [],
+          'servicesUsage': <Map<String, dynamic>>[],
         });
         when(mockPkgSnapshot.data()).thenReturn({
           'services': [
@@ -249,7 +249,7 @@ void main() {
         ]);
 
         // Verify that runTransaction was called twice
-        verify(mockFirestore.runTransaction(any)).called(2);
+        verify(mockFirestore.runTransaction<void>(any)).called(2);
 
         // Verify that 'get' and 'update' were invoked on the Transaction specifically,
         // confirming commit-once semantics via Firestore.

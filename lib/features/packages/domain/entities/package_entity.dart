@@ -98,6 +98,19 @@ enum PackageType {
   }
 }
 
+/// Extension for localized Arabic labels for [PackageType].
+///
+/// إضافة تسميات عربية لنوع الباقة.
+extension PackageTypeX on PackageType {
+  /// Arabic UI label shown to admin — التسمية العربية للمسؤول.
+  String get arabicLabel => switch (this) {
+    PackageType.videoOnly => 'استشارات فيديو فقط',
+    PackageType.physicalOnly => 'زيارات حضورية فقط',
+    PackageType.both => 'فيديو وحضوري',
+    PackageType.investigationsOnly => 'تحاليل وأشعة فقط',
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PackageCategory enum
 // ─────────────────────────────────────────────────────────────────────────────

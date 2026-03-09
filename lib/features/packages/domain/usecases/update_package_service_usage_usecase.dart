@@ -30,7 +30,7 @@ class UpdatePackageServiceUsageUseCase {
           .collection('packages')
           .doc(patientPackageId);
 
-      await _firestore.runTransaction<dynamic>((transaction) async {
+      await _firestore.runTransaction<void>((transaction) async {
         // 1. Read PatientPackage
         final ppSnapshot = await transaction.get(patientPackageRef);
         if (!ppSnapshot.exists || ppSnapshot.data() == null) {

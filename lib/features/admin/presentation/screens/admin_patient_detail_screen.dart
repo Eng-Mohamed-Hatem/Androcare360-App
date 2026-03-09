@@ -15,58 +15,6 @@ class AdminPatientDetailScreen extends ConsumerWidget {
 
   final UserModel patient;
 
-  Future<void> _toggleStatus(
-    BuildContext context,
-    WidgetRef ref,
-    bool currentStatus,
-  ) async {
-    final action = currentStatus ? 'تعطيل' : 'تفعيل';
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('$action الحساب'),
-        content: Text(
-          'هل تريد $action حساب المريض "${patient.fullName}"؟',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: currentStatus ? Colors.red : AppColors.primary,
-            ),
-            child: Text(action),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    if (!context.mounted) return;
-    await ref
-        .read(adminProvider.notifier)
-        .setAccountStatus(
-          targetUserId: patient.id,
-          isActive: !currentStatus,
-        );
-    final state = ref.read(adminProvider);
-    if (!context.mounted) return;
-    if (state.error == null) {
-      // Pop back to the list — it is already refreshed by setAccountStatus
-      // → loadPatients(), so the badge reflects the new status immediately.
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.error!),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(adminProvider);
@@ -156,60 +104,50 @@ class AdminPatientDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Packages & Status Row
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      // TODO: Navigate to AdminPatientPackagesPage
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (_) =>
-                                AdminPatientPackagesPage(patient: patient),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.card_membership),
-                      label: const Text('باقات المريض'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: state.isActionLoading
-                          ? null
-                          : () => _toggleStatus(
-                              context,
-                              ref,
-                              patient.isActive,
+                      onPressed: () async {
+                        final action = patient.isActive ? 'تعطيل' : 'تفعيل';
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text('$action الحساب'),
+                            content: Text(
+                              'هل أنت متأكد من $action حساب المريض؟',
                             ),
-                      icon: state.isActionLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('إلغاء'),
                               ),
-                            )
-                          : Icon(
-                              patient.isActive
-                                  ? Icons.block_outlined
-                                  : Icons.check_circle_outline,
-                            ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: patient.isActive
+                                      ? Colors.red
+                                      : Colors.green,
+                                ),
+                                child: Text(action),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmed == true) {
+                          await ref
+                              .read(adminProvider.notifier)
+                              .setAccountStatus(
+                                targetUserId: patient.id,
+                                isActive: !patient.isActive,
+                              );
+                        }
+                      },
+                      icon: Icon(
+                        patient.isActive
+                            ? Icons.block
+                            : Icons.check_circle_outline,
+                      ),
                       label: Text(
                         patient.isActive ? 'تعطيل الحساب' : 'تفعيل الحساب',
                       ),
@@ -227,6 +165,13 @@ class AdminPatientDetailScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+
+              // Patient Packages Section
+              _PackageSection(
+                patient: patient,
+              ),
+              const SizedBox(height: 24),
 
               // Show error if any
               if (state.error != null) ...[
@@ -246,7 +191,6 @@ class AdminPatientDetailScreen extends ConsumerWidget {
 
 class _InfoCard extends StatelessWidget {
   const _InfoCard({required this.child});
-
   final Widget child;
 
   @override
@@ -265,4 +209,71 @@ class _InfoCard extends StatelessWidget {
     ),
     child: child,
   );
+}
+
+class _PackageSection extends StatelessWidget {
+  const _PackageSection({
+    required this.patient,
+  });
+  final UserModel patient;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (_) => AdminPatientPackagesPage(
+                patient: patient,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.card_giftcard,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'باقات المريض',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimaryLight,
+                    ),
+                  ),
+                  Spacer(),
+                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'عرض جميع الباقات المشتراة وارفاق المستندات',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textHintLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

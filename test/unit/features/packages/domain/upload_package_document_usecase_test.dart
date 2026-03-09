@@ -5,13 +5,11 @@
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart';
 import 'package:elajtech/features/packages/domain/repositories/package_document_repository.dart';
 import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart';
-import 'package:elajtech/shared/models/notification_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -139,7 +137,7 @@ void main() {
     test('c) file > 20 MB -> UploadFailure', () async {
       final file = File('huge.pdf');
       // Create a 21MB file
-      await file.writeAsBytes(List.filled(21 * 1024 * 1024, 0));
+      await file.writeAsBytes(List<int>.filled(21 * 1024 * 1024, 0));
 
       final result = await useCase(
         localFilePath: file.path,
@@ -228,7 +226,6 @@ void main() {
         title: 'Test Lab',
         uploadedByUserId: 'dr_001',
         uploadedByRole: 'DOCTOR',
-        serviceId: null, // explicit null
       );
 
       expect(result.isRight(), isTrue);

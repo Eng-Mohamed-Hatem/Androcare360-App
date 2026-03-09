@@ -10,8 +10,6 @@ part 'patient_package.g.dart';
 
 @freezed
 abstract class PatientPackage with _$PatientPackage {
-  const PatientPackage._();
-
   /// Creates a new PatientPackage instance.
   /// ينشئ مثيلاً جديدًا لـ PatientPackage.
   ///
@@ -40,6 +38,7 @@ abstract class PatientPackage with _$PatientPackage {
     required DateTime updatedAt,
     required bool isActive,
   }) = _PatientPackage;
+  const PatientPackage._();
 
   /// Creates a PatientPackage from JSON map.
   /// ينشئ PatientPackage من خريطة JSON.
@@ -76,7 +75,7 @@ abstract class PatientPackage with _$PatientPackage {
     }
 
     try {
-      final data = snapshot.data() as Map<String, dynamic>;
+      final data = snapshot.data()! as Map<String, dynamic>;
       return PatientPackage.fromJson(data);
     } catch (e, stackTrace) {
       if (kDebugMode) {

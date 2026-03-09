@@ -136,6 +136,33 @@ void main() {
         expect(result.length, ClinicIds.all.length);
       },
     );
+    test(
+      'Fallback to Firestore: "admin" (lowercase/normalized) → all clinics',
+      () async {
+        final mockUser = MockUser();
+        final mockToken = MockIdTokenResult();
+        final mockDocRef = MockDocumentReference();
+        final mockDocSnapshot = MockDocumentSnapshot();
+        final mockCollection = MockCollectionReference();
+
+        when(mockAuth.currentUser).thenReturn(mockUser);
+        when(mockUser.uid).thenReturn('user_456');
+        when(mockUser.getIdTokenResult()).thenAnswer(
+          (_) async => mockToken,
+        );
+        when(mockToken.claims).thenReturn(<String, dynamic>{});
+        when(mockFirestore.collection('users')).thenReturn(mockCollection);
+        when(mockCollection.doc('user_456')).thenReturn(mockDocRef);
+        when(mockDocRef.get()).thenAnswer((_) async => mockDocSnapshot);
+        when(mockDocSnapshot.exists).thenReturn(true);
+        when(mockDocSnapshot.data()).thenReturn({'userType': 'admin'});
+
+        final result = await resolver.getAllowedClinics();
+
+        expect(result.length, ClinicIds.all.length);
+        expect(result, containsAll(ClinicIds.all));
+      },
+    );
 
     test(
       'PATIENT role returns empty list (no clinic access)',

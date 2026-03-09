@@ -57,20 +57,20 @@ void main() {
   group('GetPatientPackagesForAdminUseCase', () {
     // ── T070-a: happy path paginated ─────────────────────────────────────────
     test('happy path: returns Right paginated', () async {
-      final p1 = makeEntity(id: 'pp_001', notes: 'admin note 1');
+      final p1 = makeEntity(notes: 'admin note 1');
       final p2 = makeEntity(id: 'pp_002');
       final mockDoc = MockDocumentSnapshot<Object?>();
-      
-      when(mockRepo.listPatientPackagesForAdmin(
-        patientId: patientId,
-        lastDocument: mockDoc,
-        limit: 20,
-      )).thenAnswer((_) async => Right([p1, p2]));
+
+      when(
+        mockRepo.listPatientPackagesForAdmin(
+          patientId: patientId,
+          lastDocument: mockDoc,
+        ),
+      ).thenAnswer((_) async => Right([p1, p2]));
 
       final result = await useCase(
-        patientId: patientId, 
+        patientId: patientId,
         lastDocument: mockDoc,
-        limit: 20,
         now: now,
       );
 
@@ -83,11 +83,11 @@ void main() {
 
     // ── T070-b: empty list ───────────────────────────────────────────────────
     test('empty list: returns Right([])', () async {
-      when(mockRepo.listPatientPackagesForAdmin(
-        patientId: patientId,
-        lastDocument: null,
-        limit: 20,
-      )).thenAnswer((_) async => const Right([]));
+      when(
+        mockRepo.listPatientPackagesForAdmin(
+          patientId: patientId,
+        ),
+      ).thenAnswer((_) async => const Right([]));
 
       final result = await useCase(patientId: patientId, now: now);
 
@@ -98,49 +98,55 @@ void main() {
     });
 
     // ── T070-c: R2 notes field IS included ────────────────────────────────────
-    test('R2: notes field IS included in returned entity (admin-facing)', () async {
-      final notesValue = 'ملاحظات هامة جدا للأدمن';
-      final entityWithNotes = makeEntity(notes: notesValue);
+    test(
+      'R2: notes field IS included in returned entity (admin-facing)',
+      () async {
+        const notesValue = 'ملاحظات هامة جدا للأدمن';
+        final entityWithNotes = makeEntity(notes: notesValue);
 
-      when(mockRepo.listPatientPackagesForAdmin(
-        patientId: patientId,
-        lastDocument: null,
-        limit: 20,
-      )).thenAnswer((_) async => Right([entityWithNotes]));
+        when(
+          mockRepo.listPatientPackagesForAdmin(
+            patientId: patientId,
+          ),
+        ).thenAnswer((_) async => Right([entityWithNotes]));
 
-      final result = await useCase(patientId: patientId, now: now);
+        final result = await useCase(patientId: patientId, now: now);
 
-      expect(result.isRight(), isTrue);
-      result.fold((_) => fail('Expected right'), (list) {
-        expect(list.length, 1);
-        expect(
-          list.first.notes, 
-          equals(notesValue),
-          reason: 'R2: notes must be visible to admin',
-        );
-      });
-    });
+        expect(result.isRight(), isTrue);
+        result.fold((_) => fail('Expected right'), (list) {
+          expect(list.length, 1);
+          expect(
+            list.first.notes,
+            equals(notesValue),
+            reason: 'R2: notes must be visible to admin',
+          );
+        });
+      },
+    );
 
     // ── Expiry re-derivation ─────────────────────────────────────────────────
-    test('expiry re-derivation: ACTIVE entity with expiryDate < now is EXPIRED', () async {
-      final expiredEntity = makeEntity(
-        id: 'pp_expired',
-        expiryDate: now.subtract(const Duration(days: 1)),
-      );
+    test(
+      'expiry re-derivation: ACTIVE entity with expiryDate < now is EXPIRED',
+      () async {
+        final expiredEntity = makeEntity(
+          id: 'pp_expired',
+          expiryDate: now.subtract(const Duration(days: 1)),
+        );
 
-      when(mockRepo.listPatientPackagesForAdmin(
-        patientId: patientId,
-        lastDocument: null,
-        limit: 20,
-      )).thenAnswer((_) async => Right([expiredEntity]));
+        when(
+          mockRepo.listPatientPackagesForAdmin(
+            patientId: patientId,
+          ),
+        ).thenAnswer((_) async => Right([expiredEntity]));
 
-      final result = await useCase(patientId: patientId, now: now);
+        final result = await useCase(patientId: patientId, now: now);
 
-      expect(result.isRight(), isTrue);
-      result.fold((_) => fail('Expected right'), (list) {
-        expect(list.length, 1);
-        expect(list[0].status, PatientPackageStatus.expired);
-      });
-    });
+        expect(result.isRight(), isTrue);
+        result.fold((_) => fail('Expected right'), (list) {
+          expect(list.length, 1);
+          expect(list[0].status, PatientPackageStatus.expired);
+        });
+      },
+    );
   });
 }

@@ -848,7 +848,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         debugPrint('   • Slot ID: $slotId');
       }
 
-      await _firestore.runTransaction((transaction) async {
+      await _firestore.runTransaction<void>((transaction) async {
         // 2. Check if doctor's slot is already taken
         final slotDoc = await transaction.get(slotRef);
         if (slotDoc.exists) {

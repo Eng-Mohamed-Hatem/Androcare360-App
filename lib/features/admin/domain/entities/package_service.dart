@@ -15,6 +15,8 @@
 ///   durationMinutes: 30,
 /// );
 /// ```
+library;
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'package_service.freezed.dart';
@@ -22,8 +24,6 @@ part 'package_service.g.dart';
 
 @freezed
 abstract class PackageService with _$PackageService {
-  const PackageService._();
-
   /// Creates a new PackageService instance.
   /// ينشئ مثيلاً جديدًا لـ PackageService.
   ///
@@ -40,6 +40,7 @@ abstract class PackageService with _$PackageService {
     required double price,
     required int durationMinutes,
   }) = _PackageService;
+  const PackageService._();
 
   /// Creates a PackageService from JSON map.
   /// ينشئ PackageService من خريطة JSON.

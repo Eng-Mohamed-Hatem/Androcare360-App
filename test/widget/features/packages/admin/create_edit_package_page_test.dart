@@ -64,7 +64,10 @@ void main() {
       await tester.tap(find.text('إنشاء الباقة'));
       await tester.pumpAndSettle();
 
-      expect(find.text('هذا الحقل مطلوب'), findsWidgets); // For name and price
+      expect(
+        find.text('هذا الحقل مطلوب'),
+        findsAtLeast(2),
+      ); // For name and price
     });
 
     testWidgets('empty services shows validation error snackbar', (
@@ -75,11 +78,11 @@ void main() {
 
       // Delete the default service
       await tester.dragUntilVisible(
-        find.byIcon(Icons.delete),
+        find.byIcon(Icons.delete_outline),
         find.byType(SingleChildScrollView),
         const Offset(0, -500),
       );
-      await tester.tap(find.byIcon(Icons.delete));
+      await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
 
       // Fill required fields
@@ -88,7 +91,7 @@ void main() {
         'باقة تست',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'وصف مختصر *'),
+        find.widgetWithText(TextFormField, 'وصف مختصر تسويقي *'),
         'وصف تست',
       );
       await tester.enterText(
@@ -120,9 +123,16 @@ void main() {
         'باقة تست',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'وصف مختصر *'),
+        find.widgetWithText(TextFormField, 'وصف مختصر تسويقي *'),
         'وصف تست',
       );
+
+      await tester.dragUntilVisible(
+        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.byType(SingleChildScrollView),
+        const Offset(0, -500),
+      );
+
       await tester.enterText(
         find.widgetWithText(TextFormField, 'السعر (EGP) *'),
         '1000',
@@ -137,26 +147,33 @@ void main() {
       await tester.tap(find.text('إنشاء الباقة'));
       await tester.pumpAndSettle();
 
-      // Snackbar
+      // Should show red field error instead of snackbar due to form validation
       expect(
-        find.text('الرجاء إدخال أسماء جميع الخدمات بشكل صحيح'),
+        find.text('الرجاء إدخال اسم الخدمة'),
         findsOneWidget,
       );
     });
 
-    testWidgets('happy path creation (mock form)', (tester) async {
+    testWidgets('happy path creation shows success snackbar', (tester) async {
       await tester.pumpWidget(createSubject());
       await tester.pumpAndSettle();
 
-      // Fill essential text fields
+      // Fill required fields
       await tester.enterText(
         find.widgetWithText(TextFormField, 'اسم الباقة *'),
-        'باقة تست',
+        'باقة نجاح',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'وصف مختصر *'),
+        find.widgetWithText(TextFormField, 'وصف مختصر تسويقي *'),
         'وصف تست',
       );
+
+      await tester.dragUntilVisible(
+        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.byType(SingleChildScrollView),
+        const Offset(0, -500),
+      );
+
       await tester.enterText(
         find.widgetWithText(TextFormField, 'السعر (EGP) *'),
         '1000',
@@ -168,17 +185,62 @@ void main() {
 
       // Fill the service name
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'الاسم (عربي)'),
+        find.widgetWithText(TextFormField, 'اسم الخدمة (عربي)'),
         'كشف طبي',
       );
 
       await tester.ensureVisible(find.text('إنشاء الباقة'));
       await tester.tap(find.text('إنشاء الباقة'));
-      await tester.pump();
+      await tester.pump(); // Start creation work
+      await tester.pump(); // Trigger feedback logic
 
-      // We don't verify full navigation/write success because we didn't mock the notifier state,
-      // but the fact it passes the validation confirms UI mechanics.
-      expect(find.text('هذا الحقل مطلوب'), findsNothing);
+      expect(find.text('تم إنشاء الباقة بنجاح'), findsOneWidget);
+    });
+
+    testWidgets('creation failure shows error snackbar', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            adminSelectedClinicProvider.overrideWith((ref) => 'andrology'),
+            adminPackageWriteProvider.overrideWith(
+              _FailingAdminPackageWriteNotifier.new,
+            ),
+          ],
+          child: MaterialApp(
+            home: CreateEditPackagePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Fill essential text fields
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'اسم الباقة *'),
+        'باقة فشل',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'وصف مختصر تسويقي *'),
+        'وصف',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        '1000',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'الصلاحية (بالأيام) *'),
+        '30',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'اسم الخدمة (عربي)'),
+        'خدمة',
+      );
+
+      await tester.ensureVisible(find.text('إنشاء الباقة'));
+      await tester.tap(find.text('إنشاء الباقة'));
+      await tester.pump(); // Start async work
+      await tester.pump(); // Trigger feedback logic
+
+      expect(find.textContaining('فشل الإنشاء'), findsOneWidget);
     });
 
     testWidgets('load package in edit mode', (tester) async {
@@ -187,11 +249,18 @@ void main() {
 
       // Check fields are pre-filled
       expect(find.text('باقة نشطة'), findsOneWidget);
-      expect(
-        find.text('1500.0'),
-        findsOneWidget,
-      ); // Price might be formatted as 1500.0
+      expect(find.textContaining('1500'), findsOneWidget);
       expect(find.text('حفظ التغييرات'), findsOneWidget);
     });
   });
+}
+
+class _FailingAdminPackageWriteNotifier extends AdminPackageWriteNotifier {
+  @override
+  AsyncValue<void> build() => const AsyncError('خطأ تجريبي', StackTrace.empty);
+
+  @override
+  Future<bool> createPackage(CreatePackageParams params) async {
+    return false;
+  }
 }

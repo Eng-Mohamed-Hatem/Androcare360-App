@@ -17,6 +17,22 @@ Elajtech Project:  Null Safety & Stability Rules
 
     Safe Pattern: final user = ref.watch(authProvider).user; if (user == null) return const LoadingWidget();
 
+Authentication & Role-Based Routing (Behavior Safety)
+
+The app must never crash when encountering an unknown userType. AuthWrapper and any role-based routing logic must provide a safe fallback (e.g., splash or login) and optionally log the issue for debugging.
+
+
+Inactive accounts (isActive == false) must be blocked consistently across all entry points (repositories, providers, UI) and must show a clear, localized error message to the user instead of failing silently.
+
+
+Any change that touches authentication flows, user identity, or role-based routing must:
+
+
+Preserve all existing authentication-related tests (no regressions in the current 700+ test suite).
+
+
+Add or update unit and/or widget tests for every new scenario (new roles, new account states, new routing branches).
+
 2. Firestore Data Mapping (Data Access Safety)
 
     Rule: Strict validation of Firestore snapshots in fromFirestore methods.
@@ -80,3 +96,84 @@ MCP & Code Generation Rules
         Integrity Checks: After every substantial modification, use the MCP to run flutter analyze. This is mandatory to ensure there are no Type Errors or broken dependencies introduced by the changes.
 
         Generated Code Inspection: In case of generation errors or unexpected behavior, use the MCP to inspect the content of the generated files (e.g., .freezed.dart or .g.dart) to verify the integrity and formatting of the generated code.
+
+Analyze & Static Checks:
+
+    Run flutter analyze on the entire project after applying the changes.
+
+    Verify that the command completes with no errors, no warnings, and no info messages.
+
+Spec Kit Usage Rules for AndroCare / Elajtech
+
+    Always assume Spec Kit is enabled
+
+        When working in the AndroCare/Elajtech repository, always assume that GitHub Spec Kit is installed and initialized under .specify/.
+
+        Do not propose ad‑hoc implementation without considering the Spec Kit lifecycle.
+
+    Enforce the Spec Kit lifecycle for any new feature
+
+        For any new feature, improvement, or significant refactor, you must follow this sequence:
+
+            /speckit.constitution (if the project principles or rules might be affected)
+
+            /speckit.specify
+
+            /speckit.clarify (whenever there is any ambiguity)
+
+            /speckit.plan
+
+            /speckit.checklist
+
+            /speckit.tasks
+
+            /speckit.analyze
+
+            /speckit.implement
+
+        You must not skip from “idea” directly to “implementation” without at least a spec and plan.
+
+    No implementation without spec and plan
+
+        Do not generate production‑level code for a new feature unless:
+
+            A spec exists under .specify/specs/[feature]/spec.md.
+
+            A plan exists under .specify/specs/[feature]/plan.md.
+
+        If a request asks for direct implementation and no spec/plan exist, first propose using /speckit.specify and /speckit.plan.
+
+    Align with constitution and rules files
+
+        Always align specs, plans, tasks, and implementation with:
+
+            .specify/memory/constitution.md
+
+            instructions-for-flutter-app-development.md
+
+            important-rules.md (final authority on Elajtech behavior and safety rules).
+
+        If a user request conflicts with these documents, explicitly highlight the conflict and propose updating the constitution/spec first.
+
+    Use clarifying and quality commands by default
+
+        When a feature description is incomplete or ambiguous, you must suggest /speckit.clarify before planning.
+
+        After /speckit.plan, you should suggest /speckit.checklist to generate a quality checklist.
+
+        After /speckit.tasks, you should suggest /speckit.analyze before /speckit.implement for consistency checks.
+
+    Backward documentation for existing features
+
+        If the user asks about an existing feature with no spec, prefer creating a reverse‑engineered spec using /speckit.specify based on the current code, then optionally a plan for refactors or improvements.
+
+    Preference for Flutter‑aware structures
+
+        When creating or modifying plans/specs for AndroCare, always assume:
+
+            Flutter + Dart + Clean Architecture (Presentation/Domain/Data).
+
+            Folder structure rooted in lib/ and lib/features/....
+
+            Tests under test/unit, test/widget, and test/integration
+    If any issues appear (error, warning, or info), they must be resolved before considering this task complete

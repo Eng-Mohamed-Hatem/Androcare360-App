@@ -25,7 +25,7 @@ abstract class FirebaseModule {
   FirebaseFirestore get firebaseFirestore => FirebaseFirestore.instanceFor(
     app: Firebase.app(),
     databaseId: 'elajtech',
-  );
+  )..settings = const Settings(persistenceEnabled: true);
 
   /// تسجيل FirebaseFunctions instance كـ Singleton
   ///
