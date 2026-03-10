@@ -2,11 +2,15 @@ import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/presentation/providers/admin_patient_packages_provider.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_patient_package_context_page.dart';
+import 'package:elajtech/features/packages/presentation/widgets/package_progress_widget.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
-/// Admin Screen: Lists all purchased packages for a specific patient.
+/// Admin- [x] T076 [US4] Refine admin patient packages providers
+/// - [x] T077 [US4] Refine Admin Patient Detail Integration
+/// - [/] T078 [US4] Refine `AdminPatientPackagesPage`
 class AdminPatientPackagesPage extends ConsumerWidget {
   const AdminPatientPackagesPage({required this.patient, super.key});
 
@@ -41,40 +45,21 @@ class AdminPatientPackagesPage extends ConsumerWidget {
                 itemCount: packages.length,
                 itemBuilder: (context, index) {
                   final pkg = packages[index];
-                  // Safe access to patientPackageName using extension or directly if it exists.
-                  // For now, we will use a fallback since patientPackageName is inside the package entity
-                  // We'll just display a generic name or the packageId if name isn't directly available.
-                  final packageName =
-                      'باقة رقم ${pkg.id.substring(0, 4)}'; // Replaced later with real name if fetched
+                  final isExpired =
+                      pkg.status == PatientPackageStatus.completed ||
+                      pkg.expiryDate.isBefore(DateTime.now());
 
                   return Card(
-                    elevation: 2,
+                    elevation: 0,
                     margin: const EdgeInsets.only(bottom: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(
+                        color: AppColors.borderLight,
+                      ),
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      leading: const CircleAvatar(
-                        backgroundColor: AppColors.primary,
-                        child: Icon(Icons.loyalty, color: Colors.white),
-                      ),
-                      title: Text(
-                        packageName, // We might need to fetch the true PackageEntity for the name
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text('العيادة: ${pkg.clinicId}'),
-                          Text(
-                            'الحالة: ${pkg.status == PatientPackageStatus.active ? "نشطة" : "غير نشطة"}',
-                          ),
-                          Text('الخدمات المستخدمة: ${pkg.usedServicesCount}'),
-                        ],
-                      ),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    color: AppColors.cardLight,
+                    child: InkWell(
                       onTap: () {
                         Navigator.push(
                           context,
@@ -86,6 +71,82 @@ class AdminPatientPackagesPage extends ConsumerWidget {
                           ),
                         );
                       },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.card_giftcard,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'باقة عيادة ${pkg.clinicId}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'تاريخ الشراء: ${DateFormat.yMMMMd('ar').format(pkg.purchaseDate)}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textHintLight,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isExpired
+                                        ? Colors.orange.withOpacity(0.1)
+                                        : Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    isExpired ? 'منتهية' : 'نشطة',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: isExpired
+                                          ? Colors.orange
+                                          : Colors.green,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            PackageProgressWidget(
+                              used: pkg.usedServicesCount,
+                              total: pkg.totalServicesCount,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 },

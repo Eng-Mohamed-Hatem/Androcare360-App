@@ -10,6 +10,8 @@
 /// **Spec**: data-model.md §5.1, spec.md §7.15.
 library;
 
+import 'package:meta/meta.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DocumentType enum
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ enum DocumentType {
 ///   uploadedAt: DateTime.now(),
 /// );
 /// ```
+@immutable
 class PackageDocumentEntity {
   /// Creates a [PackageDocumentEntity].
   const PackageDocumentEntity({

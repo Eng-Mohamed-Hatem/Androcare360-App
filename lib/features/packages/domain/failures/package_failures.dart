@@ -5,6 +5,8 @@ import 'package:elajtech/features/packages/domain/usecases/purchase_package_usec
     show PurchasePackageUseCase;
 import 'package:elajtech/features/packages/domain/usecases/update_clinic_package_usecase.dart'
     show UpdateClinicPackageUseCase;
+import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart'
+    show UploadPackageDocumentUseCase;
 
 /// Package-specific failure types for the Clinic Packages Full Flow feature.
 ///

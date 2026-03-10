@@ -15,7 +15,8 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/di/firebase_module.dart' show FirebaseModule;
-import 'package:elajtech/features/packages/data/datasources/firebase_storage_package_datasource.dart' show FirebaseStoragePackageDatasource;
+import 'package:elajtech/features/packages/data/datasources/firebase_storage_package_datasource.dart'
+    show FirebaseStoragePackageDatasource;
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -68,7 +69,9 @@ class FirestorePackageDatasource {
     String? packageId,
   }) async {
     if (kDebugMode) {
-      debugPrint('[FirestorePackageDatasource] createClinicPackage clinicId=$clinicId pkgId=$packageId');
+      debugPrint(
+        '[FirestorePackageDatasource] createClinicPackage clinicId=$clinicId pkgId=$packageId',
+      );
     }
     final collection = _clinicPackages(clinicId);
     if (packageId != null && packageId.isNotEmpty) {
@@ -87,7 +90,9 @@ class FirestorePackageDatasource {
     required Map<String, dynamic> data,
   }) async {
     if (kDebugMode) {
-      debugPrint('[FirestorePackageDatasource] updateClinicPackage clinicId=$clinicId pkgId=$packageId');
+      debugPrint(
+        '[FirestorePackageDatasource] updateClinicPackage clinicId=$clinicId pkgId=$packageId',
+      );
     }
     await _clinicPackages(clinicId).doc(packageId).update(data);
   }
@@ -258,6 +263,26 @@ class FirestorePackageDatasource {
       query = query.startAfterDocument(lastDocument);
     }
     return query.get();
+  }
+
+  /// Updates the notes field for a specific patient package.
+  ///
+  /// **Arabic**: يُحدِّث حقل الملاحظات لسجل شراء مريض محدد.
+  Future<void> updatePatientPackageNotes({
+    required String patientId,
+    required String patientPackageId,
+    required String notes,
+  }) async {
+    if (kDebugMode) {
+      debugPrint(
+        '[FirestorePackageDatasource] updatePatientPackageNotes '
+        'patientId=$patientId ppId=$patientPackageId',
+      );
+    }
+    await _patientPackages(patientId).doc(patientPackageId).update({
+      'notes': notes,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // ── Package Documents ──────────────────────────────────────────────────────

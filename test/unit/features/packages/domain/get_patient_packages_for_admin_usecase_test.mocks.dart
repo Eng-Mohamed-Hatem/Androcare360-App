@@ -231,6 +231,31 @@ class MockPatientPackageRepository extends _i1.Mock
           as _i5.Future<
             _i2.Either<_i6.Failure, List<_i7.PatientPackageEntity>>
           >);
+
+  @override
+  _i5.Future<_i2.Either<_i6.Failure, void>> updateNotes({
+    required String? patientId,
+    required String? patientPackageId,
+    required String? notes,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateNotes, [], {
+              #patientId: patientId,
+              #patientPackageId: patientPackageId,
+              #notes: notes,
+            }),
+            returnValue: _i5.Future<_i2.Either<_i6.Failure, void>>.value(
+              _FakeEither_0<_i6.Failure, void>(
+                this,
+                Invocation.method(#updateNotes, [], {
+                  #patientId: patientId,
+                  #patientPackageId: patientPackageId,
+                  #notes: notes,
+                }),
+              ),
+            ),
+          )
+          as _i5.Future<_i2.Either<_i6.Failure, void>>);
 }
 
 /// A class which mocks [DocumentSnapshot].

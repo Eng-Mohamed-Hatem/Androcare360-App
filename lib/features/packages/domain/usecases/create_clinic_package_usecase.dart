@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:elajtech/core/auth/clinic_access_resolver.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
@@ -14,17 +15,17 @@ class CreatePackageParams {
     required this.category,
     required this.name,
     required this.shortDescription,
-    this.description,
     required this.services,
     required this.validityDays,
-    this.termsAndConditions,
     required this.price,
     required this.currency,
-    this.discountPercentage,
     required this.type,
     required this.status,
-    this.displayOrder,
     required this.isFeatured,
+    this.description,
+    this.termsAndConditions,
+    this.discountPercentage,
+    this.displayOrder,
   });
   final String clinicId;
   final PackageCategory category;
@@ -59,9 +60,20 @@ class CreateClinicPackageUseCase {
     required PackageRepository repository,
     required CreatePackageParams params,
   }) async {
+    if (kDebugMode) {
+      debugPrint(
+        '[CreateClinicPackageUseCase] Triggered for clinic: ${params.clinicId}',
+      );
+    }
+
     // 1. Check clinic access
     final allowed = await _accessResolver.getAllowedClinics();
     if (!allowed.contains(params.clinicId)) {
+      if (kDebugMode) {
+        debugPrint(
+          '[CreateClinicPackageUseCase] ACCESS DENIED: ${params.clinicId} not in $allowed',
+        );
+      }
       return const Left(
         ClinicUnavailableFailure('ليس لديك صلاحية لإضافة باقة في هذه العيادة.'),
       );

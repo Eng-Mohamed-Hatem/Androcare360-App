@@ -147,7 +147,7 @@ Custom Instructions for Flutter App Development
 
     Use mockito for mocking dependencies in tests.
 
-    Aim for at least 70% test coverage.
+    Aim for at least 99% test coverage.
 
 11. Error Handling
 

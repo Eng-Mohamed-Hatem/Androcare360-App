@@ -10,6 +10,8 @@
 /// **Spec**: data-model.md §3.1, spec.md §7.9, §8.1.
 library;
 
+import 'package:meta/meta.dart';
+
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,6 +96,19 @@ enum PackageType {
       orElse: () => PackageType.investigationsOnly,
     );
   }
+}
+
+/// Extension for localized Arabic labels for [PackageType].
+///
+/// إضافة تسميات عربية لنوع الباقة.
+extension PackageTypeX on PackageType {
+  /// Arabic UI label shown to admin — التسمية العربية للمسؤول.
+  String get arabicLabel => switch (this) {
+    PackageType.videoOnly => 'استشارات فيديو فقط',
+    PackageType.physicalOnly => 'زيارات حضورية فقط',
+    PackageType.both => 'فيديو وحضوري',
+    PackageType.investigationsOnly => 'تحاليل وأشعة فقط',
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,6 +199,7 @@ enum PackageCategory {
 ///   // ...
 /// );
 /// ```
+@immutable
 class PackageEntity {
   /// Creates a [PackageEntity].
   ///
@@ -206,7 +222,9 @@ class PackageEntity {
     required this.isFeatured,
     required this.createdAt,
     required this.updatedAt,
-    required this.includesVideoConsultation, required this.includesPhysicalVisit, this.description,
+    required this.includesVideoConsultation,
+    required this.includesPhysicalVisit,
+    this.description,
     this.termsAndConditions,
     this.discountPercentage,
   });

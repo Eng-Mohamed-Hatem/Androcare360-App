@@ -157,11 +157,13 @@ class ClinicAccessResolver {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (!doc.exists || doc.data() == null) return const [];
 
-      final userType = doc.data()!['userType'] as String?;
-      if (userType == 'ADMIN_GLOBAL') {
+      final userTypeRaw = doc.data()!['userType'] as String?;
+      final userType = userTypeRaw?.toUpperCase();
+
+      if (userType == 'ADMIN_GLOBAL' || userType == 'ADMIN') {
         if (kDebugMode) {
           debugPrint(
-            '[ClinicAccessResolver] Firestore fallback: ADMIN_GLOBAL',
+            '[ClinicAccessResolver] Firestore fallback SUCCESS: userType=$userTypeRaw → all access',
           );
         }
         return List.unmodifiable(ClinicIds.all);

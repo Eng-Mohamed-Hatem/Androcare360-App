@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
+import 'package:elajtech/features/packages/domain/repositories/patient_package_repository.dart';
 import 'package:elajtech/features/packages/domain/usecases/get_patient_packages_for_admin_usecase.dart';
 import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart';
 import 'package:elajtech/features/packages/domain/usecases/update_package_service_usage_usecase.dart';
+import 'package:elajtech/features/packages/data/models/package_document_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,6 +125,34 @@ class AdminPatientPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       },
     );
   }
+
+  /// Updates the admin notes for a specific patient package.
+  Future<bool> updateNotes({
+    required String patientId,
+    required String patientPackageId,
+    required String notes,
+  }) async {
+    state = const AsyncLoading();
+    final repo = getIt<PatientPackageRepository>();
+    final result = await repo.updateNotes(
+      patientId: patientId,
+      patientPackageId: patientPackageId,
+      notes: notes,
+    );
+
+    return result.fold(
+      (failure) {
+        state = AsyncError(failure.message, StackTrace.current);
+        return false;
+      },
+      (_) {
+        state = const AsyncData(null);
+        // Refresh the list to reflect new notes
+        ref.read(adminPatientPackagesProvider(patientId).notifier).refresh();
+        return true;
+      },
+    );
+  }
 }
 
 /// Provider for write operations on a patient package.
@@ -137,7 +167,8 @@ final adminPatientPackageWriteProvider =
 
 /// Stream of documents for a specific patient package.
 /// The parameter is a tuple: `(patientId, patientPackageId)`.
-final adminPackageDocumentsProvider =
+final StreamProviderFamily<List<PackageDocumentEntity>, (String, String)>
+adminPackageDocumentsProvider =
     StreamProvider.family<List<PackageDocumentEntity>, (String, String)>(
       (ref, args) {
         final patientId = args.$1;
@@ -152,32 +183,10 @@ final adminPackageDocumentsProvider =
             .orderBy('uploadedAt', descending: true)
             .snapshots()
             .map((snapshot) {
-              return snapshot.docs.map((doc) {
-                final data = doc.data();
-                data['id'] = doc.id;
-                // In a real implementation we would parse data using PackageDocumentEntity.fromFirestore
-                // but since we only have the raw entity, we will instantiate it manually here.
-                // Assuming PackageDocumentEntity fromJson or fromFirestore exists, or we map it manually.
-                return PackageDocumentEntity(
-                  id: doc.id,
-                  patientId: patientId,
-                  patientPackageId: patientPackageId,
-                  packageId: data['packageId'] as String? ?? '',
-                  clinicId: data['clinicId'] as String? ?? '',
-                  documentType: DocumentType.fromString(
-                    data['documentType'] as String? ?? 'OTHER',
-                  ),
-                  title: data['title'] as String? ?? '',
-                  fileUrl: data['fileUrl'] as String? ?? '',
-                  uploadedByUserId: data['uploadedByUserId'] as String? ?? '',
-                  uploadedByRole: data['uploadedByRole'] as String? ?? '',
-                  uploadedAt: data['uploadedAt'] != null
-                      ? (data['uploadedAt'] as Timestamp).toDate()
-                      : DateTime.now(),
-                  serviceId: data['serviceId'] as String?,
-                  description: data['description'] as String?,
-                );
-              }).toList();
+              return snapshot.docs
+                  .map(PackageDocumentModel.fromFirestore)
+                  .whereType<PackageDocumentModel>()
+                  .toList();
             });
       },
     );

@@ -32,7 +32,7 @@ void main() {
     category: PackageCategory.andrologyInfertilityProstate,
     name: 'Original',
     shortDescription: 'desc',
-    services: [],
+    services: const [],
     validityDays: 1,
     price: 10,
     currency: 'EGP',

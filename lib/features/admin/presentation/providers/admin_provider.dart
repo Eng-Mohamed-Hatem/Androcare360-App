@@ -3,6 +3,7 @@ import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/features/admin/domain/entities/audit_log.dart';
 import 'package:elajtech/features/admin/domain/repositories/admin_repository.dart';
+import 'package:elajtech/features/admin/domain/usecases/toggle_patient_active_status_usecase.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:flutter/foundation.dart';
@@ -68,10 +69,12 @@ class AdminState {
 /// - Writes either [error] or [successMessage] on completion.
 /// - Always resets loading flags even on error.
 class AdminNotifier extends StateNotifier<AdminState> {
-  AdminNotifier(this._repo, this._ref) : super(const AdminState());
+  AdminNotifier(this._repo, this._ref, this._togglePatientActiveStatus)
+    : super(const AdminState());
 
   final AdminRepository _repo;
   final Ref _ref;
+  final TogglePatientActiveStatusUseCase _togglePatientActiveStatus;
 
   // ———— helpers ————
 
@@ -157,7 +160,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
       adminId: admin.id,
       adminName: admin.fullName,
     );
-    _handleResult(
+    _handleResult<Unit>(
       result,
       successMsg: 'تم إنشاء حساب الطبيب بنجاح',
       onSuccess: loadDoctors,
@@ -186,7 +189,7 @@ class AdminNotifier extends StateNotifier<AdminState> {
       adminId: admin.id,
       adminName: admin.fullName,
     );
-    _handleResult(
+    _handleResult<Unit>(
       result,
       successMsg: 'تم تحديث ملف الطبيب بنجاح',
       onSuccess: loadDoctors,
@@ -211,14 +214,14 @@ class AdminNotifier extends StateNotifier<AdminState> {
       );
       return;
     }
-    final result = await _repo.setAccountStatus(
+    final result = await _togglePatientActiveStatus(
       targetUserId: targetUserId,
       isActive: isActive,
       adminId: admin.id,
       adminName: admin.fullName,
     );
     final action = isActive ? 'تفعيل' : 'تعطيل';
-    _handleResult(
+    _handleResult<Unit>(
       result,
       successMsg: 'تم $action الحساب بنجاح',
       // Refresh both lists so the UI badge updates immediately
@@ -268,7 +271,8 @@ final adminRepositoryProvider = Provider<AdminRepository>((ref) {
 /// Main admin provider — exposes [AdminNotifier] and [AdminState].
 final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
   final repo = ref.watch(adminRepositoryProvider);
-  return AdminNotifier(repo, ref);
+  final togglePatientActiveStatus = getIt<TogglePatientActiveStatusUseCase>();
+  return AdminNotifier(repo, ref, togglePatientActiveStatus);
 });
 
 /// Streams audit logs in real time for display on the audit log screen.

@@ -10,9 +10,13 @@
 /// **Spec**: data-model.md §3.1 (`services`), §4.1 (`servicesUsage`).
 library;
 
+import 'package:meta/meta.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:elajtech/features/packages/domain/entities/package_entity.dart' show PackageEntity;
-import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart' show PatientPackageEntity;
+import 'package:elajtech/features/packages/domain/entities/package_entity.dart'
+    show PackageEntity;
+import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart'
+    show PatientPackageEntity;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Package Service Item
@@ -40,6 +44,7 @@ import 'package:elajtech/features/packages/domain/entities/patient_package_entit
 ///   quantity: 1,
 /// );
 /// ```
+@immutable
 class PackageServiceItem {
   /// Creates a [PackageServiceItem].
   ///
@@ -85,6 +90,23 @@ class PackageServiceItem {
     'quantity': quantity,
   };
 
+  /// Creates a copy of this [PackageServiceItem] with the given fields replaced.
+  ///
+  /// إنشاء نسخة من الكائن مع استبدال الحقول المحددة.
+  PackageServiceItem copyWith({
+    String? serviceId,
+    ServiceType? serviceType,
+    String? displayName,
+    int? quantity,
+  }) {
+    return PackageServiceItem(
+      serviceId: serviceId ?? this.serviceId,
+      serviceType: serviceType ?? this.serviceType,
+      displayName: displayName ?? this.displayName,
+      quantity: quantity ?? this.quantity,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -115,6 +137,7 @@ class PackageServiceItem {
 /// كل عنصر في حقل `servicesUsage` في علامة الشراء يكون من هذا النوع.
 /// قارِن [usedCount] بـ `PackageServiceItem.quantity` لحساب المتبقي.
 /// ⚠️ يجب أن تتم جميع الكتابات داخل Firestore Transaction (R3).
+@immutable
 class ServiceUsageItem {
   /// Creates a [ServiceUsageItem].
   const ServiceUsageItem({

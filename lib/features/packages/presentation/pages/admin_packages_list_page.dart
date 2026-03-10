@@ -20,16 +20,25 @@ class _AdminPackagesListPageState extends ConsumerState<AdminPackagesListPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final Map<String, String> _clinicNames = {
-    ClinicIds.andrology: 'عيادة الذكورة والتأخر الإنجابي',
-    ClinicIds.physiotherapy: 'عيادة العلاج الطبيعي',
-    ClinicIds.nutrition: 'عيادة التغذية',
+  static const Map<String, String> _clinicNames = {
+    ClinicIds.andrology: 'عيادة الذكورة والعقم والبروستاتة',
+    ClinicIds.physiotherapy: 'عيادة العلاج الطبيعي والتأهيل',
+    ClinicIds.internalFamily: 'الطب الداخلي والأسرة',
+    ClinicIds.nutrition: 'عيادة التغذية والسمنة',
+    ClinicIds.chronicDiseases: 'الأمراض المزمنة',
   };
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // Safety fallback: if no clinic selected, go back to grid
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(adminSelectedClinicProvider) == null) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   @override
@@ -56,13 +65,15 @@ class _AdminPackagesListPageState extends ConsumerState<AdminPackagesListPage>
       }
     });
 
+    final clinicName = _clinicNames[selectedClinicId] ?? 'باقات العيادة';
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: const Text('إدارة الباقات'),
+          title: Text(clinicName),
           bottom: TabBar(
             controller: _tabController,
             labelColor: Colors.white,
@@ -73,31 +84,6 @@ class _AdminPackagesListPageState extends ConsumerState<AdminPackagesListPage>
               Tab(text: 'غير النشطة / المخفية'),
             ],
           ),
-          actions: [
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedClinicId,
-                dropdownColor: AppColors.primary,
-                iconEnabledColor: Colors.white,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                items: _clinicNames.entries.map((e) {
-                  return DropdownMenuItem<String>(
-                    value: e.key,
-                    child: Text(e.value),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    ref.read(adminSelectedClinicProvider.notifier).state = val;
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
         ),
         body: packagesAsync.when(
           data: (packages) {

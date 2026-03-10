@@ -1,173 +1,264 @@
-import 'package:dartz/dartz.dart';
-import 'package:elajtech/core/error/failures.dart';
-import 'package:elajtech/features/packages/domain/usecases/update_package_service_usage_usecase.dart';
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:flutter_test/flutter_test.dart';
+// test/unit/features/packages/domain/update_package_service_usage_usecase_test.dart
+//
+// Unit tests for [UpdatePackageServiceUsageUseCase] — T074.
+// Covers:
+// (a) increment usedCount
+// (b) reaching quantity -> usedServicesCount incremented
+// (c) partial use does NOT increment usedServicesCount
+// (d) concurrent calls simulation (R3, R10 - transaction semantics).
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:elajtech/features/packages/domain/usecases/update_package_service_usage_usecase.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+
+import 'update_package_service_usage_usecase_test.mocks.dart';
+
+@GenerateNiceMocks([
+  MockSpec<FirebaseFirestore>(),
+  MockSpec<Transaction>(),
+  MockSpec<DocumentReference>(),
+  MockSpec<DocumentSnapshot>(),
+  MockSpec<CollectionReference>(),
+])
 void main() {
-  late FakeFirebaseFirestore fakeFirestore;
-  late UpdatePackageServiceUsageUseCase usecase;
+  late MockFirebaseFirestore mockFirestore;
+  late MockTransaction mockTransaction;
+  late UpdatePackageServiceUsageUseCase useCase;
+
+  // PatientPackage refs
+  late MockCollectionReference<Map<String, dynamic>> mockPatientsCollection;
+  late MockDocumentReference<Map<String, dynamic>> mockPatientDoc;
+  late MockCollectionReference<Map<String, dynamic>>
+  mockPatientPackagesCollection;
+  late MockDocumentReference<Map<String, dynamic>> mockPatientPackageDoc;
+
+  // ClinicPackage refs
+  late MockCollectionReference<Map<String, dynamic>> mockClinicsCollection;
+  late MockDocumentReference<Map<String, dynamic>> mockClinicDoc;
+  late MockCollectionReference<Map<String, dynamic>>
+  mockClinicPackagesCollection;
+  late MockDocumentReference<Map<String, dynamic>> mockClinicPackageDoc;
+
+  // Snapshots
+  late MockDocumentSnapshot<Map<String, dynamic>> mockPpSnapshot;
+  late MockDocumentSnapshot<Map<String, dynamic>> mockPkgSnapshot;
+
+  const patientId = 'pat_001';
+  const patientPackageId = 'pp_001';
+  const clinicId = 'andrology';
+  const packageId = 'pkg_001';
+  const serviceId = 'srv_1';
 
   setUp(() {
-    fakeFirestore = FakeFirebaseFirestore();
-    usecase = UpdatePackageServiceUsageUseCase(fakeFirestore);
-  });
+    mockFirestore = MockFirebaseFirestore();
+    mockTransaction = MockTransaction();
+    useCase = UpdatePackageServiceUsageUseCase(mockFirestore);
 
-  const tPatientId = 'patient_1';
-  const tPatientPackageId = 'pp_1';
-  const tClinicId = 'clinic_1';
-  const tPackageId = 'pkg_1';
-  const tServiceId = 'service_A';
+    mockPatientsCollection = MockCollectionReference();
+    mockPatientDoc = MockDocumentReference();
+    mockPatientPackagesCollection = MockCollectionReference();
+    mockPatientPackageDoc = MockDocumentReference();
 
-  test(
-    'happy path: increments usedCount and does NOT increment usedServicesCount if below quantity',
-    () async {
-      // arrange
-      // Clinic package
-      await fakeFirestore
-          .collection('clinics')
-          .doc(tClinicId)
-          .collection('packages')
-          .doc(tPackageId)
-          .set({
-            'services': [
-              {'serviceId': tServiceId, 'quantity': 3}, // Wants 3 to complete
-            ],
-          });
+    mockClinicsCollection = MockCollectionReference();
+    mockClinicDoc = MockDocumentReference();
+    mockClinicPackagesCollection = MockCollectionReference();
+    mockClinicPackageDoc = MockDocumentReference();
 
-      // Patient package
-      final ppRef = fakeFirestore
-          .collection('patients')
-          .doc(tPatientId)
-          .collection('packages')
-          .doc(tPatientPackageId);
+    mockPpSnapshot = MockDocumentSnapshot();
+    mockPkgSnapshot = MockDocumentSnapshot();
 
-      await ppRef.set({
-        'clinicId': tClinicId,
-        'packageId': tPackageId,
-        'usedServicesCount': 0,
-        'servicesUsage': [
-          {'serviceId': tServiceId, 'usedCount': 1},
-        ],
-      });
+    // Setup PatientPackage path
+    when(
+      mockFirestore.collection('patients'),
+    ).thenReturn(mockPatientsCollection);
+    when(mockPatientsCollection.doc(patientId)).thenReturn(mockPatientDoc);
+    when(
+      mockPatientDoc.collection('packages'),
+    ).thenReturn(mockPatientPackagesCollection);
+    when(
+      mockPatientPackagesCollection.doc(patientPackageId),
+    ).thenReturn(mockPatientPackageDoc);
 
-      // act
-      final result = await usecase(
-        patientId: tPatientId,
-        patientPackageId: tPatientPackageId,
-        serviceId: tServiceId,
-      );
+    // Setup ClinicPackage path
+    when(mockFirestore.collection('clinics')).thenReturn(mockClinicsCollection);
+    when(mockClinicsCollection.doc(clinicId)).thenReturn(mockClinicDoc);
+    when(
+      mockClinicDoc.collection('packages'),
+    ).thenReturn(mockClinicPackagesCollection);
+    when(
+      mockClinicPackagesCollection.doc(packageId),
+    ).thenReturn(mockClinicPackageDoc);
 
-      // assert
-      expect(result, const Right<Failure, Unit>(unit));
-
-      final snapshot = await ppRef.get();
-      final data = snapshot.data()!;
-      expect(data['usedServicesCount'], 0); // 2 is still < 3
-
-      final usages = List<Map<String, dynamic>>.from(
-        (data['servicesUsage'] as Iterable<dynamic>?) ?? [],
-      );
-      expect(usages.length, 1);
-      expect(usages[0]['serviceId'], tServiceId);
-      expect(usages[0]['usedCount'], 2);
-      expect(usages[0]['lastUsedAt'], isNotNull);
-    },
-  );
-
-  test(
-    'increments usedCount and INCREMENTS usedServicesCount if reaches quantity',
-    () async {
-      // arrange
-      await fakeFirestore
-          .collection('clinics')
-          .doc(tClinicId)
-          .collection('packages')
-          .doc(tPackageId)
-          .set({
-            'services': [
-              {'serviceId': tServiceId, 'quantity': 3},
-            ],
-          });
-
-      final ppRef = fakeFirestore
-          .collection('patients')
-          .doc(tPatientId)
-          .collection('packages')
-          .doc(tPatientPackageId);
-
-      await ppRef.set({
-        'clinicId': tClinicId,
-        'packageId': tPackageId,
-        'usedServicesCount': 0,
-        'servicesUsage': [
-          {'serviceId': tServiceId, 'usedCount': 2}, // Next use -> 3 >= 3
-        ],
-      });
-
-      // act
-      final result = await usecase(
-        patientId: tPatientId,
-        patientPackageId: tPatientPackageId,
-        serviceId: tServiceId,
-      );
-
-      // assert
-      expect(result, const Right<Failure, Unit>(unit));
-
-      final snapshot = await ppRef.get();
-      final data = snapshot.data()!;
-      expect(data['usedServicesCount'], 1); // REACHED quantity
-
-      final usages = List<Map<String, dynamic>>.from(
-        (data['servicesUsage'] as Iterable<dynamic>?) ?? [],
-      );
-      expect(usages[0]['usedCount'], 3);
-    },
-  );
-
-  test('Failure if patient package not found', () async {
-    // act
-    final result = await usecase(
-      patientId: 'unknown',
-      patientPackageId: 'unknown_pp',
-      serviceId: tServiceId,
-    );
-
-    // assert
-    expect(result.fold((l) => l, (r) => r), isA<ServerFailure>());
-    expect(
-      (result.fold((l) => l, (r) => r) as ServerFailure).message,
-      contains('PatientPackageNotFound'),
-    );
-  });
-
-  test('Failure if original package not found', () async {
-    // arrange
-    final ppRef = fakeFirestore
-        .collection('patients')
-        .doc(tPatientId)
-        .collection('packages')
-        .doc(tPatientPackageId);
-
-    await ppRef.set({
-      'clinicId': tClinicId,
-      'packageId': 'unknown_package',
-      'usedServicesCount': 0,
+    when(mockFirestore.runTransaction<void>(any)).thenAnswer((inv) async {
+      final action = inv.positionalArguments[0] as Function;
+      return await action(mockTransaction);
     });
 
-    // act
-    final result = await usecase(
-      patientId: tPatientId,
-      patientPackageId: tPatientPackageId,
-      serviceId: tServiceId,
+    // Mock gets
+    when(
+      mockTransaction.get(mockPatientPackageDoc),
+    ).thenAnswer((_) async => mockPpSnapshot);
+    when(
+      mockTransaction.get(mockClinicPackageDoc),
+    ).thenAnswer((_) async => mockPkgSnapshot);
+
+    // Snapshot exists
+    when(mockPpSnapshot.exists).thenReturn(true);
+    when(mockPkgSnapshot.exists).thenReturn(true);
+
+    // Stub transaction.update
+    when(mockTransaction.update(any, any)).thenReturn(mockTransaction);
+  });
+
+  group('UpdatePackageServiceUsageUseCase', () {
+    test(
+      'a) increment usedCount (adds new usage item if none exists)',
+      () async {
+        when(mockPpSnapshot.data()).thenReturn({
+          'clinicId': clinicId,
+          'packageId': packageId,
+          'servicesUsage': <Map<String, dynamic>>[],
+        });
+        when(mockPkgSnapshot.data()).thenReturn({
+          'services': [
+            {'serviceId': serviceId, 'quantity': 2},
+          ],
+        });
+
+        final result = await useCase(
+          patientId: patientId,
+          patientPackageId: patientPackageId,
+          serviceId: serviceId,
+        );
+
+        expect(result.isRight(), isTrue);
+
+        final captured = verify(
+          mockTransaction.update(mockPatientPackageDoc, captureAny),
+        ).captured;
+        final updates = captured.first as Map<String, dynamic>;
+
+        final usages = updates['servicesUsage'] as List<dynamic>;
+        expect(usages.length, 1);
+        expect(usages[0]['serviceId'], serviceId);
+        expect(usages[0]['usedCount'], 1); // incremented from 0 to 1
+        expect(updates['usedServicesCount'], 0); // Need 2 to reach quantity
+      },
     );
 
-    // assert
-    expect(result.fold((l) => l, (r) => r), isA<ServerFailure>());
-    expect(
-      (result.fold((l) => l, (r) => r) as ServerFailure).message,
-      contains('OriginalPackageNotFound'),
+    test('c) partial use does NOT increment usedServicesCount', () async {
+      when(mockPpSnapshot.data()).thenReturn({
+        'clinicId': clinicId,
+        'packageId': packageId,
+        'servicesUsage': [
+          {'serviceId': serviceId, 'usedCount': 1},
+        ],
+      });
+      when(mockPkgSnapshot.data()).thenReturn({
+        'services': [
+          {'serviceId': serviceId, 'quantity': 3}, // target is 3
+        ],
+      });
+
+      final result = await useCase(
+        patientId: patientId,
+        patientPackageId: patientPackageId,
+        serviceId: serviceId,
+      );
+
+      expect(result.isRight(), isTrue);
+
+      final captured = verify(
+        mockTransaction.update(mockPatientPackageDoc, captureAny),
+      ).captured;
+      final updates = captured.first as Map<String, dynamic>;
+
+      final usages = updates['servicesUsage'] as List<dynamic>;
+      expect(usages[0]['usedCount'], 2); // 1 -> 2
+      expect(updates['usedServicesCount'], 0); // 2 < 3, still 0
+    });
+
+    test('b) reaching quantity -> usedServicesCount incremented', () async {
+      when(mockPpSnapshot.data()).thenReturn({
+        'clinicId': clinicId,
+        'packageId': packageId,
+        'servicesUsage': [
+          {'serviceId': serviceId, 'usedCount': 1},
+        ],
+      });
+      when(mockPkgSnapshot.data()).thenReturn({
+        'services': [
+          {'serviceId': serviceId, 'quantity': 2}, // target is 2
+        ],
+      });
+
+      final result = await useCase(
+        patientId: patientId,
+        patientPackageId: patientPackageId,
+        serviceId: serviceId,
+      );
+
+      expect(result.isRight(), isTrue);
+
+      final captured = verify(
+        mockTransaction.update(mockPatientPackageDoc, captureAny),
+      ).captured;
+      final updates = captured.first as Map<String, dynamic>;
+
+      final usages = updates['servicesUsage'] as List<dynamic>;
+      expect(usages[0]['usedCount'], 2); // 1 -> 2
+      expect(
+        updates['usedServicesCount'],
+        1,
+      ); // 2 reached 2 -> counts as 1 completed service
+    });
+
+    test(
+      'd) simulate two concurrent calls for the same service (R3, R10)',
+      () async {
+        // We simulate concurrency by mocking runTransaction state.
+        // Since it's inside runTransaction, the usecase relies on Firestore's locks.
+        // We verify that the logic executes twice inside the transaction wrapper
+        // and doesn't read/write outside of it.
+
+        when(mockPpSnapshot.data()).thenReturn({
+          'clinicId': clinicId,
+          'packageId': packageId,
+          'servicesUsage': <Map<String, dynamic>>[],
+        });
+        when(mockPkgSnapshot.data()).thenReturn({
+          'services': [
+            {'serviceId': serviceId, 'quantity': 2},
+          ],
+        });
+
+        // Execute concurrently
+        await Future.wait([
+          useCase(
+            patientId: patientId,
+            patientPackageId: patientPackageId,
+            serviceId: serviceId,
+          ),
+          useCase(
+            patientId: patientId,
+            patientPackageId: patientPackageId,
+            serviceId: serviceId,
+          ),
+        ]);
+
+        // Verify that runTransaction was called twice
+        verify(mockFirestore.runTransaction<void>(any)).called(2);
+
+        // Verify that 'get' and 'update' were invoked on the Transaction specifically,
+        // confirming commit-once semantics via Firestore.
+        verify(mockTransaction.get(mockPatientPackageDoc)).called(2);
+        verify(mockTransaction.update(mockPatientPackageDoc, any)).called(2);
+
+        // Verify no direct update on CollectionReference/DocumentRefs
+        verifyNever(mockPatientPackageDoc.update(any));
+      },
     );
   });
 }

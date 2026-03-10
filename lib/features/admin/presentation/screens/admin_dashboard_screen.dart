@@ -2,7 +2,7 @@ import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/features/admin/presentation/providers/admin_provider.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_audit_log_screen.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_doctor_list_screen.dart';
-import 'package:elajtech/features/packages/presentation/pages/admin_packages_list_page.dart';
+import 'package:elajtech/features/packages/presentation/pages/admin_packages_grid_page.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_patient_list_screen.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/main.dart' show AuthWrapper;
@@ -188,13 +188,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 icon: Icons.card_giftcard_outlined,
                 title: 'إدارة الباقات',
                 subtitle: 'إضافة وتعديل الباقات وعروض العيادات المختلفة',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AdminPackagesListPage(),
-                  ),
-                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AdminPackagesGridPage(),
+                    ),
+                  );
+                },
               ),
+              const SizedBox(height: 48),
             ],
           ),
         ),

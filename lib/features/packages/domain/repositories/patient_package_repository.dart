@@ -15,7 +15,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
-import 'package:elajtech/features/packages/domain/failures/package_failures.dart' show PackageAlreadyActiveFailure;
+import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
+    show PackageAlreadyActiveFailure;
 
 /// Abstract repository for patient package purchase records.
 ///
@@ -103,5 +104,14 @@ abstract class PatientPackageRepository {
     required String patientId,
     DocumentSnapshot? lastDocument,
     int limit = 20,
+  });
+
+  /// Updates the notes field for a patient package — admin-facing.
+  ///
+  /// **Arabic**: يُحدِّث حقل الملاحظات لسجل شراء مريض.
+  Future<Either<Failure, void>> updateNotes({
+    required String patientId,
+    required String patientPackageId,
+    required String notes,
   });
 }

@@ -45,9 +45,23 @@ class _AdminDocumentUploadBottomSheetState
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
     );
     if (result != null && result.files.single.path != null) {
+      final file = result.files.single;
+      // Max size: 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('حجم الملف كبير جداً. الحد الأقصى هو 5 ميجا بايت.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
-        _localFilePath = result.files.single.path;
-        _fileName = result.files.single.name;
+        _localFilePath = file.path;
+        _fileName = file.name;
       });
     }
   }
@@ -112,9 +126,16 @@ class _AdminDocumentUploadBottomSheetState
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -157,7 +178,7 @@ class _AdminDocumentUploadBottomSheetState
 
                 // Type
                 DropdownButtonFormField<DocumentType>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'نوع المستند',
                     border: OutlineInputBorder(),
@@ -193,14 +214,13 @@ class _AdminDocumentUploadBottomSheetState
                 // Service ID
                 if (availableServiceIds.isNotEmpty)
                   DropdownButtonFormField<String?>(
-                    value: _selectedServiceId,
+                    initialValue: _selectedServiceId,
                     decoration: const InputDecoration(
                       labelText: 'ربط بخدمة (اختياري)',
                       border: OutlineInputBorder(),
                     ),
                     items: [
                       const DropdownMenuItem<String?>(
-                        value: null,
                         child: Text('بدون ربط بخدمة'),
                       ),
                       ...availableServiceIds.map(

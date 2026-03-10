@@ -53,8 +53,8 @@ void main() {
     category: PackageCategory.andrologyInfertilityProstate,
     name: 'باقة رجالية',
     shortDescription: 'وصف',
-    services: [
-      const PackageServiceItem(
+    services: const [
+      PackageServiceItem(
         serviceId: '1',
         serviceType: ServiceType.lab,
         displayName: 'فحص دم',
@@ -151,7 +151,7 @@ void main() {
         category: PackageCategory.andrologyInfertilityProstate,
         name: 'باقة رجالية',
         shortDescription: 'وصف',
-        services: [],
+        services: const [],
         validityDays: 30,
         price: 100,
         currency: 'EGP',

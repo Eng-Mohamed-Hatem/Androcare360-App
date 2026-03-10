@@ -17,6 +17,7 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:injectable/injectable.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:elajtech/core/error/failures.dart';
@@ -206,7 +207,14 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         packageId: package.id,
         data: model.toFirestore(),
       );
-      
+
+      if (kDebugMode) {
+        debugPrint(
+          '[$runtimeType] createPackage SUCCESS: '
+          'clinicId=$clinicId packageId=$id name=${package.name}',
+        );
+      }
+
       return Right(id);
     } on FirebaseException catch (e, st) {
       if (kDebugMode) {
@@ -254,7 +262,14 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         packageId: package.id,
         data: model.toFirestore(),
       );
-      
+
+      if (kDebugMode) {
+        debugPrint(
+          '[$runtimeType] updatePackage SUCCESS: '
+          'clinicId=$clinicId packageId=${package.id}',
+        );
+      }
+
       return const Right(unit);
     } on FirebaseException catch (e, st) {
       if (kDebugMode) {
@@ -311,6 +326,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
 ///
 /// clinicId = `ClinicIds.andrology` ('andrology').
 /// Spec: tasks.md T017.
+@lazySingleton
 class AndrologyPackageRepository extends BaseClinicPackageRepository {
   /// Creates an [AndrologyPackageRepository].
   const AndrologyPackageRepository(super.datasource);
@@ -323,6 +339,7 @@ class AndrologyPackageRepository extends BaseClinicPackageRepository {
 ///
 /// clinicId = `ClinicIds.physiotherapy` ('physiotherapy').
 /// Spec: tasks.md T018.
+@lazySingleton
 class PhysiotherapyPackageRepository extends BaseClinicPackageRepository {
   /// Creates a [PhysiotherapyPackageRepository].
   const PhysiotherapyPackageRepository(super.datasource);
@@ -336,6 +353,7 @@ class PhysiotherapyPackageRepository extends BaseClinicPackageRepository {
 ///
 /// clinicId = `ClinicIds.internalFamily` ('internal_family').
 /// Spec: tasks.md T019.
+@lazySingleton
 class InternalFamilyPackageRepository extends BaseClinicPackageRepository {
   /// Creates an [InternalFamilyPackageRepository].
   const InternalFamilyPackageRepository(super.datasource);
@@ -348,6 +366,7 @@ class InternalFamilyPackageRepository extends BaseClinicPackageRepository {
 ///
 /// clinicId = `ClinicIds.nutrition` ('nutrition').
 /// Spec: tasks.md T020.
+@lazySingleton
 class NutritionPackageRepository extends BaseClinicPackageRepository {
   /// Creates a [NutritionPackageRepository].
   const NutritionPackageRepository(super.datasource);
@@ -360,6 +379,7 @@ class NutritionPackageRepository extends BaseClinicPackageRepository {
 ///
 /// clinicId = `ClinicIds.chronicDiseases` ('chronic_diseases').
 /// Spec: tasks.md T021.
+@lazySingleton
 class ChronicDiseasesPackageRepository extends BaseClinicPackageRepository {
   /// Creates a [ChronicDiseasesPackageRepository].
   const ChronicDiseasesPackageRepository(super.datasource);

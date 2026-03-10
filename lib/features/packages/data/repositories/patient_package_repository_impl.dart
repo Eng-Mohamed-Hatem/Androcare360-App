@@ -315,4 +315,38 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
       return const Left(NetworkFailure('حدث خطأ غير متوقع'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> updateNotes({
+    required String patientId,
+    required String patientPackageId,
+    required String notes,
+  }) async {
+    try {
+      if (kDebugMode) {
+        debugPrint(
+          '[PatientPackageRepositoryImpl] updateNotes '
+          'patientId=$patientId ppId=$patientPackageId',
+        );
+      }
+      await _datasource.updatePatientPackageNotes(
+        patientId: patientId,
+        patientPackageId: patientPackageId,
+        notes: notes,
+      );
+      return const Right(null);
+    } on FirebaseException catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[PatientPackageRepositoryImpl] updateNotes error: $e');
+        debugPrint(st.toString());
+      }
+      return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
+        debugPrint(st.toString());
+      }
+      return const Left(NetworkFailure('حدث خطأ غير متوقع'));
+    }
+  }
 }

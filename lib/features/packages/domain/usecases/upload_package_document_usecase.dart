@@ -1,7 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
+import 'dart:io';
+
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
+import 'package:elajtech/features/packages/domain/failures/package_failures.dart';
 import 'package:elajtech/features/packages/domain/repositories/package_document_repository.dart';
 import 'package:elajtech/shared/models/notification_model.dart';
 import 'package:flutter/foundation.dart';
@@ -15,14 +18,13 @@ import 'package:uuid/uuid.dart';
 /// After successful upload, it sends a best-effort FCM notification via [NotificationRepository].
 @lazySingleton
 class UploadPackageDocumentUseCase {
-  final PackageDocumentRepository _documentRepository;
-  final NotificationRepository _notificationRepository;
-  final _uuid = const Uuid();
-
   UploadPackageDocumentUseCase(
     this._documentRepository,
     this._notificationRepository,
   );
+  final PackageDocumentRepository _documentRepository;
+  final NotificationRepository _notificationRepository;
+  final _uuid = const Uuid();
 
   Future<Either<Failure, PackageDocumentEntity>> call({
     required String localFilePath,
@@ -37,7 +39,38 @@ class UploadPackageDocumentUseCase {
     String? serviceId,
     String? description,
   }) async {
-    // 1. Delegate upload and validation to repository (which uses the datasources)
+    // 1. Validate file extension
+    final lowercasePath = localFilePath.toLowerCase();
+    if (!lowercasePath.endsWith('.pdf') &&
+        !lowercasePath.endsWith('.jpg') &&
+        !lowercasePath.endsWith('.jpeg') &&
+        !lowercasePath.endsWith('.png')) {
+      return const Left(
+        UploadFailure('Unsupported file type. Allowed: pdf, jpg, jpeg, png.'),
+      );
+    }
+
+    // 2. Validate file size (<= 20 MB)
+    try {
+      final file = File(localFilePath);
+      if (file.existsSync()) {
+        final fileSize = file.lengthSync();
+        final sizeInMb = fileSize / (1024 * 1024);
+        if (sizeInMb > 20) {
+          return const Left(
+            UploadFailure('File size exceeds the 20 MB limit.'),
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          '[UploadPackageDocumentUseCase] File length check failed: $e',
+        );
+      }
+    }
+
+    // 3. Delegate upload to repository (which uses the datasources)
     final result = await _documentRepository.uploadDocument(
       localFilePath: localFilePath,
       patientId: patientId,
@@ -65,7 +98,6 @@ class UploadPackageDocumentUseCase {
             title: 'تم رفع مستند جديد',
             body: 'تم رفع مستند جديد بعنوان "$title" كجزء من باقتك.',
             type: NotificationType.general,
-            isRead: false,
             createdAt: DateTime.now(),
             data: {
               'patientPackageId': patientPackageId,

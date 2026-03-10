@@ -17,11 +17,11 @@ import 'package:flutter/material.dart';
 ///
 /// **English**
 /// Shows `"X / Y"` with a coloured [LinearProgressIndicator]. Both are wrapped
-/// in [Directionality.ltr] so the progress bar fills left-to-right and the
+/// in [TextDirection.ltr] so the progress bar fills left-to-right and the
 /// numbers render in western digits even in an RTL app.
 ///
 /// **Arabic**
-/// يعرض نص `"X / Y"` مع شريط تقدم. ملفوف بـ `Directionality.ltr` لضمان
+/// يعرض نص `"X / Y"` مع شريط تقدم. ملفوف بـ `TextDirection.ltr` لضمان
 /// الاتجاه الصحيح للأرقام والشريط بغض النظر عن إعداد RTL للتطبيق.
 ///
 /// **Usage / الاستخدام**:
@@ -73,12 +73,14 @@ class PackageProgressWidget extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           // Linear progress bar
-          LinearProgressIndicator(
-            value: fraction,
-            backgroundColor: color.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 6,
+          ClipRRect(
             borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: fraction,
+              backgroundColor: color.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color?>(color),
+              minHeight: 6,
+            ),
           ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:elajtech/core/constants/app_colors.dart';
 
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
@@ -121,6 +123,11 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
     final displayOrder = int.tryParse(_displayOrderController.text.trim());
 
     if (isEditMode) {
+      if (kDebugMode) {
+        debugPrint(
+          '[CreateEditPackagePage] Saving updates for package ${widget.packageToEdit!.id}',
+        );
+      }
       // Optimistic concurrency logic
       final params = UpdatePackageParams(
         clinicId: widget.packageToEdit!.clinicId,
@@ -141,15 +148,34 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
         displayOrder: displayOrder ?? widget.packageToEdit!.displayOrder,
         isFeatured: _isFeatured,
       );
-      ref.read(adminPackageWriteProvider.notifier).updatePackage(params).then((
-        _,
-      ) {
-        if (mounted && !ref.read(adminPackageWriteProvider).hasError) {
-          Navigator.pop(context);
-        }
-      });
+      unawaited(
+        ref.read(adminPackageWriteProvider.notifier).updatePackage(params).then(
+          (success) {
+            if (mounted) {
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم تحديث الباقة بنجاح')),
+                );
+                Navigator.pop(context);
+              } else {
+                final error = ref.read(adminPackageWriteProvider).error;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('فشل التحديث: ${error ?? "خطأ غير معروف"}'),
+                  ),
+                );
+              }
+            }
+          },
+        ),
+      );
     } else {
       final clinicId = ref.read(adminSelectedClinicProvider);
+      if (kDebugMode) {
+        debugPrint(
+          '[CreateEditPackagePage] Creating new package for clinic $clinicId',
+        );
+      }
       if (clinicId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('الرجاء اختيار عيادة أولاً')),
@@ -173,13 +199,27 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
         displayOrder: displayOrder,
         isFeatured: _isFeatured,
       );
-      ref.read(adminPackageWriteProvider.notifier).createPackage(params).then((
-        _,
-      ) {
-        if (mounted && !ref.read(adminPackageWriteProvider).hasError) {
-          Navigator.pop(context);
-        }
-      });
+      unawaited(
+        ref.read(adminPackageWriteProvider.notifier).createPackage(params).then(
+          (success) {
+            if (mounted) {
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم إنشاء الباقة بنجاح')),
+                );
+                Navigator.pop(context);
+              } else {
+                final error = ref.read(adminPackageWriteProvider).error;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('فشل الإنشاء: ${error ?? "خطأ غير معروف"}'),
+                  ),
+                );
+              }
+            }
+          },
+        ),
+      );
     }
   }
 
@@ -217,17 +257,22 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
                       const SizedBox(height: 12),
                       _buildTextField(
                         _shortDescController,
-                        'وصف مختصر',
+                        'وصف مختصر تسويقي',
                         required: true,
                         maxLength: 500,
-                        maxLines: 2,
+                        maxLines: 3,
+                        minLines: 2,
+                        helperText: 'يظهر في قائمة الباقات للمريض',
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
                         _descController,
-                        'وصف تفصيلي',
-                        maxLines: 4,
+                        'وصف تفصيلي للباقة',
+                        maxLines: 10,
+                        minLines: 4,
                         maxLength: 3000,
+                        helperText:
+                            'يظهر في صفحة تفاصيل الباقة عند الضغط عليها',
                       ),
 
                       const SizedBox(height: 24),
@@ -242,7 +287,7 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
                         items: PackageCategory.values.map((c) {
                           return DropdownMenuItem(
                             value: c,
-                            child: Text(c.value),
+                            child: Text(c.arabicLabel),
                           );
                         }).toList(),
                         onChanged: (val) =>
@@ -255,20 +300,12 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
                           labelText: 'نوع الباقة',
                           border: OutlineInputBorder(),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: PackageType.physicalOnly,
-                            child: Text('حضوري فقط'),
-                          ),
-                          DropdownMenuItem(
-                            value: PackageType.videoOnly,
-                            child: Text('فيديو فقط'),
-                          ),
-                          DropdownMenuItem(
-                            value: PackageType.both,
-                            child: Text('شامل (حضوري وفيديو)'),
-                          ),
-                        ],
+                        items: PackageType.values.map((t) {
+                          return DropdownMenuItem(
+                            value: t,
+                            child: Text(t.arabicLabel),
+                          );
+                        }).toList(),
                         onChanged: (val) =>
                             setState(() => _selectedType = val!),
                       ),
@@ -422,21 +459,26 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
     bool required = false,
     bool isNumber = false,
     int maxLines = 1,
+    int? minLines,
     int? maxLength,
+    String? helperText,
   }) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label + (required ? ' *' : ''),
+        helperText: helperText,
         border: const OutlineInputBorder(),
+        alignLabelWithHint: maxLines > 1,
       ),
       keyboardType: isNumber
           ? const TextInputType.numberWithOptions(decimal: true)
-          : TextInputType.text,
+          : (maxLines > 1 ? TextInputType.multiline : TextInputType.text),
       inputFormatters: isNumber
           ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
           : null,
       maxLines: maxLines,
+      minLines: minLines,
       maxLength: maxLength,
       validator: (value) {
         if (required && (value == null || value.trim().isEmpty)) {
@@ -452,110 +494,126 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _services.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = _services[index];
         return Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
           ),
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<ServiceType>(
-                  initialValue: item.serviceType,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: OutlineInputBorder(),
+              Row(
+                children: [
+                  // Service Type
+                  Expanded(
+                    child: DropdownButtonFormField<ServiceType>(
+                      initialValue: item.serviceType,
+                      decoration: const InputDecoration(
+                        labelText: 'نوع الخدمة',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: ServiceType.visit,
+                          child: Text('زيارة'),
+                        ),
+                        DropdownMenuItem(
+                          value: ServiceType.lab,
+                          child: Text('تحليل'),
+                        ),
+                        DropdownMenuItem(
+                          value: ServiceType.imaging,
+                          child: Text('أشعة'),
+                        ),
+                        DropdownMenuItem(
+                          value: ServiceType.session,
+                          child: Text('جلسة'),
+                        ),
+                        DropdownMenuItem(
+                          value: ServiceType.other,
+                          child: Text('أخرى'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _services[index] = item.copyWith(serviceType: val);
+                          });
+                        }
+                      },
+                    ),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: ServiceType.visit,
-                      child: Text('زيارة'),
+                  const SizedBox(width: 8),
+                  // Quantity
+                  SizedBox(
+                    width: 90,
+                    child: TextFormField(
+                      initialValue: item.quantity.toString(),
+                      decoration: const InputDecoration(
+                        labelText: 'الكمية',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(2),
+                      ],
+                      validator: (val) {
+                        final q = int.tryParse(val ?? '') ?? 0;
+                        if (q < 1 || q > 99) return '1-99';
+                        return null;
+                      },
+                      onChanged: (val) {
+                        final q = int.tryParse(val) ?? 1;
+                        setState(() {
+                          _services[index] = item.copyWith(
+                            quantity: q > 0 ? (q > 99 ? 99 : q) : 1,
+                          );
+                        });
+                      },
                     ),
-                    DropdownMenuItem(
-                      value: ServiceType.lab,
-                      child: Text('تحليل'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceType.imaging,
-                      child: Text('أشعة'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceType.session,
-                      child: Text('جلسة'),
-                    ),
-                    DropdownMenuItem(
-                      value: ServiceType.other,
-                      child: Text('أخرى'),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
+                  ),
+                  const SizedBox(width: 4),
+                  // Delete button
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: () {
                       setState(() {
-                        _services[index] = PackageServiceItem(
-                          serviceId: item.serviceId,
-                          serviceType: val,
-                          displayName: item.displayName,
-                          quantity: item.quantity,
-                        );
+                        _services.removeAt(index);
                       });
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: TextFormField(
-                  initialValue: item.displayName,
-                  decoration: const InputDecoration(
-                    labelText: 'الاسم (عربي)',
-                    isDense: true,
-                    border: OutlineInputBorder(),
+                    },
+                    tooltip: 'حذف الخدمة',
                   ),
-                  onChanged: (val) {
-                    _services[index] = PackageServiceItem(
-                      serviceId: item.serviceId,
-                      serviceType: item.serviceType,
-                      displayName: val,
-                      quantity: item.quantity,
-                    );
-                  },
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  initialValue: item.quantity.toString(),
-                  decoration: const InputDecoration(
-                    labelText: 'الكمية',
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onChanged: (val) {
-                    final q = int.tryParse(val) ?? 1;
-                    _services[index] = PackageServiceItem(
-                      serviceId: item.serviceId,
-                      serviceType: item.serviceType,
-                      displayName: item.displayName,
-                      quantity: q > 0 ? q : 1,
-                    );
-                  },
+              const SizedBox(height: 12),
+              // Display Name
+              TextFormField(
+                initialValue: item.displayName,
+                decoration: const InputDecoration(
+                  labelText: 'اسم الخدمة (عربي)',
+                  hintText: 'مثال: كشف أخصائي، تحليل دم...',
+                  isDense: true,
+                  border: OutlineInputBorder(),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () {
+                onChanged: (val) {
                   setState(() {
-                    _services.removeAt(index);
+                    _services[index] = item.copyWith(displayName: val);
                   });
+                },
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'الرجاء إدخال اسم الخدمة';
+                  }
+                  return null;
                 },
               ),
             ],

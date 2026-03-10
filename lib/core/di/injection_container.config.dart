@@ -25,6 +25,8 @@ import 'package:elajtech/features/admin/data/repositories/admin_repository_impl.
     as _i423;
 import 'package:elajtech/features/admin/domain/repositories/admin_repository.dart'
     as _i341;
+import 'package:elajtech/features/admin/domain/usecases/toggle_patient_active_status_usecase.dart'
+    as _i213;
 import 'package:elajtech/features/appointments/data/repositories/appointment_repository_impl.dart'
     as _i1049;
 import 'package:elajtech/features/appointments/domain/repositories/appointment_repository.dart'
@@ -77,6 +79,8 @@ import 'package:elajtech/features/packages/data/datasources/firebase_storage_pac
     as _i958;
 import 'package:elajtech/features/packages/data/datasources/firestore_package_datasource.dart'
     as _i220;
+import 'package:elajtech/features/packages/data/repositories/clinic_package_repository_impl.dart'
+    as _i265;
 import 'package:elajtech/features/packages/data/repositories/package_document_repository_impl.dart'
     as _i789;
 import 'package:elajtech/features/packages/data/repositories/patient_package_repository_impl.dart'
@@ -99,6 +103,8 @@ import 'package:elajtech/features/packages/domain/usecases/toggle_package_status
     as _i799;
 import 'package:elajtech/features/packages/domain/usecases/update_clinic_package_usecase.dart'
     as _i793;
+import 'package:elajtech/features/packages/domain/usecases/update_package_service_usage_usecase.dart'
+    as _i674;
 import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart'
     as _i1063;
 import 'package:elajtech/features/patient/home/data/repositories/medical_screening_repository_impl.dart'
@@ -233,6 +239,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i220.FirestorePackageDatasource>(
       () => _i220.FirestorePackageDatasource(gh<_i974.FirebaseFirestore>()),
     );
+    gh.lazySingleton<_i674.UpdatePackageServiceUsageUseCase>(
+      () =>
+          _i674.UpdatePackageServiceUsageUseCase(gh<_i974.FirebaseFirestore>()),
+    );
     gh.lazySingleton<_i563.NutritionEMRRepository>(
       () => _i772.NutritionEMRRepositoryImpl(gh<_i974.FirebaseFirestore>()),
     );
@@ -244,6 +254,31 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i691.PhysiotherapyEMRRepository>(
       () => _i980.PhysiotherapyEMRRepositoryImpl(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i265.AndrologyPackageRepository>(
+      () => _i265.AndrologyPackageRepository(
+        gh<_i220.FirestorePackageDatasource>(),
+      ),
+    );
+    gh.lazySingleton<_i265.PhysiotherapyPackageRepository>(
+      () => _i265.PhysiotherapyPackageRepository(
+        gh<_i220.FirestorePackageDatasource>(),
+      ),
+    );
+    gh.lazySingleton<_i265.InternalFamilyPackageRepository>(
+      () => _i265.InternalFamilyPackageRepository(
+        gh<_i220.FirestorePackageDatasource>(),
+      ),
+    );
+    gh.lazySingleton<_i265.NutritionPackageRepository>(
+      () => _i265.NutritionPackageRepository(
+        gh<_i220.FirestorePackageDatasource>(),
+      ),
+    );
+    gh.lazySingleton<_i265.ChronicDiseasesPackageRepository>(
+      () => _i265.ChronicDiseasesPackageRepository(
+        gh<_i220.FirestorePackageDatasource>(),
+      ),
     );
     gh.lazySingleton<_i28.PackageDocumentRepository>(
       () => _i789.PackageDocumentRepositoryImpl(
@@ -259,6 +294,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i28.PackageDocumentRepository>(),
         gh<_i70.NotificationRepository>(),
       ),
+    );
+    gh.lazySingleton<_i213.TogglePatientActiveStatusUseCase>(
+      () => _i213.TogglePatientActiveStatusUseCase(gh<_i341.AdminRepository>()),
     );
     gh.lazySingleton<_i302.PatientPackageRepository>(
       () => _i720.PatientPackageRepositoryImpl(

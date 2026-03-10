@@ -15,17 +15,17 @@ class UpdatePackageParams {
     required this.category,
     required this.name,
     required this.shortDescription,
-    this.description,
     required this.services,
     required this.validityDays,
-    this.termsAndConditions,
     required this.price,
     required this.currency,
-    this.discountPercentage,
     required this.type,
     required this.status,
     required this.displayOrder,
     required this.isFeatured,
+    this.description,
+    this.termsAndConditions,
+    this.discountPercentage,
   });
   final String clinicId;
   final String packageId;

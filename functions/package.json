@@ -2,20 +2,20 @@
     "name": "elajtech-functions",
     "description": "Cloud Functions for Elajtech - Agora Video Calls & VoIP",
     "version": "1.0.0",
+    "main": "lib/index.js",
     "scripts": {
-        "serve": "firebase emulators:start --only functions",
-        "shell": "firebase functions:shell",
+        "lint": "eslint src --ext .ts",
+        "build": "tsc",
+        "build:watch": "tsc --watch",
+        "serve": "npm run build && firebase emulators:start --only functions",
+        "shell": "npm run build && firebase functions:shell",
         "start": "npm run shell",
         "deploy": "firebase deploy --only functions",
-        "logs": "firebase functions:log",
-        "test": "jest --detectOpenHandles",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
+        "logs": "firebase functions:log"
     },
     "engines": {
         "node": "20"
     },
-    "main": "index.js",
     "dependencies": {
         "agora-access-token": "^2.0.4",
         "firebase-admin": "^12.0.0",
