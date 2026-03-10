@@ -1,3 +1,4 @@
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/usecases/create_clinic_package_usecase.dart';
@@ -30,7 +31,7 @@ void main() {
     ],
     validityDays: 30,
     price: 1500,
-    currency: 'EGP',
+    currency: CurrencyConstants.defaultCurrency,
     packageType: PackageType.both,
     status: PackageStatus.active,
     displayOrder: 1,
@@ -95,7 +96,7 @@ void main() {
         'وصف تست',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.widgetWithText(TextFormField, 'السعر (ريال سعودي) *'),
         '1000',
       );
       await tester.enterText(
@@ -128,13 +129,13 @@ void main() {
       );
 
       await tester.dragUntilVisible(
-        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.widgetWithText(TextFormField, 'السعر (ريال سعودي) *'),
         find.byType(SingleChildScrollView),
         const Offset(0, -500),
       );
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.widgetWithText(TextFormField, 'السعر (ريال سعودي) *'),
         '1000',
       );
       await tester.enterText(
@@ -169,13 +170,13 @@ void main() {
       );
 
       await tester.dragUntilVisible(
-        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.widgetWithText(TextFormField, 'السعر (ريال سعودي) *'),
         find.byType(SingleChildScrollView),
         const Offset(0, -500),
       );
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.widgetWithText(TextFormField, 'السعر (ريال سعودي) *'),
         '1000',
       );
       await tester.enterText(
@@ -206,7 +207,7 @@ void main() {
               _FailingAdminPackageWriteNotifier.new,
             ),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             home: CreateEditPackagePage(),
           ),
         ),
@@ -223,7 +224,7 @@ void main() {
         'وصف',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'السعر (EGP) *'),
+        find.widgetWithText(TextFormField, 'السعر (ريال سعودي) *'),
         '1000',
       );
       await tester.enterText(

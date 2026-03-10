@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/core/constants/app_colors.dart';
 
 import 'package:elajtech/features/packages/data/constants/clinic_ids.dart';
@@ -185,7 +186,7 @@ class _AdminPackagesListPageState extends ConsumerState<AdminPackagesListPage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${pkg.price} ${pkg.currency}',
+                  '${pkg.price} ${CurrencyConstants.sarArabic}',
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,

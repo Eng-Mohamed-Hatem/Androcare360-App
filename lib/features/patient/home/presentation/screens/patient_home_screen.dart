@@ -1,6 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it/get_it.dart';
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/core/constants/app_strings.dart';
 import 'package:elajtech/core/constants/medical_specializations.dart';
+import 'package:elajtech/core/constants/specialty_constants.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/features/patient/appointments/presentation/screens/select_doctor_for_appointment_screen.dart';
 import 'package:elajtech/features/packages/presentation/pages/package_categories_page.dart';
@@ -17,9 +21,6 @@ import 'package:elajtech/features/patient/home/presentation/screens/devices_scre
 import 'package:elajtech/features/patient/home/presentation/screens/medical_screening_screen.dart';
 import 'package:elajtech/features/patient/medical_records/presentation/screens/medical_records_screen.dart';
 import 'package:elajtech/shared/providers/registered_doctors_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 
 /// Patient Home Screen - الصفحة الرئيسية للمريض
 class PatientHomeScreen extends ConsumerWidget {
@@ -400,14 +401,28 @@ class PatientHomeScreen extends ConsumerWidget {
                               color: AppColors.primary,
                             ),
                             onTap: () async {
-                              await Navigator.push<void>(
-                                context,
-                                MaterialPageRoute<void>(
-                                  builder: (context) => SubSpecialtiesScreen(
-                                    mainCategory: category,
+                              if (category ==
+                                  MedicalSpecializations.andrologyClinic) {
+                                await Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (context) =>
+                                        const DoctorsListScreen(
+                                          category: SpecialtyConstants
+                                              .andrologyClinic,
+                                        ),
                                   ),
-                                ),
-                              );
+                                );
+                              } else {
+                                await Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (context) => SubSpecialtiesScreen(
+                                      mainCategory: category,
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ),

@@ -36,9 +36,9 @@ import 'package:flutter/material.dart';
 /// يتحقق من الحجم (أقل من 20 ميجا) ويظهر رسائل خطأ باللغة العربية.
 class DocumentUploadBottomSheet extends StatefulWidget {
   const DocumentUploadBottomSheet({
-    super.key,
     required this.onUploadSuccess,
     required this.onCancel,
+    super.key,
   });
 
   /// Creates [DocumentUploadBottomSheet].

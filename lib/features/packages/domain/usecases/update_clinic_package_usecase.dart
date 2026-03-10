@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart';
@@ -132,8 +133,12 @@ class UpdateClinicPackageUseCase {
             ServerFailure('ترتيب العرض يجب أن يكون 1 أو أكثر.'),
           );
         }
-        if (params.currency != 'EGP') {
-          return const Left(ServerFailure('العملة يجب أن تكون EGP'));
+        if (params.currency != CurrencyConstants.defaultCurrency) {
+          return const Left(
+            ServerFailure(
+              'العملة يجب أن تكون ${CurrencyConstants.defaultCurrency}',
+            ),
+          );
         }
 
         // 5. Update Entity

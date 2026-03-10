@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:elajtech/core/constants/app_colors.dart';
 
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/usecases/create_clinic_package_usecase.dart';
@@ -141,7 +142,7 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
         validityDays: validity,
         termsAndConditions: _termsController.text.trim(),
         price: price,
-        currency: 'EGP',
+        currency: CurrencyConstants.defaultCurrency,
         discountPercentage: discount,
         type: _selectedType,
         status: _selectedStatus,
@@ -192,7 +193,7 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
         validityDays: validity,
         termsAndConditions: _termsController.text.trim(),
         price: price,
-        currency: 'EGP',
+        currency: CurrencyConstants.defaultCurrency,
         discountPercentage: discount,
         type: _selectedType,
         status: _selectedStatus,
@@ -341,7 +342,7 @@ class _CreateEditPackagePageState extends ConsumerState<CreateEditPackagePage> {
                           Expanded(
                             child: _buildTextField(
                               _priceController,
-                              'السعر (EGP)',
+                              'السعر (${CurrencyConstants.sarArabic})',
                               required: true,
                               isNumber: true,
                             ),

@@ -19,6 +19,8 @@ library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:elajtech/core/constants/currency_constants.dart';
+
 part 'package_service.freezed.dart';
 part 'package_service.g.dart';
 
@@ -53,10 +55,10 @@ abstract class PackageService with _$PackageService {
   /// **Example:**
   /// ```dart
   /// print(service.formatPrice());
-  /// // Output: "50.00 EGP"
+  /// // Output: "50.00 SAR"
   /// ```
   String formatPrice() {
-    return '${price.toStringAsFixed(2)} EGP';
+    return '${price.toStringAsFixed(2)} ${CurrencyConstants.defaultCurrency}';
   }
 
   /// Formats the duration to human-readable string.

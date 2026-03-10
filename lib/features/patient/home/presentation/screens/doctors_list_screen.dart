@@ -1,3 +1,4 @@
+import 'package:elajtech/core/constants/specialty_constants.dart';
 import 'package:elajtech/features/patient/home/presentation/widgets/doctor_card.dart';
 import 'package:elajtech/shared/providers/registered_doctors_provider.dart';
 import 'package:flutter/material.dart';
@@ -81,10 +82,34 @@ class _DoctorsListScreenState extends ConsumerState<DoctorsListScreen> {
                   // Filter by Category
                   if (widget.category != null) {
                     final specs = doctor.specializations ?? [];
-                    if (!specs.contains(widget.category) &&
-                        !specs.any((s) => s.contains(widget.category!))) {
-                      return false;
+
+                    // Use SpecialtyConstants for more robust matching if available
+                    var isMatch = false;
+                    final category = widget.category!;
+
+                    if (category.contains('ذكورة') ||
+                        category.contains('andrology')) {
+                      isMatch = SpecialtyConstants.isAndrologyDoctor(specs);
+                    } else if (category.contains('تغذية') ||
+                        category.contains('nutrition') ||
+                        category.contains('سمنة')) {
+                      isMatch = SpecialtyConstants.isNutritionDoctor(specs);
+                    } else if (category.contains('طبيعي') ||
+                        category.contains('physiotherapy')) {
+                      isMatch = SpecialtyConstants.isPhysiotherapyDoctor(specs);
+                    } else if (category.contains('باطنة') ||
+                        category.contains('internal')) {
+                      isMatch = SpecialtyConstants.isInternalMedicineDoctor(
+                        specs,
+                      );
+                    } else {
+                      // Fallback to existing logic for other categories
+                      isMatch =
+                          specs.contains(category) ||
+                          specs.any((s) => s.contains(category));
                     }
+
+                    if (!isMatch) return false;
                   }
 
                   // Filter by Search

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/presentation/pages/admin_packages_list_page.dart';
@@ -32,7 +33,7 @@ void main() {
     ],
     validityDays: 30,
     price: 1500,
-    currency: 'EGP',
+    currency: CurrencyConstants.defaultCurrency,
     packageType: PackageType.both,
     status: PackageStatus.active,
     displayOrder: 1,
@@ -58,7 +59,7 @@ void main() {
     ],
     validityDays: 30,
     price: 1500,
-    currency: 'EGP',
+    currency: CurrencyConstants.defaultCurrency,
     packageType: PackageType.both,
     status: PackageStatus.inactive,
     displayOrder: 2,

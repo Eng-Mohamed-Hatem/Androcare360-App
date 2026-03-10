@@ -9,6 +9,7 @@
 /// **Spec**: tasks.md T037.
 library;
 
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/presentation/pages/package_details_page.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,7 @@ import 'package:flutter/material.dart';
 /// A card widget representing a single clinic package in a list.
 ///
 /// **English**
-/// Shows: package name, short description, price in EGP, and an amber badge
+/// Shows: package name, short description, price in SAR, and an amber badge
 /// "الأكثر اختيارًا" when [PackageEntity.isFeatured] is true.
 /// RTL layout, tappable — navigates to [PackageDetailsPage].
 ///
@@ -115,7 +116,7 @@ class PackageCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${package.price.toStringAsFixed(0)} جنيه',
+                    '${package.price.toStringAsFixed(0)} ${CurrencyConstants.sarArabic}',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,

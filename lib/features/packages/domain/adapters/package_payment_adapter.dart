@@ -22,7 +22,8 @@ library;
 
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart';
-import 'package:elajtech/features/packages/domain/usecases/purchase_package_usecase.dart' show PurchasePackageUseCase;
+import 'package:elajtech/features/packages/domain/usecases/purchase_package_usecase.dart'
+    show PurchasePackageUseCase;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PaymentSuccess value type
@@ -44,7 +45,7 @@ import 'package:elajtech/features/packages/domain/usecases/purchase_package_usec
 /// const success = PaymentSuccess(
 ///   transactionId: 'TXN_20260307_0001',
 ///   amount: 499.0,
-///   currency: 'EGP',
+///   currency: 'SAR',
 /// );
 /// ```
 class PaymentSuccess {
@@ -62,7 +63,7 @@ class PaymentSuccess {
   /// Amount charged — المبلغ المدفوع.
   final double amount;
 
-  /// Currency code (e.g. 'EGP') — رمز العملة.
+  /// Currency code (e.g. 'SAR') — رمز العملة.
   final String currency;
 
   @override
@@ -109,7 +110,7 @@ abstract class PackagePaymentAdapter {
   ///
   /// **Parameters**:
   /// - [amount]: Total amount to charge — المبلغ الإجمالي للمطالبة.
-  /// - [currency]: Currency code (e.g. 'EGP') — رمز العملة.
+  /// - [currency]: Currency code (e.g. 'SAR') — رمز العملة.
   /// - [packageRef]: Package ID used as payment descriptor — معرف الباقة.
   ///
   /// **Returns**:

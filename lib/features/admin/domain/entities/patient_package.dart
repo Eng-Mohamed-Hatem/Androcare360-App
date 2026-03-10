@@ -32,11 +32,11 @@ abstract class PatientPackage with _$PatientPackage {
     required List<PackageService> services,
     required List<PackageServiceUsage> servicesUsage,
     required int usedServicesCount,
-    String? notes,
     required List<PackageDocument> documents,
     required DateTime createdAt,
     required DateTime updatedAt,
     required bool isActive,
+    String? notes,
   }) = _PatientPackage;
   const PatientPackage._();
 

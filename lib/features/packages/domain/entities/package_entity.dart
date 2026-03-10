@@ -12,6 +12,7 @@ library;
 
 import 'package:meta/meta.dart';
 
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -242,13 +243,13 @@ class PackageEntity {
     required List<PackageServiceItem> services,
     required int validityDays,
     required double price,
-    required String currency,
     required PackageType type,
     required PackageStatus status,
     required int displayOrder,
     required bool isFeatured,
     required DateTime createdAt,
     required DateTime updatedAt,
+    String currency = CurrencyConstants.defaultCurrency,
     String? description,
     String? termsAndConditions,
     double? discountPercentage,
@@ -323,7 +324,7 @@ class PackageEntity {
   /// Total price — السعر الإجمالي.
   final double price;
 
-  /// Currency code (e.g. EGP) — رمز العملة.
+  /// Currency code (e.g. SAR) — رمز العملة.
   final String currency;
 
   /// Optional discount percentage — نسبة الخصم (اختيارية).

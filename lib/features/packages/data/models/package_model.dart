@@ -13,8 +13,10 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:elajtech/features/packages/domain/failures/package_failures.dart' show PackageNotFoundFailure;
+import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
+    show PackageNotFoundFailure;
 import 'package:flutter/foundation.dart';
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 
@@ -108,7 +110,8 @@ class PackageModel extends PackageEntity {
             .toList(),
         validityDays: (data['validityDays'] as num?)?.toInt() ?? 0,
         price: (data['price'] as num?)?.toDouble() ?? 0.0,
-        currency: data['currency'] as String? ?? 'EGP',
+        currency:
+            data['currency'] as String? ?? CurrencyConstants.defaultCurrency,
         discountPercentage: (data['discountPercentage'] as num?)?.toDouble(),
         packageType: packageType,
         // ⬇ Derived from packageType — never read from Firestore independently

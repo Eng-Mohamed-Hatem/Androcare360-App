@@ -39,10 +39,10 @@ import 'package:intl/intl.dart';
 class AdminPatientPackageContextView extends ConsumerWidget {
   /// Creates [AdminPatientPackageContextView].
   const AdminPatientPackageContextView({
-    super.key,
     required this.patientId,
     required this.patientPackageId,
     required this.package,
+    super.key,
   });
 
   /// User ID of the patient.
@@ -75,7 +75,7 @@ class AdminPatientPackageContextView extends ConsumerWidget {
           package: package,
           documents: documents,
           onUploadPressed: () {
-            // TODO: Show document upload bottom sheet
+            // TODO(Elajtech): Show document upload bottom sheet
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('فتح نافذة رفع المستندات'),
@@ -87,7 +87,7 @@ class AdminPatientPackageContextView extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Show document upload bottom sheet
+          // TODO(Elajtech): Show document upload bottom sheet
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('فتح نافذة رفع المستندات'),
@@ -143,10 +143,11 @@ class _ServiceUsageList extends StatelessWidget {
   const _ServiceUsageList({
     required this.package,
     required this.documents,
-    required VoidCallback onUploadPressed,
+    required this.onUploadPressed,
   });
   final PatientPackageEntity package;
   final List<PackageDocumentEntity> documents;
+  final VoidCallback onUploadPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +163,7 @@ class _ServiceUsageList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: serviceUsages.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final serviceUsage = serviceUsages[index];
         final serviceName = _getServiceName(serviceUsage.serviceId);
@@ -191,12 +192,12 @@ class _ServiceUsageList extends StatelessWidget {
   }
 
   String _getServiceName(String serviceId) {
-    // TODO: Map serviceId to actual service name
+    // TODO(Elajtech): Map serviceId to actual service name
     return 'خدمة #$serviceId';
   }
 
   int _getServiceQuantity(String serviceId) {
-    // TODO: Get quantity from package definition
+    // TODO(Elajtech): Get quantity from package definition
     return 1;
   }
 }
@@ -367,7 +368,7 @@ class _ServiceUsageCard extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: documents.length,
-                  separatorBuilder: (_, __) => const Divider(),
+                  separatorBuilder: (_, _) => const Divider(),
                   itemBuilder: (context, index) {
                     final doc = documents[index];
                     return _DocumentItem(doc: doc);

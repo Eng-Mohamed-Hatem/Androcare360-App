@@ -10,6 +10,7 @@
 /// **Spec**: tasks.md T038, spec.md §9.4.
 library;
 
+import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/core/network/connectivity_provider.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
@@ -165,7 +166,7 @@ class _PackageContent extends StatelessWidget {
                   children: [
                     Text('السعر', style: theme.textTheme.bodyMedium),
                     Text(
-                      '${package.price.toStringAsFixed(0)} ${package.currency}',
+                      '${package.price.toStringAsFixed(0)} ${CurrencyConstants.sarArabic}',
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary,

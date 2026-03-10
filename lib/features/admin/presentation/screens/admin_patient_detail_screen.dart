@@ -134,7 +134,7 @@ class AdminPatientDetailScreen extends ConsumerWidget {
                           ),
                         );
 
-                        if (confirmed == true) {
+                        if (confirmed ?? false) {
                           await ref
                               .read(adminProvider.notifier)
                               .setAccountStatus(
@@ -237,12 +237,12 @@ class _PackageSection extends StatelessWidget {
           );
         },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.card_giftcard,
@@ -262,8 +262,8 @@ class _PackageSection extends StatelessWidget {
                   Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
                 ],
               ),
-              const SizedBox(height: 12),
-              const Text(
+              SizedBox(height: 12),
+              Text(
                 'عرض جميع الباقات المشتراة وارفاق المستندات',
                 style: TextStyle(
                   fontSize: 12,

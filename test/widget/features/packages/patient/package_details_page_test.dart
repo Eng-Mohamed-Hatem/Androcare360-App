@@ -18,7 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 // ── Mock Notifier ────────────────────────────────────────────────────────────
 class MockPurchaseNotifier extends StateNotifier<PurchaseNotifierState>
     implements PurchasePackageNotifier {
-  MockPurchaseNotifier(super.state);
+  MockPurchaseNotifier(super._state);
 
   bool purchaseCalled = false;
   PackageEntity? purchasedPackage;
@@ -139,7 +139,7 @@ void main() {
 
         expect(find.text('باقة التفاصيل'), findsOneWidget);
         expect(find.text('تفاصيل كاملة هنا'), findsOneWidget);
-        expect(find.text('1500 EGP'), findsOneWidget);
+        expect(find.text('1500 ريال سعودي'), findsOneWidget);
 
         final buyButton = find.byKey(const Key('buy_button'));
         expect(buyButton, findsOneWidget);

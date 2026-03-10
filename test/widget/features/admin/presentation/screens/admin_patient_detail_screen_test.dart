@@ -13,16 +13,11 @@ void main() {
     email: 'ahmed@test.com',
     phoneNumber: '123456789',
     userType: UserType.patient,
-    isActive: true,
     createdAt: DateTime(2025),
   );
 
   Widget createSubject({required UserModel patient}) {
     return ProviderScope(
-      overrides: [
-        // We can override providers here if needed,
-        // but for basic UI check the default state is enough
-      ],
       child: MaterialApp(
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,

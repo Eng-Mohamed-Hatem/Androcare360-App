@@ -80,17 +80,16 @@ class AdminPackagesGridPage extends ConsumerWidget {
 }
 
 class _ClinicGridCard extends StatelessWidget {
-  final String clinicId;
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
   const _ClinicGridCard({
     required this.clinicId,
     required this.label,
     required this.icon,
     required this.onTap,
   });
+  final String clinicId;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +105,7 @@ class _ClinicGridCard extends StatelessWidget {
             Icon(icon, size: 48, color: Theme.of(context).primaryColor),
             const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 label,
                 textAlign: TextAlign.center,
