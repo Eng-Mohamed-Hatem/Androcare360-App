@@ -8,12 +8,14 @@ import 'dart:async' as _i5;
 import 'package:cloud_firestore/cloud_firestore.dart' as _i3;
 import 'package:dartz/dartz.dart' as _i2;
 import 'package:elajtech/core/error/failures.dart' as _i6;
+import 'package:elajtech/features/packages/domain/entities/package_service_item.dart'
+    as _i8;
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart'
     as _i7;
 import 'package:elajtech/features/packages/domain/repositories/patient_package_repository.dart'
     as _i4;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i8;
+import 'package:mockito/src/dummies.dart' as _i9;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -159,27 +161,39 @@ class MockPatientPackageRepository extends _i1.Mock
   _i5.Future<_i2.Either<_i6.Failure, String>> createPatientPackage({
     required String? patientId,
     required String? packageId,
+    required String? packageName,
     required String? clinicId,
     required _i7.PatientPackageStatus? status,
     required DateTime? purchaseDate,
     required DateTime? expiryDate,
     required int? totalServicesCount,
     required List<String>? servicesUsageInit,
+    required List<_i8.PackageServiceItem>? packageServices,
     required String? paymentTransactionId,
     required String? category,
+    required bool? isTestPurchase,
+    required String? description,
+    required String? shortDescription,
+    required int? validityDays,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#createPatientPackage, [], {
               #patientId: patientId,
               #packageId: packageId,
+              #packageName: packageName,
               #clinicId: clinicId,
               #status: status,
               #purchaseDate: purchaseDate,
               #expiryDate: expiryDate,
               #totalServicesCount: totalServicesCount,
               #servicesUsageInit: servicesUsageInit,
+              #packageServices: packageServices,
               #paymentTransactionId: paymentTransactionId,
               #category: category,
+              #isTestPurchase: isTestPurchase,
+              #description: description,
+              #shortDescription: shortDescription,
+              #validityDays: validityDays,
             }),
             returnValue: _i5.Future<_i2.Either<_i6.Failure, String>>.value(
               _FakeEither_0<_i6.Failure, String>(
@@ -187,14 +201,20 @@ class MockPatientPackageRepository extends _i1.Mock
                 Invocation.method(#createPatientPackage, [], {
                   #patientId: patientId,
                   #packageId: packageId,
+                  #packageName: packageName,
                   #clinicId: clinicId,
                   #status: status,
                   #purchaseDate: purchaseDate,
                   #expiryDate: expiryDate,
                   #totalServicesCount: totalServicesCount,
                   #servicesUsageInit: servicesUsageInit,
+                  #packageServices: packageServices,
                   #paymentTransactionId: paymentTransactionId,
                   #category: category,
+                  #isTestPurchase: isTestPurchase,
+                  #description: description,
+                  #shortDescription: shortDescription,
+                  #validityDays: validityDays,
                 }),
               ),
             ),
@@ -271,7 +291,7 @@ class MockDocumentSnapshot<T extends Object?> extends _i1.Mock
   String get id =>
       (super.noSuchMethod(
             Invocation.getter(#id),
-            returnValue: _i8.dummyValue<String>(this, Invocation.getter(#id)),
+            returnValue: _i9.dummyValue<String>(this, Invocation.getter(#id)),
           )
           as String);
 

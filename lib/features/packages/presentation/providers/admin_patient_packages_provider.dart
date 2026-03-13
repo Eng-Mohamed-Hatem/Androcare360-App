@@ -1,12 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
+import 'package:elajtech/features/packages/domain/repositories/package_document_repository.dart';
 import 'package:elajtech/features/packages/domain/repositories/patient_package_repository.dart';
 import 'package:elajtech/features/packages/domain/usecases/get_patient_packages_for_admin_usecase.dart';
 import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart';
 import 'package:elajtech/features/packages/domain/usecases/update_package_service_usage_usecase.dart';
-import 'package:elajtech/features/packages/data/models/package_document_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,7 +92,9 @@ class AdminPatientPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       (_) {
         state = const AsyncData(null);
         // Refresh the patient's packages list or document list if needed
-        ref.read(adminPatientPackagesProvider(patientId).notifier).refresh();
+        unawaited(
+          ref.read(adminPatientPackagesProvider(patientId).notifier).refresh(),
+        );
         return true;
       },
     );
@@ -120,7 +122,9 @@ class AdminPatientPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       (_) {
         state = const AsyncData(null);
         // Refresh the list to show updated progress
-        ref.read(adminPatientPackagesProvider(patientId).notifier).refresh();
+        unawaited(
+          ref.read(adminPatientPackagesProvider(patientId).notifier).refresh(),
+        );
         return true;
       },
     );
@@ -148,7 +152,9 @@ class AdminPatientPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       (_) {
         state = const AsyncData(null);
         // Refresh the list to reflect new notes
-        ref.read(adminPatientPackagesProvider(patientId).notifier).refresh();
+        unawaited(
+          ref.read(adminPatientPackagesProvider(patientId).notifier).refresh(),
+        );
         return true;
       },
     );
@@ -173,20 +179,10 @@ adminPackageDocumentsProvider =
       (ref, args) {
         final patientId = args.$1;
         final patientPackageId = args.$2;
-
-        return getIt<FirebaseFirestore>()
-            .collection('patients')
-            .doc(patientId)
-            .collection('packages')
-            .doc(patientPackageId)
-            .collection('documents')
-            .orderBy('uploadedAt', descending: true)
-            .snapshots()
-            .map((snapshot) {
-              return snapshot.docs
-                  .map(PackageDocumentModel.fromFirestore)
-                  .whereType<PackageDocumentModel>()
-                  .toList();
-            });
+        final repo = getIt<PackageDocumentRepository>();
+        return repo.streamDocumentsByPatientPackage(
+          patientId: patientId,
+          patientPackageId: patientPackageId,
+        );
       },
     );

@@ -14,6 +14,7 @@ library;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
+import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
     show PackageAlreadyActiveFailure;
@@ -83,14 +84,20 @@ abstract class PatientPackageRepository {
   Future<Either<Failure, String>> createPatientPackage({
     required String patientId,
     required String packageId,
+    required String packageName,
     required String clinicId,
     required PatientPackageStatus status,
     required DateTime purchaseDate,
     required DateTime expiryDate,
     required int totalServicesCount,
     required List<String> servicesUsageInit,
+    required List<PackageServiceItem> packageServices,
     required String paymentTransactionId,
     required String category,
+    required bool isTestPurchase,
+    required String description,
+    required String shortDescription,
+    required int validityDays,
   });
 
   /// Returns a paginated list of patient packages — admin-facing. Notes INCLUDED.

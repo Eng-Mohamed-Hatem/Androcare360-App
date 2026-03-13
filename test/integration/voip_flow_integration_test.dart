@@ -51,6 +51,19 @@ import '../helpers/integration_test_config.dart';
 void main() {
   // NOTE: This test is documented but cannot run in VM environment
   // It requires integration_test package and device/emulator
+  const runDeviceIntegration = bool.fromEnvironment(
+    'RUN_DEVICE_INTEGRATION_TESTS',
+  );
+  if (!runDeviceIntegration) {
+    group('VoIP Flow Integration Tests (Device/Emulator Required)', () {
+      test(
+        'skipped unless RUN_DEVICE_INTEGRATION_TESTS=true',
+        () {},
+        skip: 'Requires device/emulator and Firebase emulators',
+      );
+    });
+    return;
+  }
 
   group('VoIP Flow Integration Tests (Device/Emulator Required)', () {
     late FirebaseFirestore firestore;

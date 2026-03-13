@@ -8,17 +8,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-/// Admin- [x] T076 [US4] Refine admin patient packages providers
-/// - [x] T077 [US4] Refine Admin Patient Detail Integration
-/// - [/] T078 [US4] Refine `AdminPatientPackagesPage`
-class AdminPatientPackagesPage extends ConsumerWidget {
+/// Admin screen for viewing and filtering a patient's purchased packages.
+///
+/// **English**:
+/// Lists all packages for [patient] with:
+/// - Filter toggle to hide/show simulated test purchases (T015).
+/// - Visual indicators for test vs real records (T014).
+/// - Navigation to context-specific management page.
+///
+/// **Arabic**:
+/// شاشة الأدمن لعرض وتصفية باقات المريض.
+/// تتضمن مفتاح تبديل لإخفاء/إظهار العمليات التجريبية (T015).
+///
+/// **Usage / الاستخدام**:
+/// ```dart
+/// Navigator.push(context, MaterialPageRoute(
+///   builder: (_) => AdminPatientPackagesPage(patient: user),
+/// ));
+/// ```
+class AdminPatientPackagesPage extends ConsumerStatefulWidget {
   const AdminPatientPackagesPage({required this.patient, super.key});
 
   final UserModel patient;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(adminPatientPackagesProvider(patient.id));
+  ConsumerState<AdminPatientPackagesPage> createState() =>
+      _AdminPatientPackagesPageState();
+}
+
+class _AdminPatientPackagesPageState
+    extends ConsumerState<AdminPatientPackagesPage> {
+  bool _hideTestPurchases = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(adminPatientPackagesProvider(widget.patient.id));
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -26,25 +50,52 @@ class AdminPatientPackagesPage extends ConsumerWidget {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          title: Text('باقات ${patient.fullName}'),
+          title: Text('باقات ${widget.patient.fullName}'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                _hideTestPurchases ? Icons.visibility_off : Icons.visibility,
+              ),
+              tooltip: _hideTestPurchases
+                  ? 'إظهار العمليات التجريبية'
+                  : 'إخفاء العمليات التجريبية',
+              onPressed: () =>
+                  setState(() => _hideTestPurchases = !_hideTestPurchases),
+            ),
+          ],
         ),
         body: state.when(
           data: (packages) {
-            if (packages.isEmpty) {
-              return const Center(child: Text('لا توجد باقات لهذا المريض.'));
+            var filteredPackages = packages;
+            if (_hideTestPurchases) {
+              filteredPackages = packages
+                  .where((p) => !p.isTestPurchase)
+                  .toList();
+            }
+
+            if (filteredPackages.isEmpty) {
+              return Center(
+                child: Text(
+                  _hideTestPurchases
+                      ? 'لا توجد باقات حقيقية.'
+                      : 'لا توجد باقات لهذا المريض.',
+                ),
+              );
             }
 
             return RefreshIndicator(
               onRefresh: () async {
                 await ref
-                    .read(adminPatientPackagesProvider(patient.id).notifier)
+                    .read(
+                      adminPatientPackagesProvider(widget.patient.id).notifier,
+                    )
                     .refresh();
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: packages.length,
+                itemCount: filteredPackages.length,
                 itemBuilder: (context, index) {
-                  final pkg = packages[index];
+                  final pkg = filteredPackages[index];
                   final isExpired =
                       pkg.status == PatientPackageStatus.completed ||
                       pkg.expiryDate.isBefore(DateTime.now());
@@ -65,7 +116,7 @@ class AdminPatientPackagesPage extends ConsumerWidget {
                           context,
                           MaterialPageRoute<void>(
                             builder: (_) => AdminPatientPackageContextPage(
-                              patient: patient,
+                              patient: widget.patient,
                               patientPackage: pkg,
                             ),
                           ),
@@ -98,7 +149,9 @@ class AdminPatientPackagesPage extends ConsumerWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'باقة عيادة ${pkg.clinicId}',
+                                        pkg.packageName.isNotEmpty
+                                            ? pkg.packageName
+                                            : 'باقة عيادة ${pkg.clinicId}',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -137,6 +190,30 @@ class AdminPatientPackagesPage extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
+                                if (pkg.isTestPurchase) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Colors.blue.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'تجريبي',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -164,7 +241,11 @@ class AdminPatientPackagesPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => ref
-                      .read(adminPatientPackagesProvider(patient.id).notifier)
+                      .read(
+                        adminPatientPackagesProvider(
+                          widget.patient.id,
+                        ).notifier,
+                      )
                       .refresh(),
                   child: const Text('إعادة المحاولة'),
                 ),

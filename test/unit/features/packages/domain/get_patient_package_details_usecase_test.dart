@@ -31,6 +31,7 @@ void main() {
     id: patientPackageId,
     patientId: patientId,
     packageId: 'pkg_001',
+    packageName: 'Test Package',
     clinicId: 'andrology',
     category: PackageCategory.andrologyInfertilityProstate,
     status: PatientPackageStatus.active,

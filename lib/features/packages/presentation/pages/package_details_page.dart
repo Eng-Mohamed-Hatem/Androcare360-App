@@ -3,20 +3,27 @@
 /// تعرض هذه الشاشة تفاصيل باقة سريرية كاملة وتُتيح للمريض شراءها.
 /// تستمع إلى [packageDetailsProvider] و[purchasePackageProvider] و[connectivityProvider].
 ///
-/// **English**: Full package details screen with purchase flow.
+/// **English**: Full package details screen with purchase flow integration.
 /// Watches [packageDetailsProvider], [purchasePackageProvider], and
 /// [connectivityProvider] to drive button state and offline messaging.
+/// Automatically handles simulated test purchases (T010).
 ///
-/// **Spec**: tasks.md T038, spec.md §9.4.
+/// **Arabic**: شاشة تفاصيل الباقة مع دمج تدفق عملية الشراء.
+/// تراقب الحالة لإدارة زر الشراء وحالة عدم الاتصال، وتدعم الشراء التجريبي (T010).
+///
+/// **Spec**: tasks.md T038, spec.md §9.4, tasks.md T010.
 library;
 
+import 'dart:async';
 import 'package:elajtech/core/constants/currency_constants.dart';
 import 'package:elajtech/core/network/connectivity_provider.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
     show ClinicUnavailableFailure;
+import 'package:elajtech/features/packages/presentation/pages/my_packages_page.dart';
 import 'package:elajtech/features/packages/presentation/providers/packages_provider.dart';
+import 'package:elajtech/features/packages/presentation/widgets/simulated_purchase_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -57,6 +64,17 @@ class PackageDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Listen for successful purchase to navigate
+    ref.listen(purchasePackageProvider, (previous, next) {
+      if (next.purchaseState == PurchaseState.success) {
+        unawaited(
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(builder: (_) => const MyPackagesPage()),
+          ),
+        );
+      }
+    });
+
     final packageAsync = ref.watch(
       packageDetailsProvider((clinicId, packageId)),
     );
@@ -74,12 +92,25 @@ class PackageDetailsPage extends ConsumerWidget {
           package: package,
           isOnline: isOnline,
           purchaseNotifierState: purchaseState,
-          onPurchase: () =>
-              ref.read(purchasePackageProvider.notifier).purchase(package),
+          onPurchase: () async {
+            final confirmed = await SimulatedPurchaseDialog.show(context);
+            if (confirmed ?? false) {
+              await ref
+                  .read(purchasePackageProvider.notifier)
+                  .purchase(package);
+            }
+          },
         ),
       ),
       bottomNavigationBar: packageAsync.whenOrNull(
-        data: (package) => PackageDetailsBuyButton(package: package),
+        data: (package) {
+          final isPurchased = ref.watch(isPackagePurchasedProvider(package.id));
+
+          return PackageDetailsBuyButton(
+            package: package,
+            isPurchased: isPurchased,
+          );
+        },
       ),
     );
   }
@@ -202,7 +233,9 @@ class _PackageContent extends StatelessWidget {
           const SizedBox(height: 8),
           _InfoCard(
             child: Column(
-              children: package.services.map(_buildServiceRow).toList(),
+              children: package.services
+                  .map((s) => _buildServiceRow(context, s))
+                  .toList(),
             ),
           ),
 
@@ -273,22 +306,43 @@ class _PackageContent extends StatelessWidget {
     );
   }
 
-  Widget _buildServiceRow(PackageServiceItem service) {
+  /// Renders a single service included in the package.
+  ///
+  /// **Arabic**: مكوِّن يعرض خدمة واحدة مشمولة في الباقة.
+  Widget _buildServiceRow(BuildContext context, PackageServiceItem service) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(_serviceIcon(service.serviceType), size: 18, color: Colors.blue),
-          const SizedBox(width: 8),
-          Expanded(child: Text(service.displayName)),
-          if (service.quantity > 1)
-            Text(
-              '× ${service.quantity}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
-              ),
+          Icon(
+            _serviceIcon(service.serviceType),
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  service.displayName,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (service.quantity > 0)
+                  Text(
+                    'مرات الاستخدام: ${service.quantity}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
@@ -316,11 +370,18 @@ class _PackageContent extends StatelessWidget {
 ///
 /// ودجت زر الشراء السفلي مع المعالجة الكاملة للحالات.
 class PackageDetailsBuyButton extends ConsumerWidget {
-  /// Creates a buy button for [package].
-  const PackageDetailsBuyButton({required this.package, super.key});
+  /// Creates a [PackageDetailsBuyButton].
+  const PackageDetailsBuyButton({
+    required this.package,
+    this.isPurchased = false,
+    super.key,
+  });
 
   /// The package to purchase.
   final PackageEntity package;
+
+  /// Whether the package is already purchased.
+  final bool isPurchased;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -330,24 +391,41 @@ class PackageDetailsBuyButton extends ConsumerWidget {
     // Button label
     final label = switch (ps) {
       PurchaseState.success || PurchaseState.alreadyPurchased => 'عرض الباقة',
-      _ => 'اشترِ الآن',
+      _ => isPurchased ? 'عرض الباقة' : 'اشترِ الآن',
     };
 
     final isLoading = ps == PurchaseState.loading;
-    final isEnabled =
-        isOnline &&
-        !isLoading &&
-        ps != PurchaseState.success &&
-        ps != PurchaseState.alreadyPurchased;
+    final isAlreadyOwned =
+        isPurchased ||
+        ps == PurchaseState.success ||
+        ps == PurchaseState.alreadyPurchased;
+
+    final isEnabled = isOnline && !isLoading;
 
     Widget button = FilledButton.icon(
       key: const Key('buy_button'),
       onPressed: isEnabled
-          ? () => ref
-                .read(purchasePackageProvider.notifier)
-                .purchase(
-                  package,
-                )
+          ? () async {
+              if (isAlreadyOwned) {
+                // Navigate to My Packages
+                unawaited(
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MyPackagesPage(),
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              final confirmed = await SimulatedPurchaseDialog.show(context);
+              if (confirmed ?? false) {
+                await ref
+                    .read(purchasePackageProvider.notifier)
+                    .purchase(package);
+              }
+            }
           : null,
       icon: isLoading
           ? const SizedBox(
@@ -359,8 +437,7 @@ class PackageDetailsBuyButton extends ConsumerWidget {
               ),
             )
           : Icon(
-              ps == PurchaseState.success ||
-                      ps == PurchaseState.alreadyPurchased
+              isAlreadyOwned
                   ? Icons.inventory_2_outlined
                   : Icons.shopping_cart_outlined,
             ),

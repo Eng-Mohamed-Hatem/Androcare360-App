@@ -35,6 +35,19 @@ abstract class PackageDocumentRepository {
     required String patientPackageId,
   });
 
+  /// Streams all documents linked to [patientPackageId] for [patientId].
+  ///
+  /// **English**: Realtime stream used by admin/patient detail screens.
+  /// Emits latest-first by upload date from the canonical package documents
+  /// subcollection.
+  ///
+  /// **Arabic**: تدفق لحظي لمستندات الباقة يُستخدم في شاشات التفاصيل
+  /// للأدمن والمريض، ويرجع العناصر الأحدث أولًا.
+  Stream<List<PackageDocumentEntity>> streamDocumentsByPatientPackage({
+    required String patientId,
+    required String patientPackageId,
+  });
+
   /// Uploads a document file and creates a Firestore metadata record.
   ///
   /// **English**: Storage path: `packageDocuments/{clinicId}/{patientId}/

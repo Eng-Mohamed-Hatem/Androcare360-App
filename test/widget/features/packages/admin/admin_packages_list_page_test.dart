@@ -22,13 +22,13 @@ void main() {
     id: 'pkg1',
     clinicId: 'andrology',
     category: PackageCategory.andrologyInfertilityProstate,
-    name: 'باقة نشطة',
-    shortDescription: 'وصف',
+    name: '???? ????',
+    shortDescription: '???',
     services: const [
       PackageServiceItem(
         serviceId: 's1',
         serviceType: ServiceType.visit,
-        displayName: 'كشف',
+        displayName: '???',
       ),
     ],
     validityDays: 30,
@@ -48,13 +48,13 @@ void main() {
     id: 'pkg2',
     clinicId: 'andrology',
     category: PackageCategory.andrologyInfertilityProstate,
-    name: 'باقة غير نشطة',
-    shortDescription: 'وصف',
+    name: '???? ??? ????',
+    shortDescription: '???',
     services: const [
       PackageServiceItem(
         serviceId: 's1',
         serviceType: ServiceType.visit,
-        displayName: 'كشف',
+        displayName: '???',
       ),
     ],
     validityDays: 30,
@@ -96,7 +96,7 @@ void main() {
       await tester.pumpWidget(createSubject(() async => []));
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد باقات'), findsOneWidget);
+      expect(find.text('?? ???? ?????'), findsOneWidget);
     });
 
     testWidgets('shows error state', (tester) async {
@@ -118,36 +118,35 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Default tab is "النشطة" (Active)
-        expect(find.text('باقة نشطة'), findsOneWidget);
-        expect(
-          find.text('باقة غير نشطة'),
-          findsNothing,
-        ); // not visible in active tab
+        expect(find.text('???? ????'), findsOneWidget);
+        expect(find.text('???? ??? ????'), findsNothing);
 
-        // Switch to "غير النشطة / المخفية" tab
-        await tester.tap(find.text('غير النشطة / المخفية'));
+        await tester.tap(find.text('??? ?????? / ???????'));
         await tester.pumpAndSettle();
 
-        expect(find.text('باقة غير نشطة'), findsOneWidget);
-        expect(find.text('باقة نشطة'), findsNothing);
+        expect(find.text('???? ??? ????'), findsOneWidget);
+        expect(find.text('???? ????'), findsNothing);
       },
     );
 
-    testWidgets('shows actions and can trigger duplicate dialog', (
-      tester,
-    ) async {
+    testWidgets('shows actions and can trigger duplicate dialog', (tester) async {
       await tester.pumpWidget(createSubject(() async => [dummyPackageActive]));
       await tester.pumpAndSettle();
 
-      // Find "نسخ" button
-      expect(find.text('نسخ'), findsOneWidget);
-      await tester.tap(find.text('نسخ'));
+      expect(find.text('???'), findsOneWidget);
+      await tester.tap(find.text('???'));
       await tester.pumpAndSettle();
 
-      // Dialog should appear
-      expect(find.text('نسخ الباقة'), findsOneWidget);
-      expect(find.textContaining('نعم، انسخ'), findsOneWidget);
+      expect(find.text('??? ??????'), findsOneWidget);
+      expect(find.textContaining('???? ????'), findsOneWidget);
+    });
+
+    testWidgets('keeps bottom-safe padding for package list', (tester) async {
+      await tester.pumpWidget(createSubject(() async => [dummyPackageActive]));
+      await tester.pumpAndSettle();
+
+      final listView = tester.widget<ListView>(find.byType(ListView).first);
+      expect(listView.padding, const EdgeInsets.fromLTRB(16, 16, 16, 120));
     });
   });
 }

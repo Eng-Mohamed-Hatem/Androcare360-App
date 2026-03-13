@@ -51,6 +51,21 @@ service cloud.firestore {
                .hasAny(adminOnly);
     }
 
+    /// ✅ تحقق من أن العملية هي شراء تجريبي
+    /// Verify the operation is a test purchase
+    function isTestPurchase() {
+      return request.resource.data.get('isTestPurchase', false) == true;
+    }
+
+    /// ✅ تحقق من صحة البيانات المسجلة للباقة
+    /// Ensure all required fields are present and valid for a package purchase
+    function isValidPackageCreate() {
+      return request.resource.data.keys().hasAll([
+        'patientId', 'packageId', 'clinicId', 'status', 
+        'purchaseDate', 'expiryDate', 'totalServicesCount', 'isTestPurchase'
+      ]) && request.resource.data.status == 'active';
+    }
+
     // -- Users Collection --
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -311,24 +326,23 @@ service cloud.firestore {
         // Admin / doctor: full read and write
         allow read, write: if isAuthenticated() && (isAdmin() || isDoctor());
 
-        // Patient cannot directly create or update package records
-        // (PurchasePackageUseCase runs server-side / via Cloud Function)
-        allow create, update, delete: if false;
-      }
+        // ✅ Allow patients to create test purchase records
+        allow create: if isAuthenticated() 
+          && request.auth.uid == patientId 
+          && isTestPurchase() 
+          && isValidPackageCreate();
 
-      // ─────────────────────────────────────────────────────────────────────
-      // PACKAGE DOCUMENTS — patients/{patientId}/packageDocuments/{documentId}
-      // Same isolation as packages: patient read-only, admin/doctor write.
-      // ─────────────────────────────────────────────────────────────────────
-      match /packageDocuments/{documentId} {
-        // Patient: read-only, own documents only
-        allow read: if isAuthenticated() && request.auth.uid == patientId;
+        allow update, delete: if false;
 
-        // Admin / doctor: full access (upload, update, read)
-        allow read, write: if isAuthenticated() && (isAdmin() || isDoctor());
-
-        // Patient cannot upload or delete documents directly
-        allow create, update, delete: if false;
+        // ───────────────────────────────────────────────────────────────────
+        // PACKAGE DOCUMENTS — subcollection under a specific patient package
+        // ───────────────────────────────────────────────────────────────────
+        match /documents/{documentId} {
+          // Patient can read own package documents. Admin can read/write.
+          allow read: if isAuthenticated() &&
+            (request.auth.uid == patientId || isAdmin());
+          allow create, update, delete: if isAuthenticated() && isAdmin();
+        }
       }
     }
 

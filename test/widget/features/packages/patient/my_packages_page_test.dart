@@ -44,6 +44,7 @@ void main() {
       id: id,
       patientId: 'uid_001',
       packageId: 'pkg_001',
+      packageName: 'باقة تجريبية',
       clinicId: 'andrology',
       category: PackageCategory.chronicDiseases,
       status: status,

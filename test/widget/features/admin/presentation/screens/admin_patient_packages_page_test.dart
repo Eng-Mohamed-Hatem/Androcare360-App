@@ -44,6 +44,7 @@ void main() {
     id: 'pp_1',
     patientId: 'patient_1',
     packageId: 'pkg_1',
+    packageName: 'باقة تجريبية',
     clinicId: 'andrology',
     category: PackageCategory.andrologyInfertilityProstate,
     status: PatientPackageStatus.active,
@@ -103,7 +104,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Card), findsAtLeastNWidgets(1));
-      expect(find.textContaining('andrology'), findsOneWidget);
+      expect(find.text('باقة تجريبية'), findsOneWidget);
     });
   });
 }

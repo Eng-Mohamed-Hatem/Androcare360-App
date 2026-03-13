@@ -35,6 +35,7 @@ class PatientPackageModel extends PatientPackageEntity {
     required super.id,
     required super.patientId,
     required super.packageId,
+    required super.packageName,
     required super.clinicId,
     required super.category,
     required super.status,
@@ -44,9 +45,14 @@ class PatientPackageModel extends PatientPackageEntity {
     required super.usedServicesCount,
     required super.createdAt,
     required super.updatedAt,
+    super.isTestPurchase,
     super.servicesUsage,
+    super.packageServices,
     super.paymentTransactionId,
     super.notes,
+    super.description,
+    super.shortDescription,
+    super.validityDays,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -78,22 +84,27 @@ class PatientPackageModel extends PatientPackageEntity {
 
     try {
       final usageRaw = data['servicesUsage'] as List<dynamic>? ?? [];
+      final servicesRaw = data['packageServices'] as List<dynamic>? ?? [];
+      final clinicId = (data['clinicId'] as String?) ?? 'general';
+      final patientId = (data['patientId'] as String?) ??
+          snapshot.reference.parent.parent!.id;
+      final packageName =
+          (data['packageName'] as String?) ?? 'باقة عيادة $clinicId';
 
       return PatientPackageModel(
         id: snapshot.id,
-        patientId: data['patientId'] as String? ?? '',
-        packageId: data['packageId'] as String? ?? '',
-        clinicId: data['clinicId'] as String? ?? '',
+        patientId: patientId,
+        packageId: data['packageId'] as String,
+        packageName: packageName,
+        clinicId: clinicId,
         category: PackageCategory.fromString(
           data['category'] as String? ?? '',
         ),
         status: PatientPackageStatus.fromString(
           data['status'] as String? ?? '',
         ),
-        purchaseDate:
-            (data['purchaseDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        expiryDate:
-            (data['expiryDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        purchaseDate: _parseDate(data['purchaseDate']),
+        expiryDate: _parseDate(data['expiryDate']),
         totalServicesCount: (data['totalServicesCount'] as num?)?.toInt() ?? 0,
         usedServicesCount: (data['usedServicesCount'] as num?)?.toInt() ?? 0,
         servicesUsage: usageRaw
@@ -101,13 +112,21 @@ class PatientPackageModel extends PatientPackageEntity {
               (e) => ServiceUsageItem.fromMap(e as Map<String, dynamic>),
             )
             .toList(),
+        packageServices: servicesRaw
+            .map(
+              (e) => PackageServiceItem.fromMap(e as Map<String, dynamic>),
+            )
+            .toList(),
+        // Flag for simulated test purchases (T004)
+        isTestPurchase: data['isTestPurchase'] as bool? ?? false,
         paymentTransactionId: data['paymentTransactionId'] as String?,
         // R2: only include notes when explicitly requested (admin view)
         notes: includeNotes ? data['notes'] as String? : null,
-        createdAt:
-            (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        updatedAt:
-            (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        description: data['description'] as String? ?? '',
+        shortDescription: data['shortDescription'] as String? ?? '',
+        validityDays: (data['validityDays'] as num?)?.toInt() ?? 0,
+        createdAt: _parseDate(data['createdAt']),
+        updatedAt: _parseDate(data['updatedAt']),
       );
     } catch (e, st) {
       if (kDebugMode) {
@@ -123,6 +142,13 @@ class PatientPackageModel extends PatientPackageEntity {
   // ─────────────────────────────────────────────────────────────────────────
   // Public factories — R2 enforcement
   // ─────────────────────────────────────────────────────────────────────────
+
+  /// Robust date parser handling both Timestamp and ISO String.
+  static DateTime _parseDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
+  }
 
   /// Creates a patient-facing model — notes is ALWAYS null (R2).
   ///
@@ -157,10 +183,15 @@ class PatientPackageModel extends PatientPackageEntity {
     'expiryDate': Timestamp.fromDate(expiryDate),
     'totalServicesCount': totalServicesCount,
     'usedServicesCount': usedServicesCount,
+    'isTestPurchase': isTestPurchase,
     'servicesUsage': servicesUsage.map((u) => u.toMap()).toList(),
+    'packageServices': packageServices.map((s) => s.toMap()).toList(),
     if (paymentTransactionId != null)
       'paymentTransactionId': paymentTransactionId,
     if (notes != null) 'notes': notes,
+    'description': description,
+    'shortDescription': shortDescription,
+    'validityDays': validityDays,
     'createdAt': FieldValue.serverTimestamp(),
     'updatedAt': FieldValue.serverTimestamp(),
   };

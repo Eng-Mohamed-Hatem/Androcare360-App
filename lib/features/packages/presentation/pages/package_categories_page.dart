@@ -86,7 +86,7 @@ class PackageCategoriesPage extends StatelessWidget {
         centerTitle: true,
       ),
       body: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         itemCount: _categories.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {

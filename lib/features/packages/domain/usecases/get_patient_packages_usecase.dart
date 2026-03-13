@@ -97,10 +97,11 @@ class GetPatientPackagesUseCase {
         : entity.status;
 
     // R2: notes is always null in patient-facing entities.
-    return PatientPackageEntity.forPatient(
+    return PatientPackageEntity(
       id: entity.id,
       patientId: entity.patientId,
       packageId: entity.packageId,
+      packageName: entity.packageName,
       clinicId: entity.clinicId,
       category: entity.category,
       status: newStatus,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/features/packages/data/constants/clinic_ids.dart';
 import 'package:elajtech/features/packages/data/repositories/clinic_package_repository_impl.dart';
@@ -97,7 +98,7 @@ class AdminPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       },
       (id) {
         state = const AsyncData(null);
-        ref.read(adminPackagesListProvider.notifier).refresh();
+        unawaited(ref.read(adminPackagesListProvider.notifier).refresh());
         return true;
       },
     );
@@ -116,7 +117,7 @@ class AdminPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       },
       (_) {
         state = const AsyncData(null);
-        ref.read(adminPackagesListProvider.notifier).refresh();
+        unawaited(ref.read(adminPackagesListProvider.notifier).refresh());
         return true;
       },
     );
@@ -144,7 +145,7 @@ class AdminPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       },
       (_) {
         state = const AsyncData(null);
-        ref.read(adminPackagesListProvider.notifier).refresh();
+        unawaited(ref.read(adminPackagesListProvider.notifier).refresh());
         return true;
       },
     );
@@ -170,7 +171,7 @@ class AdminPackageWriteNotifier extends Notifier<AsyncValue<void>> {
       },
       (newId) {
         state = const AsyncData(null);
-        ref.read(adminPackagesListProvider.notifier).refresh();
+        unawaited(ref.read(adminPackagesListProvider.notifier).refresh());
         return true;
       },
     );

@@ -11,8 +11,9 @@
 ///
 /// **R2 (Enforcement)**: No `notes` field is displayed or accessed anywhere.
 /// **RTL**: All layout inherits global RTL; `PackageProgressWidget` handles LTR.
+/// Supports visual distinction for test purchases (T005).
 ///
-/// **Spec**: tasks.md T048, spec.md §4.2, §9.4, §9.14.
+/// **Spec**: tasks.md T048, spec.md §4.2, §9.4, §9.14, tasks.md T005.
 library;
 
 import 'package:elajtech/core/constants/app_colors.dart';
@@ -81,7 +82,7 @@ class MyPackagesPage extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: packages.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, index) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final pkg = packages[index];
                 return _PatientPackageCard(
@@ -163,6 +164,30 @@ class _PatientPackageCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  if (package.isTestPurchase) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Text(
+                        'شراء تجريبي',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Flexible(
                     child: PackageStatusBadge(status: package.status),
                   ),
@@ -170,9 +195,11 @@ class _PatientPackageCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // Package ID (acts as title; replace with name when available)
+              // Package Name
               Text(
-                'باقة: ${package.packageId}',
+                package.packageName.isNotEmpty
+                    ? package.packageName
+                    : 'باقة: ${package.packageId}',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),

@@ -14,8 +14,8 @@ library;
 
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
-import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
+import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:elajtech/features/packages/domain/usecases/get_patient_package_details_usecase.dart';
 import 'package:elajtech/features/packages/presentation/providers/my_packages_provider.dart';
 import 'package:elajtech/features/packages/presentation/widgets/package_document_card.dart';
@@ -56,10 +56,20 @@ class MyPackagesDetailPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تفاصيل الباقة')),
+      appBar: AppBar(
+        title: detailAsync.when(
+          data: (details) => Text(
+            details.entity.packageName.isNotEmpty
+                ? details.entity.packageName
+                : 'تفاصيل الباقة',
+          ),
+          loading: () => const Text('جاري التحميل...'),
+          error: (error, stackTrace) => const Text('خطأ'),
+        ),
+      ),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _DetailErrorState(
+        error: (error, stackTrace) => _DetailErrorState(
           message: error.toString().replaceAll('Exception: ', ''),
           onRetry: () => ref.invalidate(
             patientPackageDetailProvider(patientPackageId),
@@ -127,7 +137,9 @@ class _DetailBody extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'باقة: ${entity.packageId}',
+                    entity.packageName.isNotEmpty
+                        ? entity.packageName
+                        : 'باقة: ${entity.packageId}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -158,20 +170,81 @@ class _DetailBody extends StatelessWidget {
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          // ── Package Info (New) ─────────────────────────────────────────────
+          if (entity.description.isNotEmpty || entity.validityDays > 0)
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'معلومات الباقة',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (entity.description.isNotEmpty) ...[
+                      Text(
+                        entity.description,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondaryLight,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (entity.validityDays > 0)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'مدة الصلاحية: ${entity.validityDays} يومًا',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
           const SizedBox(height: 20),
 
           // ── Services usage rows ────────────────────────────────────────────
-          if (entity.servicesUsage.isNotEmpty) ...[
+          if (entity.packageServices.isNotEmpty ||
+              entity.servicesUsage.isNotEmpty) ...[
             Text(
-              'الخدمات المشمولة',
+              'Included Services',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
-            ...entity.servicesUsage.map(
-              (usage) => _ServiceUsageRow(usage: usage, entity: entity),
-            ),
+            ..._buildServiceUsageRows(entity),
             const SizedBox(height: 20),
           ],
 
@@ -191,6 +264,44 @@ class _DetailBody extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildServiceUsageRows(PatientPackageEntity entity) {
+    final usageByServiceId = <String, ServiceUsageItem>{
+      for (final usage in entity.servicesUsage) usage.serviceId: usage,
+    };
+
+    final renderedServiceIds = <String>{};
+    final rows = <Widget>[];
+
+    for (final service in entity.packageServices) {
+      final usage = usageByServiceId[service.serviceId];
+      renderedServiceIds.add(service.serviceId);
+
+      rows.add(
+        _ServiceUsageRow(
+          displayName: service.displayName,
+          used: usage?.usedCount ?? 0,
+          total: service.quantity,
+        ),
+      );
+    }
+
+    for (final usage in entity.servicesUsage) {
+      if (renderedServiceIds.contains(usage.serviceId)) {
+        continue;
+      }
+
+      rows.add(
+        _ServiceUsageRow(
+          displayName: 'خدمة غير معروفة',
+          used: usage.usedCount,
+          total: 0,
+        ),
+      );
+    }
+
+    return rows;
   }
 }
 
@@ -232,50 +343,72 @@ class _DateRow extends StatelessWidget {
 
 class _ServiceUsageRow extends StatelessWidget {
   const _ServiceUsageRow({
-    required this.usage,
-    required this.entity,
+    required this.displayName,
+    required this.used,
+    required this.total,
   });
 
-  final ServiceUsageItem usage;
-  final PatientPackageEntity entity;
+  final String displayName;
+  final int used;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // Calculate progress percentage for safety
+    final progress = total > 0 ? (used / total).clamp(0.0, 1.0) : 0.0;
+    final isFull = used >= total && total > 0;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.check_circle_outline,
-            size: 18,
-            color: AppColors.primary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              usage.serviceId,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: Text(
-              '${usage.usedCount} / ${_quantityForService(usage.serviceId)}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+          Row(
+            children: [
+              Icon(
+                isFull ? Icons.check_circle : Icons.radio_button_unchecked,
+                size: 18,
+                color: isFull ? Colors.green : AppColors.primary,
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  displayName,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  '$used / $total',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isFull ? Colors.green : AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.grey.withValues(alpha: 0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isFull ? Colors.green : AppColors.primary,
+              ),
+              minHeight: 6,
             ),
           ),
+          const SizedBox(height: 4),
         ],
       ),
     );
-  }
-
-  /// Returns the total quantity of a service within the entity's servicesUsage.
-  int _quantityForService(String serviceId) {
-    return entity.servicesUsage.where((u) => u.serviceId == serviceId).length;
   }
 }
 
@@ -363,9 +496,9 @@ class _DetailErrorState extends StatelessWidget {
 // Full-screen document viewer wrapper — used when tapping a document card
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Opens a document in full-screen based on its [fileUrl].
+/// Opens a document in full-screen based on its `fileUrl`.
 ///
-/// **English**: Simple webview-less viewer — opens URL via [url_launcher].
+/// **English**: Simple webview-less viewer — opens URL via url_launcher.
 /// For a richer in-app viewer (PDF/image), integrate a dedicated package later.
 ///
 /// **Arabic**: فتح المستند خارجيًا (عبر url_launcher). يمكن توسيعه لاحقًا.

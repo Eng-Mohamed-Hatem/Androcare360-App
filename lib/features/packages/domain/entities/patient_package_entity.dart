@@ -6,13 +6,13 @@
 /// **English**: Domain entity for a patient's package purchase record.
 /// Pure Dart — no Firebase or Flutter imports. Immutable.
 ///
-/// ⚠️ **R2 (Application-layer notes isolation)**: The [notes] field is included
+/// ⚠️ **R2 (Application-layer notes isolation)**: The `notes` field is included
 /// in this entity but must be `null` in any result returned to patient-facing
 /// screens. Enforcement is at the **repository / model layer**, not Firestore
-/// rules. Admin-facing methods populate [notes]; patient-facing methods set it
+/// rules. Admin-facing methods populate `notes`; patient-facing methods set it
 /// to null unconditionally.
 ///
-/// ⚠️ **R3 (Atomicity)**: All writes to [servicesUsage] and [usedServicesCount]
+/// ⚠️ **R3 (Atomicity)**: All writes to `servicesUsage` and `usedServicesCount`
 /// must use Firestore Transactions to prevent lost updates.
 ///
 /// **Spec**: data-model.md §4.1, spec.md §7.4, §7.5, §7.8.
@@ -110,6 +110,7 @@ class PatientPackageEntity {
     required this.id,
     required this.patientId,
     required this.packageId,
+    required this.packageName,
     required this.clinicId,
     required this.category,
     required this.status,
@@ -119,18 +120,24 @@ class PatientPackageEntity {
     required this.usedServicesCount,
     required this.createdAt,
     required this.updatedAt,
+    this.isTestPurchase = false,
     this.servicesUsage = const [],
+    this.packageServices = const [],
     this.paymentTransactionId,
     this.notes,
+    this.description = '',
+    this.shortDescription = '',
+    this.validityDays = 0,
   });
 
   /// Creates a patient-facing variant where [notes] is always null (R2).
   ///
   /// إنشاء نسخة للمريض حيث حقل [notes] دائمًا null (R2).
-  factory PatientPackageEntity.forPatient({
+  factory PatientPackageEntity.fromFirestoreForPatient({
     required String id,
     required String patientId,
     required String packageId,
+    required String packageName,
     required String clinicId,
     required PackageCategory category,
     required PatientPackageStatus status,
@@ -140,13 +147,19 @@ class PatientPackageEntity {
     required int usedServicesCount,
     required DateTime createdAt,
     required DateTime updatedAt,
+    bool isTestPurchase = false,
     List<ServiceUsageItem> servicesUsage = const [],
+    List<PackageServiceItem> packageServices = const [],
     String? paymentTransactionId,
+    String description = '',
+    String shortDescription = '',
+    int validityDays = 0,
   }) {
     return PatientPackageEntity(
       id: id,
       patientId: patientId,
       packageId: packageId,
+      packageName: packageName,
       clinicId: clinicId,
       category: category,
       status: status,
@@ -156,8 +169,13 @@ class PatientPackageEntity {
       usedServicesCount: usedServicesCount,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      isTestPurchase: isTestPurchase,
       servicesUsage: servicesUsage,
+      packageServices: packageServices,
       paymentTransactionId: paymentTransactionId,
+      description: description,
+      shortDescription: shortDescription,
+      validityDays: validityDays,
     );
   }
 
@@ -174,6 +192,11 @@ class PatientPackageEntity {
 
   /// Owning clinic — معرف العيادة.
   final String clinicId;
+
+  /// The name of the package purchased.
+  /// **English**: Normalized name from the original package entity.
+  /// **Arabic**: اسم الباقة التي تم شراؤها.
+  final String packageName;
 
   // ── Classification ─────────────────────────────────────────────────────────
 
@@ -203,6 +226,17 @@ class PatientPackageEntity {
   /// ⚠️ Writes require Firestore Transaction (R3).
   final List<ServiceUsageItem> servicesUsage;
 
+  /// Full list of service definitions included in this package at purchase time.
+  /// **English**: Preserves names and max quantities historically.
+  /// **Arabic**: قائمة كاملة بتعريفات الخدمات المضمنة في هذه الباقة وقت الشراء.
+  final List<PackageServiceItem> packageServices;
+
+  // ── Testing ────────────────────────────────────────────────────────────────
+
+  /// Whether this is a simulated test purchase (stub) — هل هذا شراء تجريبي.
+  /// Defaults to `false`.
+  final bool isTestPurchase;
+
   // ── Payment ────────────────────────────────────────────────────────────────
 
   /// Payment gateway transaction ID — mandatory when status = ACTIVE.
@@ -214,6 +248,19 @@ class PatientPackageEntity {
   /// Internal admin/doctor notes — ملاحظات داخلية للأدمن/الطبيب فقط.
   /// ⚠️ R2: Must be null for all patient-facing entity instances.
   final String? notes;
+
+  /// Full package description snapped at purchase time.
+  /// **Arabic**: وصف الباقة الكامل كما كان وقت الشراء.
+  /// **Usage**: `Text(entity.description)`
+  final String description;
+
+  /// Short package summary snapped at purchase time.
+  /// **Arabic**: ملخص الباقة القصير كما كان وقت الشراء.
+  final String shortDescription;
+
+  /// Number of days this package remains valid from [purchaseDate].
+  /// **Arabic**: عدد أيام صلاحية الباقة من تاريخ الشراء.
+  final int validityDays;
 
   // ── Audit ──────────────────────────────────────────────────────────────────
 
@@ -242,5 +289,5 @@ class PatientPackageEntity {
   @override
   String toString() =>
       'PatientPackageEntity(id: $id, patientId: $patientId, '
-      'packageId: $packageId, status: ${status.value})';
+      'packageId: $packageId, packageName: $packageName, status: ${status.value})';
 }

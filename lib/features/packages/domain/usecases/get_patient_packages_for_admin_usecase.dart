@@ -60,6 +60,7 @@ class GetPatientPackagesForAdminUseCase {
             id: entity.id,
             patientId: entity.patientId,
             packageId: entity.packageId,
+            packageName: entity.packageName,
             clinicId: entity.clinicId,
             category: entity.category,
             status: PatientPackageStatus.expired,

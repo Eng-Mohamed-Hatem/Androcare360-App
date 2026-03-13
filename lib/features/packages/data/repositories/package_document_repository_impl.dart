@@ -54,6 +54,24 @@ class PackageDocumentRepositoryImpl implements PackageDocumentRepository {
   final _uuid = const Uuid();
 
   @override
+  Stream<List<PackageDocumentEntity>> streamDocumentsByPatientPackage({
+    required String patientId,
+    required String patientPackageId,
+  }) {
+    return _firestoreDatasource
+        .streamDocumentsByPatientPackage(
+          patientId: patientId,
+          patientPackageId: patientPackageId,
+        )
+        .map(
+          (snapshot) => snapshot.docs
+              .map(PackageDocumentModel.fromFirestore)
+              .whereType<PackageDocumentModel>()
+              .toList(),
+        );
+  }
+
+  @override
   Future<Either<Failure, List<PackageDocumentEntity>>>
   getDocumentsByPatientPackage({
     required String patientId,
@@ -164,6 +182,8 @@ class PackageDocumentRepositoryImpl implements PackageDocumentRepository {
 
           final ref = await _firestoreDatasource.createDocumentRecord(
             patientId: patientId,
+            patientPackageId: patientPackageId,
+            documentId: documentId,
             data: docData,
           );
 

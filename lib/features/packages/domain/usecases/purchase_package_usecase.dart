@@ -41,6 +41,7 @@ class PurchasePackageParams {
   const PurchasePackageParams({
     required this.patientId,
     required this.package,
+    this.isTestPurchase = false,
   });
 
   /// Authenticated patient UID — UID المريض المُصادَق عليه.
@@ -48,6 +49,9 @@ class PurchasePackageParams {
 
   /// The package being purchased — الباقة المراد شراؤها.
   final PackageEntity package;
+
+  /// Whether this is a test purchase (simulated) — هل هذا شراء تجريبي.
+  final bool isTestPurchase;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,10 +66,10 @@ class PurchasePackageParams {
 ///    return [PackageAlreadyActiveFailure] if an ACTIVE or PENDING record
 ///    already exists (CHK023 duplicate guard).
 /// 2. Call [PackagePaymentAdapter.initiatePayment] — domain interface (R6).
-/// 3. On [PaymentSuccess]: call [PatientPackageRepository.createPatientPackage]
-///    with non-null [paymentTransactionId], computed [expiryDate], initialized
-///    [servicesUsage] list, `usedServicesCount=0`, `status=ACTIVE`.
-/// 4. On [PaymentFailure] or any other failure: return typed failure, no write.
+/// 3. On PaymentSuccess: call [PatientPackageRepository.createPatientPackage]
+///    with non-null `paymentTransactionId`, computed `expiryDate`, initialized
+///    `servicesUsage` list, `usedServicesCount=0`, `status=ACTIVE`.
+/// 4. On PaymentFailure or any other failure: return typed failure, no write.
 ///
 /// **Arabic**
 /// خطوات التنفيذ:
@@ -135,42 +139,63 @@ class PurchasePackageUseCase {
       return const Left(PackageAlreadyActiveFailure());
     }
 
-    // ── Step 2: Initiate payment ─────────────────────────────────────────────
-    final paymentResult = await _paymentAdapter.initiatePayment(
-      amount: package.price,
-      currency: package.currency,
-      packageRef: package.id,
-    );
-
-    if (paymentResult.isLeft()) {
-      return paymentResult.fold(
-        Left.new,
-        (_) => throw StateError('unreachable'),
-      );
-    }
-
-    final paymentSuccess = paymentResult.getOrElse(
-      () => throw StateError('unreachable'),
-    );
-
-    // ── Step 3: Create patient package record ─────────────────────────────────
+    // ── Step 2: Initiate payment (or bypass for test) ────────────────────────
     final now = DateTime.now();
     final expiryDate = now.add(Duration(days: package.validityDays));
+    String transactionId;
 
+    // TODO(Elajtech): Replace with real check for test environment when applicable
+    if (params.isTestPurchase) {
+      // ⚠️ SIMULATED FLOW (R6 bypass)
+      // TODO(Elajtech): Integrate real payment gateway logic here once providers are ready.
+      transactionId = 'TEST_TXN_${now.millisecondsSinceEpoch}';
+    } else {
+      final paymentResult = await _paymentAdapter.initiatePayment(
+        amount: package.price,
+        currency: package.currency,
+        packageRef: package.id,
+      );
+
+      if (paymentResult.isLeft()) {
+        return paymentResult.fold(
+          Left.new,
+          (_) => throw StateError('unreachable'),
+        );
+      }
+
+      final paymentSuccess = paymentResult.getOrElse(
+        () => throw StateError('unreachable'),
+      );
+      transactionId = paymentSuccess.transactionId;
+    }
+
+    // ── Step 3: Create patient package record ─────────────────────────────────
     // Initialize servicesUsage with usedCount=0 for each service
     final servicesUsageInit = package.services.map((s) => s.serviceId).toList();
+
+    // Calculate total quantity of all services (sum of quantities)
+    final totalQuantity = package.services.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
 
     final createResult = await _patientPackageRepo.createPatientPackage(
       patientId: patientId,
       packageId: package.id,
+      packageName: package.name,
       clinicId: package.clinicId,
       status: PatientPackageStatus.active,
       purchaseDate: now,
       expiryDate: expiryDate,
-      totalServicesCount: package.services.length,
+      totalServicesCount: totalQuantity,
       servicesUsageInit: servicesUsageInit,
-      paymentTransactionId: paymentSuccess.transactionId,
+      packageServices: package.services,
+      paymentTransactionId: transactionId,
       category: package.category.value,
+      isTestPurchase: params.isTestPurchase,
+      description: package.description ?? '',
+      shortDescription: package.shortDescription,
+      validityDays: package.validityDays,
     );
 
     return createResult;

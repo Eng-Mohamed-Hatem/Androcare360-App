@@ -14,6 +14,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:elajtech/features/packages/domain/entities/package_service_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:elajtech/core/error/failures.dart';
@@ -74,7 +75,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -111,7 +112,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -145,7 +146,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -197,7 +198,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -210,38 +211,52 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
   Future<Either<Failure, String>> createPatientPackage({
     required String patientId,
     required String packageId,
+    required String packageName,
     required String clinicId,
     required PatientPackageStatus status,
     required DateTime purchaseDate,
     required DateTime expiryDate,
     required int totalServicesCount,
     required List<String> servicesUsageInit,
+    required List<PackageServiceItem> packageServices,
     required String paymentTransactionId,
     required String category,
+    required bool isTestPurchase,
+    required String description,
+    required String shortDescription,
+    required int validityDays,
   }) async {
     try {
       if (kDebugMode) {
         debugPrint(
           '[PatientPackageRepositoryImpl] createPatientPackage '
           'patientId=$patientId pkgId=$packageId clinicId=$clinicId '
-          'txn=$paymentTransactionId',
+          'isTest=$isTestPurchase txn=$paymentTransactionId',
         );
       }
 
       final data = <String, dynamic>{
         'patientId': patientId,
         'packageId': packageId,
+        'packageName': packageName, // FIX: Persistent package name
         'clinicId': clinicId,
         'category': category,
         'status': status.value,
-        'purchaseDate': purchaseDate.toIso8601String(),
-        'expiryDate': expiryDate.toIso8601String(),
+        'purchaseDate': Timestamp.fromDate(purchaseDate),
+        'expiryDate': Timestamp.fromDate(expiryDate),
         'totalServicesCount': totalServicesCount,
         'usedServicesCount': 0,
+        'isTestPurchase': isTestPurchase,
         'servicesUsage': servicesUsageInit
             .map((id) => {'serviceId': id, 'usedCount': 0})
             .toList(),
+        'packageServices': packageServices.map((s) => s.toMap()).toList(),
         'paymentTransactionId': paymentTransactionId,
+        'description': description,
+        'shortDescription': shortDescription,
+        'validityDays': validityDays,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       };
 
       final docId = await _datasource.createPatientPackage(
@@ -264,7 +279,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -307,7 +322,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -341,7 +356,7 @@ class PatientPackageRepositoryImpl implements PatientPackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PatientPackageRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());

@@ -5,15 +5,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:cloud_firestore/cloud_firestore.dart' as _i7;
+import 'package:cloud_firestore/cloud_firestore.dart' as _i8;
 import 'package:dartz/dartz.dart' as _i2;
 import 'package:elajtech/core/error/failures.dart' as _i5;
 import 'package:elajtech/features/packages/domain/adapters/package_payment_adapter.dart'
-    as _i8;
+    as _i9;
+import 'package:elajtech/features/packages/domain/entities/package_service_item.dart'
+    as _i7;
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart'
     as _i6;
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
-    as _i9;
+    as _i10;
 import 'package:elajtech/features/packages/domain/repositories/patient_package_repository.dart'
     as _i3;
 import 'package:mockito/mockito.dart' as _i1;
@@ -150,27 +152,39 @@ class MockPatientPackageRepository extends _i1.Mock
   _i4.Future<_i2.Either<_i5.Failure, String>> createPatientPackage({
     required String? patientId,
     required String? packageId,
+    required String? packageName,
     required String? clinicId,
     required _i6.PatientPackageStatus? status,
     required DateTime? purchaseDate,
     required DateTime? expiryDate,
     required int? totalServicesCount,
     required List<String>? servicesUsageInit,
+    required List<_i7.PackageServiceItem>? packageServices,
     required String? paymentTransactionId,
     required String? category,
+    required bool? isTestPurchase,
+    required String? description,
+    required String? shortDescription,
+    required int? validityDays,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#createPatientPackage, [], {
               #patientId: patientId,
               #packageId: packageId,
+              #packageName: packageName,
               #clinicId: clinicId,
               #status: status,
               #purchaseDate: purchaseDate,
               #expiryDate: expiryDate,
               #totalServicesCount: totalServicesCount,
               #servicesUsageInit: servicesUsageInit,
+              #packageServices: packageServices,
               #paymentTransactionId: paymentTransactionId,
               #category: category,
+              #isTestPurchase: isTestPurchase,
+              #description: description,
+              #shortDescription: shortDescription,
+              #validityDays: validityDays,
             }),
             returnValue: _i4.Future<_i2.Either<_i5.Failure, String>>.value(
               _FakeEither_0<_i5.Failure, String>(
@@ -178,14 +192,20 @@ class MockPatientPackageRepository extends _i1.Mock
                 Invocation.method(#createPatientPackage, [], {
                   #patientId: patientId,
                   #packageId: packageId,
+                  #packageName: packageName,
                   #clinicId: clinicId,
                   #status: status,
                   #purchaseDate: purchaseDate,
                   #expiryDate: expiryDate,
                   #totalServicesCount: totalServicesCount,
                   #servicesUsageInit: servicesUsageInit,
+                  #packageServices: packageServices,
                   #paymentTransactionId: paymentTransactionId,
                   #category: category,
+                  #isTestPurchase: isTestPurchase,
+                  #description: description,
+                  #shortDescription: shortDescription,
+                  #validityDays: validityDays,
                 }),
               ),
             ),
@@ -196,7 +216,7 @@ class MockPatientPackageRepository extends _i1.Mock
   _i4.Future<_i2.Either<_i5.Failure, List<_i6.PatientPackageEntity>>>
   listPatientPackagesForAdmin({
     required String? patientId,
-    _i7.DocumentSnapshot<Object?>? lastDocument,
+    _i8.DocumentSnapshot<Object?>? lastDocument,
     int? limit = 20,
   }) =>
       (super.noSuchMethod(
@@ -253,13 +273,13 @@ class MockPatientPackageRepository extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockPackagePaymentAdapter extends _i1.Mock
-    implements _i8.PackagePaymentAdapter {
+    implements _i9.PackagePaymentAdapter {
   MockPackagePaymentAdapter() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i4.Future<_i2.Either<_i9.PaymentFailure, _i8.PaymentSuccess>>
+  _i4.Future<_i2.Either<_i10.PaymentFailure, _i9.PaymentSuccess>>
   initiatePayment({
     required double? amount,
     required String? currency,
@@ -273,9 +293,9 @@ class MockPackagePaymentAdapter extends _i1.Mock
             }),
             returnValue:
                 _i4.Future<
-                  _i2.Either<_i9.PaymentFailure, _i8.PaymentSuccess>
+                  _i2.Either<_i10.PaymentFailure, _i9.PaymentSuccess>
                 >.value(
-                  _FakeEither_0<_i9.PaymentFailure, _i8.PaymentSuccess>(
+                  _FakeEither_0<_i10.PaymentFailure, _i9.PaymentSuccess>(
                     this,
                     Invocation.method(#initiatePayment, [], {
                       #amount: amount,
@@ -285,5 +305,5 @@ class MockPackagePaymentAdapter extends _i1.Mock
                   ),
                 ),
           )
-          as _i4.Future<_i2.Either<_i9.PaymentFailure, _i8.PaymentSuccess>>);
+          as _i4.Future<_i2.Either<_i10.PaymentFailure, _i9.PaymentSuccess>>);
 }

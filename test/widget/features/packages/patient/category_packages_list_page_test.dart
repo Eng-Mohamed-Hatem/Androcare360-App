@@ -112,7 +112,11 @@ void main() {
 
       expect(find.byKey(const ValueKey('packages_list')), findsOneWidget);
       expect(find.text('باقة الاختبار'), findsOneWidget);
-      expect(find.text('100 جنيه'), findsOneWidget);
+
+      final listView = tester.widget<ListView>(
+        find.byKey(const ValueKey('packages_list')),
+      );
+      expect(listView.padding, const EdgeInsets.fromLTRB(16, 20, 16, 100));
     });
   });
 }

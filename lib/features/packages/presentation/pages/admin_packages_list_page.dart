@@ -143,7 +143,7 @@ class _AdminPackagesListPageState extends ConsumerState<AdminPackagesListPage>
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       itemCount: packages.length,
       itemBuilder: (context, index) {
         final pkg = packages[index];

@@ -22,6 +22,7 @@ import 'package:elajtech/features/packages/data/datasources/firestore_package_da
 import 'package:elajtech/features/packages/data/repositories/clinic_package_repository_impl.dart';
 import 'package:elajtech/features/packages/domain/adapters/package_payment_adapter.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
+import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart';
 import 'package:elajtech/features/packages/domain/repositories/package_repository.dart'
     show PackageRepository;
@@ -29,6 +30,7 @@ import 'package:elajtech/features/packages/domain/repositories/patient_package_r
 import 'package:elajtech/features/packages/domain/usecases/get_package_details_usecase.dart';
 import 'package:elajtech/features/packages/domain/usecases/list_category_packages_usecase.dart';
 import 'package:elajtech/features/packages/domain/usecases/purchase_package_usecase.dart';
+import 'package:elajtech/features/packages/presentation/providers/my_packages_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -264,7 +266,12 @@ class PurchasePackageNotifier extends StateNotifier<PurchaseNotifierState> {
     }
 
     final result = await useCase(
-      PurchasePackageParams(patientId: user.id, package: package),
+      PurchasePackageParams(
+        patientId: user.id,
+        package: package,
+        // TODO(Elajtech): Remove when real payment gateway integrated
+        isTestPurchase: true, // Trigger simulation for Phase 3 (R6 bypass)
+      ),
     );
 
     result.fold(
@@ -353,3 +360,31 @@ String _failureMessage(Failure failure) {
   }
   return failure.message.isNotEmpty ? failure.message : 'حدث خطأ غير متوقع';
 }
+
+/// Provider to check if the current patient already owns a specific package.
+/// Used for purchase button state persistence.
+final ProviderFamily<bool, String>
+isPackagePurchasedProvider = Provider.family<bool, String>((
+  ref,
+  packageId,
+) {
+  final authState = ref.watch(authProvider);
+  final user = authState.user;
+  if (user == null) return false;
+
+  // Uses the global myPackagesProvider defined in my_packages_provider.dart
+  // Note: MyPackagesNotifier already watches authProvider internally to get the patientId.
+  final myPackagesAsync = ref.watch(myPackagesProvider);
+
+  return myPackagesAsync.when(
+    data: (List<PatientPackageEntity> packages) =>
+        packages.any((p) => p.packageId == packageId),
+    loading: () => false,
+    error: (Object e, StackTrace st) {
+      if (kDebugMode) {
+        debugPrint('[isPackagePurchasedProvider] Error checking purchase: $e');
+      }
+      return false;
+    },
+  );
+});

@@ -85,6 +85,8 @@ import 'package:elajtech/features/packages/data/repositories/package_document_re
     as _i789;
 import 'package:elajtech/features/packages/data/repositories/patient_package_repository_impl.dart'
     as _i720;
+import 'package:elajtech/features/packages/data/services/package_migration_service.dart'
+    as _i1052;
 import 'package:elajtech/features/packages/domain/adapters/package_payment_adapter.dart'
     as _i399;
 import 'package:elajtech/features/packages/domain/repositories/package_document_repository.dart'
@@ -238,6 +240,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i220.FirestorePackageDatasource>(
       () => _i220.FirestorePackageDatasource(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i1052.PackageMigrationService>(
+      () => _i1052.PackageMigrationService(gh<_i974.FirebaseFirestore>()),
     );
     gh.lazySingleton<_i674.UpdatePackageServiceUsageUseCase>(
       () =>

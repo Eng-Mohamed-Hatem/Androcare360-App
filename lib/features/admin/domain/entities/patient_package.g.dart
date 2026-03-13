@@ -18,13 +18,13 @@ _PatientPackage _$PatientPackageFromJson(Map<String, dynamic> json) =>
           .map((e) => PackageServiceUsage.fromJson(e as Map<String, dynamic>))
           .toList(),
       usedServicesCount: (json['usedServicesCount'] as num).toInt(),
-      notes: json['notes'] as String?,
       documents: (json['documents'] as List<dynamic>)
           .map((e) => PackageDocument.fromJson(e as Map<String, dynamic>))
           .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       isActive: json['isActive'] as bool,
+      notes: json['notes'] as String?,
     );
 
 Map<String, dynamic> _$PatientPackageToJson(_PatientPackage instance) =>
@@ -35,9 +35,9 @@ Map<String, dynamic> _$PatientPackageToJson(_PatientPackage instance) =>
       'services': instance.services,
       'servicesUsage': instance.servicesUsage,
       'usedServicesCount': instance.usedServicesCount,
-      'notes': instance.notes,
       'documents': instance.documents,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'isActive': instance.isActive,
+      'notes': instance.notes,
     };

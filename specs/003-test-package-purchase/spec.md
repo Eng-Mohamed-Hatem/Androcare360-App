@@ -58,9 +58,13 @@ As a developer/tester, I want the system to record the test purchase in the data
 
 - **FR-001**: The "Buy Now" button MUST NOT initiate any real payment transaction.
 - **FR-002**: System MUST display a centered dialog titled "Purchase Completed (Test)" on the `PackageDetailsPage` with the message: "The package has been purchased successfully for testing purposes only. No real payment has been processed."
+- **FR-009**: System MUST show a loading indicator on the "Buy Now" button while the Firestore write operation is in progress (Loading State).
+- **FR-010**: System MUST handle Firestore write failures by displaying a localized error message (SnackBar or Error Banner) and re-enabling the purchase button.
 - **FR-003**: System MUST create a test-only record in Firestore linked to the patient.
 - **FR-004**: The persisted record MUST include: `patientId`, `packageId`, `purchasedAt` (timestamp), and `isTestPurchase: true`.
 - **FR-005**: After the patient taps "OK" on the test purchase dialog, the system MUST navigate the user to the `MyPackagesPage`.
+- **FR-007**: System MUST display a `(Test)` / `(تجريبي)` label next to the package name in `MyPackagesPage` for test purchases.
+- **FR-008**: Admin Dashboard MUST visually distinguish test purchases from real ones using a "Test" badge and provide filtering capabilities.
 - **FR-006**: All code related to this simulated flow MUST be marked with comments as temporary behavior (Test/Stub) to be replaced by a real payment gateway.
 
 ### Key Entities *(include if feature involves data)*
@@ -72,6 +76,11 @@ As a developer/tester, I want the system to record the test purchase in the data
   - `clinicId`: ID of the clinic.
   - `purchasedAt`: Date and time of purchase.
   - `isTestPurchase`: Boolean flag (true for this flow).
+
+## Maintenance & Cleanup (CHK019)
+
+- **Test Data Identification**: All simulated purchases are uniquely identified by the `isTestPurchase: true` flag.
+- **Rollback/Cleanup**: In case of data corruption or for periodic maintenance, administrators can identify and bulk-delete these records using the `isTestPurchase` filter in Firestore.
 
 ## Success Criteria *(mandatory)*
 

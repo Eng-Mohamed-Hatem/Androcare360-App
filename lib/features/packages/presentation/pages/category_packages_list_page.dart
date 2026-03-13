@@ -1,11 +1,11 @@
 /// CategoryPackagesListPage — شاشة قائمة الباقات حسب الفئة
 ///
 /// تعرض هذه الشاشة قائمة الباقات النشطة لعيادة وفئة محددتَيْن.
-/// تستمع إلى [categoryPackagesProvider] وتتعامل مع حالات التحميل، الخطأ، الفراغ، والبيانات.
+/// تستمع إلى `categoryPackagesProvider` وتتعامل مع حالات التحميل، الخطأ، الفراغ، والبيانات.
 ///
-/// **English**: Watches [categoryPackagesProvider] for the given [clinicId]
-/// and [category]. Shows loading indicator, empty message, error with retry,
-/// or [PackageCard] list.
+/// **English**: Watches `categoryPackagesProvider` for the given `clinicId`
+/// and `category`. Shows loading indicator, empty message, error with retry,
+/// or package cards list.
 ///
 /// **Spec**: tasks.md T036, spec.md §9.3.
 library;
@@ -21,7 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// **English**
 /// Required args: [clinicId], [category], [pageTitle] (used as AppBar title).
 /// Shows: loading spinner on data fetch, empty state with Arabic message,
-/// error state with retry button, and a [ListView] of [PackageCard] widgets.
+/// error state with retry button, and a [ListView] of package card widgets.
 ///
 /// **Arabic**
 /// تعرض قائمة الباقات النشطة. تُعالَج ثلاث حالات:
@@ -70,7 +70,7 @@ class CategoryPackagesListPage extends ConsumerWidget {
       ),
       body: packagesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _ErrorState(
+        error: (error, stackTrace) => _ErrorState(
           message: error.toString().replaceFirst('Exception: ', ''),
           onRetry: () => ref.invalidate(
             categoryPackagesProvider(
@@ -82,12 +82,10 @@ class CategoryPackagesListPage extends ConsumerWidget {
             ? const _EmptyState()
             : ListView.separated(
                 key: const ValueKey('packages_list'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
                 itemCount: packages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) =>
                     PackageCard(package: packages[index]),
               ),

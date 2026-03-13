@@ -268,10 +268,22 @@ final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   return getIt<AdminRepository>();
 });
 
+/// Provides [TogglePatientActiveStatusUseCase] for account activation toggles.
+///
+/// Uses [adminRepositoryProvider] so tests that override the repository
+/// automatically get a matching use case without requiring GetIt registration.
+final togglePatientActiveStatusUseCaseProvider =
+    Provider<TogglePatientActiveStatusUseCase>((ref) {
+      final repo = ref.watch(adminRepositoryProvider);
+      return TogglePatientActiveStatusUseCase(repo);
+    });
+
 /// Main admin provider — exposes [AdminNotifier] and [AdminState].
 final adminProvider = StateNotifierProvider<AdminNotifier, AdminState>((ref) {
   final repo = ref.watch(adminRepositoryProvider);
-  final togglePatientActiveStatus = getIt<TogglePatientActiveStatusUseCase>();
+  final togglePatientActiveStatus = ref.watch(
+    togglePatientActiveStatusUseCaseProvider,
+  );
   return AdminNotifier(repo, ref, togglePatientActiveStatus);
 });
 

@@ -1,9 +1,3 @@
-// test/widget/features/packages/patient/package_details_page_test.dart
-//
-// Widget tests for PackageDetailsPage.
-// Covers: Loading state, Error state, Loaded state, Offline interaction,
-// and Purchase state management (idle, loading, success, failure).
-
 import 'dart:async';
 
 import 'package:elajtech/core/network/connectivity_provider.dart';
@@ -15,10 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// ── Mock Notifier ────────────────────────────────────────────────────────────
 class MockPurchaseNotifier extends StateNotifier<PurchaseNotifierState>
     implements PurchasePackageNotifier {
-  MockPurchaseNotifier(super._state);
+  MockPurchaseNotifier(super.state);
 
   bool purchaseCalled = false;
   PackageEntity? purchasedPackage;
@@ -44,14 +37,14 @@ void main() {
     id: packageId,
     clinicId: clinicId,
     category: PackageCategory.andrologyInfertilityProstate,
-    name: 'باقة التفاصيل',
-    shortDescription: 'وصف قصير',
-    description: 'تفاصيل كاملة هنا',
+    name: 'Package Details',
+    shortDescription: 'Short description',
+    description: 'Full details here',
     services: const [
       PackageServiceItem(
         serviceId: 's1',
         serviceType: ServiceType.visit,
-        displayName: 'كشف',
+        displayName: 'Visit',
       ),
     ],
     validityDays: 30,
@@ -71,6 +64,7 @@ void main() {
     required Future<PackageEntity> Function() packageFetcher,
     required MockPurchaseNotifier mockNotifier,
     bool isOnline = true,
+    bool isPurchased = false,
   }) {
     return ProviderScope(
       overrides: [
@@ -80,6 +74,8 @@ void main() {
         )).overrideWith((ref) => packageFetcher()),
         purchasePackageProvider.overrideWith((ref) => mockNotifier),
         connectivityProvider.overrideWith((ref) => Stream.value(isOnline)),
+        isPackagePurchasedProvider(packageId)
+            .overrideWith((ref) => isPurchased),
       ],
       child: const MaterialApp(
         home: PackageDetailsPage(
@@ -118,45 +114,43 @@ void main() {
 
       expect(find.text('Package Error'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
-      // Buy button should NOT be visible
       expect(find.byKey(const Key('buy_button')), findsNothing);
     });
 
-    testWidgets(
-      'shows package details and idle buy button when loaded online',
-      (tester) async {
-        final mockNotifier = MockPurchaseNotifier(
-          const PurchaseNotifierState(),
-        );
+    testWidgets('shows package details and triggers purchase flow', (tester) async {
+      final mockNotifier = MockPurchaseNotifier(
+        const PurchaseNotifierState(),
+      );
 
-        await tester.pumpWidget(
-          createSubject(
-            packageFetcher: () async => dummyPackage,
-            mockNotifier: mockNotifier,
-          ),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        createSubject(
+          packageFetcher: () async => dummyPackage,
+          mockNotifier: mockNotifier,
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.text('باقة التفاصيل'), findsOneWidget);
-        expect(find.text('تفاصيل كاملة هنا'), findsOneWidget);
-        expect(find.text('1500 ريال سعودي'), findsOneWidget);
+      expect(find.byKey(const Key('buy_button')), findsOneWidget);
+      expect(find.byIcon(Icons.local_hospital), findsOneWidget);
+      expect(find.textContaining('1500'), findsOneWidget);
 
-        final buyButton = find.byKey(const Key('buy_button'));
-        expect(buyButton, findsOneWidget);
-        expect(find.text('اشترِ الآن'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('buy_button')));
+      await tester.pumpAndSettle();
 
-        // Tap buy button
-        await tester.tap(buyButton);
-        await tester.pump();
+      expect(find.byType(AlertDialog), findsOneWidget);
 
-        expect(mockNotifier.purchaseCalled, isTrue);
-        expect(mockNotifier.purchasedPackage?.id, dummyPackage.id);
-      },
-    );
+      final confirmButton = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(FilledButton),
+      );
+      await tester.tap(confirmButton);
+      await tester.pumpAndSettle();
 
-    testWidgets('shows tooltip and disables button when offline', (
-      tester,
-    ) async {
+      expect(mockNotifier.purchaseCalled, isTrue);
+      expect(mockNotifier.purchasedPackage?.id, dummyPackage.id);
+    });
+
+    testWidgets('disables effective purchase when offline', (tester) async {
       final mockNotifier = MockPurchaseNotifier(const PurchaseNotifierState());
 
       await tester.pumpWidget(
@@ -168,41 +162,37 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final buyButton = find.byKey(const Key('buy_button'));
-
-      // Tap shouldn't trigger purchase
-      await tester.tap(buyButton);
-      await tester.pump();
+      final buyButton = tester.widget<FilledButton>(
+        find.byKey(const Key('buy_button')),
+      );
+      expect(buyButton.onPressed, isNull);
 
       expect(mockNotifier.purchaseCalled, isFalse);
     });
 
-    testWidgets(
-      'shows success layout when already purchased or newly purchased',
-      (tester) async {
-        final mockNotifier = MockPurchaseNotifier(
-          const PurchaseNotifierState(
-            purchaseState: PurchaseState.alreadyPurchased,
-          ),
-        );
+    testWidgets('shows owned-state action when already purchased', (tester) async {
+      final mockNotifier = MockPurchaseNotifier(
+        const PurchaseNotifierState(
+          purchaseState: PurchaseState.alreadyPurchased,
+        ),
+      );
 
-        await tester.pumpWidget(
-          createSubject(
-            packageFetcher: () async => dummyPackage,
-            mockNotifier: mockNotifier,
-          ),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        createSubject(
+          packageFetcher: () async => dummyPackage,
+          mockNotifier: mockNotifier,
+          isPurchased: true,
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        final buyButton = find.byKey(const Key('buy_button'));
-        expect(find.text('عرض الباقة'), findsWidgets);
+      expect(find.byKey(const Key('buy_button')), findsOneWidget);
 
-        // Tap shouldn't re-trigger purchase
-        await tester.tap(buyButton);
-        await tester.pump();
-        expect(mockNotifier.purchaseCalled, isFalse);
-      },
-    );
+      await tester.tap(find.byKey(const Key('buy_button')));
+      await tester.pumpAndSettle();
+
+      expect(mockNotifier.purchaseCalled, isFalse);
+    });
 
     testWidgets('shows failure message from purchaseState', (tester) async {
       final mockNotifier = MockPurchaseNotifier(

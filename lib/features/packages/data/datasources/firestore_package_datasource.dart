@@ -54,10 +54,13 @@ class FirestorePackageDatasource {
 
   CollectionReference<Map<String, dynamic>> _patientDocuments(
     String patientId,
+    String patientPackageId,
   ) => _firestore
       .collection('patients')
       .doc(patientId)
-      .collection('packageDocuments');
+      .collection('packages')
+      .doc(patientPackageId)
+      .collection('documents');
 
   // ── Clinic Packages ────────────────────────────────────────────────────────
 
@@ -294,6 +297,8 @@ class FirestorePackageDatasource {
   /// **Arabic**: يُنشئ سجل بيانات واصفة للمستند بعد رفع الملف إلى Storage.
   Future<DocumentReference<Map<String, dynamic>>> createDocumentRecord({
     required String patientId,
+    required String patientPackageId,
+    required String documentId,
     required Map<String, dynamic> data,
   }) async {
     if (kDebugMode) {
@@ -302,7 +307,11 @@ class FirestorePackageDatasource {
         'patientId=$patientId type=${data['documentType']}',
       );
     }
-    return _patientDocuments(patientId).add(data);
+    final docRef = _patientDocuments(patientId, patientPackageId).doc(
+      documentId,
+    );
+    await docRef.set(data);
+    return docRef;
   }
 
   /// Fetches all documents for [patientPackageId] of [patientId].
@@ -320,10 +329,26 @@ class FirestorePackageDatasource {
         'patientId=$patientId ppId=$patientPackageId',
       );
     }
-    return _patientDocuments(patientId)
-        .where('patientPackageId', isEqualTo: patientPackageId)
+    return _patientDocuments(patientId, patientPackageId)
         .orderBy('uploadedAt', descending: true)
         .limit(50)
         .get();
+  }
+
+  /// Streams all documents for [patientPackageId] of [patientId].
+  ///
+  /// **English**: Realtime stream for admin and patient views under canonical
+  /// path `patients/{patientId}/packages/{patientPackageId}/documents`.
+  ///
+  /// **Arabic**: بث لحظي لمستندات الباقة من المسار القياسي داخل
+  /// `patients/{patientId}/packages/{patientPackageId}/documents`.
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamDocumentsByPatientPackage({
+    required String patientId,
+    required String patientPackageId,
+  }) {
+    return _patientDocuments(patientId, patientPackageId)
+        .orderBy('uploadedAt', descending: true)
+        .limit(50)
+        .snapshots();
   }
 }

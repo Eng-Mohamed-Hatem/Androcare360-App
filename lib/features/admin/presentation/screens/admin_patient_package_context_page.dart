@@ -7,9 +7,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
-/// Admin Screen: Shows exactly what services are in a specific patient package,
+/// Admin Screen: Detailed management view for a specific patient package.
+///
+/// **English**:
+/// Shows exactly what services are in a specific patient package,
 /// their usage so far, the uploaded documents, and provides an action to upload
-/// new documents.
+/// new documents. Includes technical notes (R2) and test indicator (T014).
+///
+/// **Arabic**:
+/// شاشة الأدمن: عرض تفصيلي وإدارة لباقة مريض محددة.
+/// تعرض الخدمات المستخدمة، المستندات المرفوعة، وتسمح برفع مستندات جديدة.
+/// تشمل الملاحظات الفنية (R2) ومؤشر الشراء التجريبي (T014).
+///
+/// **Usage / الاستخدام**:
+/// ```dart
+/// Navigator.push(context, MaterialPageRoute(
+///   builder: (_) => AdminPatientPackageContextPage(
+///     patient: patientModel,
+///     patientPackage: packageEntity,
+///   ),
+/// ));
+/// ```
 class AdminPatientPackageContextPage extends ConsumerStatefulWidget {
   const AdminPatientPackageContextPage({
     required this.patient,
@@ -27,6 +45,14 @@ class AdminPatientPackageContextPage extends ConsumerStatefulWidget {
 
 class _AdminPatientPackageContextPageState
     extends ConsumerState<AdminPatientPackageContextPage> {
+  static const Map<String, String> _clinicNames = {
+    'andrology': 'عيادة الذكورة والعقم والبروستاتا',
+    'physiotherapy': 'عيادة العلاج الطبيعي والتأهيل',
+    'internal_family': 'الطب الداخلي والأسرة',
+    'nutrition': 'عيادة التغذية والسمنة',
+    'chronic_diseases': 'الأمراض المزمنة',
+  };
+
   late TextEditingController _notesController;
   bool _isEditingNotes = false;
 
@@ -154,8 +180,20 @@ class _AdminPatientPackageContextPageState
                     ),
                     const Divider(height: 24),
                     _InfoRow(
-                      label: 'معرف الباقة',
-                      value: currentPkg.id.substring(0, 8),
+                      label: 'اسم الباقة',
+                      value: currentPkg.packageName.isNotEmpty
+                          ? currentPkg.packageName
+                          : currentPkg.packageId,
+                    ),
+                    _InfoRow(
+                      label: 'العيادة / التخصص',
+                      value:
+                          _clinicNames[currentPkg.clinicId] ??
+                          currentPkg.category.arabicLabel,
+                    ),
+                    _InfoRow(
+                      label: 'إجمالي الجلسات / الزيارات',
+                      value: '${currentPkg.totalServicesCount}',
                     ),
                     _InfoRow(
                       label: 'تاريخ الشراء',
@@ -174,8 +212,21 @@ class _AdminPatientPackageContextPageState
                       value: isExpired ? 'منتهية' : 'نشطة',
                       valueColor: isExpired ? Colors.orange : Colors.green,
                     ),
+                    _InfoRow(
+                      label: 'معرف السجل',
+                      value: currentPkg.id.length > 8
+                          ? currentPkg.id.substring(0, 8)
+                          : currentPkg.id,
+                    ),
+                    if (currentPkg.isTestPurchase)
+                      const _InfoRow(
+                        label: 'نوع العملية',
+                        value: 'شراء تجريبي (Test)',
+                        valueColor: Colors.blue,
+                      ),
                   ],
                 ),
+                // ... existing lines ...
               ),
             ),
             const SizedBox(height: 24),
@@ -200,43 +251,7 @@ class _AdminPatientPackageContextPageState
               ],
             ),
             const SizedBox(height: 12),
-            ...currentPkg.servicesUsage.map((usage) {
-              return Card(
-                elevation: 0,
-                margin: const EdgeInsets.only(bottom: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.borderLight),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  title: Text(
-                    'خدمة: ${usage.serviceId}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'تم استخدام ${usage.usedCount} مرات',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(
-                      Icons.add_circle_outline,
-                      color: AppColors.primary,
-                    ),
-                    onPressed: isBusy
-                        ? null
-                        : () => _incrementUsage(usage.serviceId),
-                    tooltip: 'تسجيل استخدام',
-                  ),
-                ),
-              );
-            }),
+            ..._buildServiceUsageCards(currentPkg, isBusy: isBusy),
 
             const SizedBox(height: 24),
 
@@ -427,6 +442,93 @@ class _AdminPatientPackageContextPageState
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildServiceUsageCards(
+    PatientPackageEntity package, {
+    required bool isBusy,
+  }) {
+    final usageByServiceId = {
+      for (final usage in package.servicesUsage) usage.serviceId: usage,
+    };
+    final renderedServiceIds = <String>{};
+    final cards = <Widget>[];
+
+    for (final service in package.packageServices) {
+      final usage = usageByServiceId[service.serviceId];
+      renderedServiceIds.add(service.serviceId);
+      cards.add(
+        _buildServiceUsageCard(
+          serviceName: service.displayName,
+          serviceId: service.serviceId,
+          allowedCount: service.quantity,
+          usedCount: usage?.usedCount ?? 0,
+          isBusy: isBusy,
+        ),
+      );
+    }
+
+    for (final usage in package.servicesUsage) {
+      if (renderedServiceIds.contains(usage.serviceId)) {
+        continue;
+      }
+      cards.add(
+        _buildServiceUsageCard(
+          serviceName: 'خدمة غير معرفة (${usage.serviceId})',
+          serviceId: usage.serviceId,
+          allowedCount: 0,
+          usedCount: usage.usedCount,
+          isBusy: isBusy,
+        ),
+      );
+    }
+
+    if (cards.isEmpty) {
+      cards.add(
+        const Card(
+          elevation: 0,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('لا توجد خدمات معرفة في هذه الباقة.'),
+          ),
+        ),
+      );
+    }
+
+    return cards;
+  }
+
+  Widget _buildServiceUsageCard({
+    required String serviceName,
+    required String serviceId,
+    required int allowedCount,
+    required int usedCount,
+    required bool isBusy,
+  }) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.borderLight),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        title: Text(
+          serviceName,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          'المسموح: $allowedCount • المستخدم: $usedCount',
+          style: const TextStyle(fontSize: 12),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+          onPressed: isBusy ? null : () => _incrementUsage(serviceId),
+          tooltip: 'تسجيل استخدام',
         ),
       ),
     );
