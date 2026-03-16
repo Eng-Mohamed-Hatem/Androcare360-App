@@ -101,7 +101,7 @@ class ClinicAccessResolver {
         );
       }
       return await _resolveFromFirestore(user.uid);
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[ClinicAccessResolver] Error resolving clinics: $e');
         debugPrint('$st');
@@ -175,7 +175,7 @@ class ClinicAccessResolver {
         );
       }
       return const [];
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[ClinicAccessResolver] Firestore fallback error: $e');
         debugPrint('$st');

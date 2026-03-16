@@ -105,7 +105,7 @@ class PackageDocumentRepositoryImpl implements PackageDocumentRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[PackageDocumentRepositoryImpl] Unexpected: $e');
         debugPrint(st.toString());
@@ -136,7 +136,8 @@ class PackageDocumentRepositoryImpl implements PackageDocumentRepository {
       debugPrint(
         '[PackageDocumentRepositoryImpl] uploadDocument '
         'patientId=$patientId ppId=$patientPackageId '
-        'clinicId=$clinicId type=${documentType.value} docId=$documentId',
+        'clinicId=$clinicId type=${documentType.value} docId=$documentId '
+        'userId=$uploadedByUserId',
       );
     }
 
@@ -218,7 +219,7 @@ class PackageDocumentRepositoryImpl implements PackageDocumentRepository {
             debugPrint(st.toString());
           }
           return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-        } catch (e, st) {
+        } on Exception catch (e, st) {
           if (kDebugMode) {
             debugPrint('[PackageDocumentRepositoryImpl] Unexpected: $e');
             debugPrint(st.toString());

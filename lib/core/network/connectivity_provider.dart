@@ -77,7 +77,8 @@ final connectivityProvider = StreamProvider<bool>((ref) {
       .catchError((Object e) {
         if (kDebugMode) debugPrint('[ConnectivityProvider] Initial check: $e');
         if (!controller.isClosed) controller.add(true); // optimistic fallback
-      });
+      })
+      .ignore();
 
   // Forward all subsequent connectivity changes.
   final subscription = connectivity.onConnectivityChanged.listen(

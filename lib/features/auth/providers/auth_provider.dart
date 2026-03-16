@@ -205,7 +205,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             try {
               await BackgroundService.init();
               await BackgroundService.registerPeriodicTask();
-            } catch (e) {
+            } on Exception catch (e) {
               if (kDebugMode) {
                 debugPrint('Background service initialization skipped: $e');
               }
@@ -215,7 +215,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           // Save credentials for biometric login (non-fatal)
           try {
             await _saveCredentials(email, password);
-          } catch (credError) {
+          } on Exception catch (credError) {
             if (kDebugMode) {
               debugPrint(
                 '⚠️ [AuthProvider] _saveCredentials failed during registration: $credError',
@@ -254,7 +254,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             // Save credentials for biometric login
             try {
               await _saveCredentials(email, password);
-            } catch (credError) {
+            } on Exception catch (credError) {
               if (kDebugMode) {
                 debugPrint(
                   '⚠️ [AuthProvider] _saveCredentials failed: $credError',
@@ -263,7 +263,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             }
 
             await _handleLoginSuccess(user, userType);
-          } catch (e, st) {
+          } on Object catch (e, st) {
             debugPrint('❌ [AuthProvider] Unexpected error in login flow: $e');
             debugPrint('   $st');
             state = state.copyWith(
@@ -318,7 +318,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           if (kDebugMode) {
             debugPrint('✅ [AuthProvider] Auto-verified, checking current user');
           }
-          _checkCurrentUser();
+          _checkCurrentUser().ignore();
         }
       },
     );
@@ -367,22 +367,49 @@ class AuthNotifier extends StateNotifier<AuthState> {
     UserModel user,
     UserType requestedType,
   ) async {
-    // 1. فحص نشاط الحساب
-    if (!user.isActive) {
+    // 1. Pending doctor approval check (must run before isActive check)
+    if (user.userType == UserType.doctor && !user.isApproved) {
       if (kDebugMode) {
-        debugPrint('🚫 [AuthProvider] Account inactive');
+        debugPrint(
+          '🚫 [AuthProvider] Doctor login blocked: user is pending approval',
+        );
+        debugPrint(
+          '   userId=${user.id} | userType=${user.userType.name} | '
+          'isApproved=${user.isApproved} | isActive=${user.isActive}',
+        );
       }
       await _authRepository.signOut();
       state = state.copyWith(
         isLoading: false,
         isPhoneLoading: false,
-        error: 'الحساب معطّل، برجاء التواصل مع الدعم.',
+        error: 'Your account is pending admin approval.',
         isAuthenticated: false,
       );
       return;
     }
 
-    // 2. فحص نوع الحساب (إلا إذا كان مسؤولاً)
+    // 2. فحص نشاط الحساب
+    if (!user.isActive) {
+      if (kDebugMode) {
+        debugPrint('🚫 [AuthProvider] Account inactive');
+        debugPrint(
+          '   userId=${user.id} | userType=${user.userType.name} | '
+          'isApproved=${user.isApproved} | isActive=${user.isActive}',
+        );
+      }
+      await _authRepository.signOut();
+      state = state.copyWith(
+        isLoading: false,
+        isPhoneLoading: false,
+        error: user.userType == UserType.doctor
+            ? 'Account disabled, please contact support.'
+            : 'الحساب معطّل، برجاء التواصل مع الدعم.',
+        isAuthenticated: false,
+      );
+      return;
+    }
+
+    // 3. فحص نوع الحساب (إلا إذا كان مسؤولاً)
     if (user.userType != UserType.admin && user.userType != requestedType) {
       if (kDebugMode) {
         debugPrint('🚫 [AuthProvider] User type mismatch');
@@ -405,19 +432,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return;
     }
 
-    // 3. تهيئة الخدمات الخلفية (للجوال فقط)
+    // 4. تهيئة الخدمات الخلفية (للجوال فقط)
     if (!kIsWeb) {
       try {
         await BackgroundService.init();
         await BackgroundService.registerPeriodicTask();
-      } catch (e) {
+      } on Exception catch (e) {
         if (kDebugMode) {
           debugPrint('⚠️ [AuthProvider] Background service init failed: $e');
         }
       }
     }
 
-    // 4. تحديث الحالة النهائية
+    // 5. تحديث الحالة النهائية
     state = state.copyWith(
       user: user,
       isLoading: false,
@@ -640,7 +667,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           try {
             await BackgroundService.init();
             await BackgroundService.registerPeriodicTask();
-          } catch (e) {
+          } on Exception catch (e) {
             if (kDebugMode) {
               debugPrint('Background service init skipped: $e');
             }
@@ -706,13 +733,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
           );
           return;
         }
-        currentUserResult.fold(
-          (Failure failure) {},
-          (UserModel user) => state = state.copyWith(
-            user: user,
-            isAuthenticated: true,
-            isLoading: false,
-          ),
+        await currentUserResult.fold(
+          (Failure failure) async {},
+          (UserModel user) async => _handleLoginSuccess(user, user.userType),
         );
         return;
       }
@@ -749,16 +772,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: credentials['password']!,
       );
 
-      result.fold(
-        (Failure failure) => state = state.copyWith(
+      await result.fold(
+        (Failure failure) async => state = state.copyWith(
           isLoading: false,
           error: 'فشل تسجيل الدخول التلقائي: ${failure.message}',
         ),
-        (UserModel user) => state = state.copyWith(
-          user: user,
-          isAuthenticated: true,
-          isLoading: false,
-        ),
+        (UserModel user) async => _handleLoginSuccess(user, user.userType),
       );
     } on Exception catch (e) {
       state = state.copyWith(

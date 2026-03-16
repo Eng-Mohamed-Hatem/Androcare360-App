@@ -124,7 +124,7 @@ class UpdatePackageServiceUsageUseCase {
       });
 
       return const Right(unit);
-    } catch (e) {
+    } on Exception catch (e) {
       if (kDebugMode) {
         debugPrint('[UpdatePackageServiceUsageUseCase] Error: $e');
       }

@@ -417,5 +417,5 @@ void showDocumentUploadBottomSheet(
       onUploadSuccess: onUploadSuccess,
       onCancel: onCancel,
     ),
-  );
+  ).ignore();
 }

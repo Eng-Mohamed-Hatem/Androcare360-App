@@ -32,9 +32,10 @@ class _MedicalScreeningScreenState
       _isInit = true;
       final patientId = ref.read(authProvider).user?.id;
       if (patientId != null) {
-        Future.microtask(() {
-          ref.read(medicalScreeningProvider.notifier).loadData(patientId);
-        });
+        ref
+            .read(medicalScreeningProvider.notifier)
+            .loadData(patientId)
+            .ignore();
       }
     }
   }
@@ -48,7 +49,8 @@ class _MedicalScreeningScreenState
   void _onSave(String patientId) {
     ref
         .read(medicalScreeningProvider.notifier)
-        .saveData(patientId, _draftModel);
+        .saveData(patientId, _draftModel)
+        .ignore();
   }
 
   @override
@@ -301,9 +303,9 @@ class _MedicalScreeningScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -357,8 +359,8 @@ class _MedicalScreeningScreenState
             ),
           ),
           backgroundColor: value
-              ? AppColors.success.withOpacity(0.1)
-              : AppColors.textSecondaryLight.withOpacity(0.1),
+              ? AppColors.success.withValues(alpha: 0.1)
+              : AppColors.textSecondaryLight.withValues(alpha: 0.1),
           side: BorderSide.none,
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),

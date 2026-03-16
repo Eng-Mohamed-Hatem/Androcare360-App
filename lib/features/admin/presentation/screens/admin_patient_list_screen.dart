@@ -25,7 +25,7 @@ class _AdminPatientListScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadPatients();
+      ref.read(adminProvider.notifier).loadPatients().ignore();
     });
   }
 
@@ -118,7 +118,7 @@ class _AdminPatientListScreenState
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(12, 4, 12, 100),
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final patient = filtered[i];
                       return _PatientTile(patient: patient);
@@ -159,7 +159,7 @@ class _PatientTile extends StatelessWidget {
               backgroundImage: patient.profileImage != null
                   ? NetworkImage(patient.profileImage!)
                   : null,
-              backgroundColor: Colors.teal.withOpacity(0.15),
+              backgroundColor: Colors.teal.withValues(alpha: 0.15),
               child: patient.profileImage == null
                   ? Text(
                       patient.fullName.isNotEmpty ? patient.fullName[0] : '?',

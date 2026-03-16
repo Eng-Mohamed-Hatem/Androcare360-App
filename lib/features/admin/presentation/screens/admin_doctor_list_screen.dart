@@ -26,7 +26,7 @@ class _AdminDoctorListScreenState extends ConsumerState<AdminDoctorListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadDoctors();
+      ref.read(adminProvider.notifier).loadDoctors().ignore();
     });
   }
 
@@ -137,7 +137,7 @@ class _AdminDoctorListScreenState extends ConsumerState<AdminDoctorListScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(12, 4, 12, 100),
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final doctor = filtered[i];
                       return _DoctorTile(doctor: doctor);
@@ -179,7 +179,7 @@ class _DoctorTile extends StatelessWidget {
               backgroundImage: doctor.profileImage != null
                   ? NetworkImage(doctor.profileImage!)
                   : null,
-              backgroundColor: AppColors.primary.withOpacity(0.15),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
               child: doctor.profileImage == null
                   ? Text(
                       doctor.fullName.isNotEmpty ? doctor.fullName[0] : '?',

@@ -141,7 +141,7 @@ class AuthRepositoryImpl implements AuthRepository {
             if (!completer.isCompleted) {
               completer.complete(Left(AuthFailure(_mapFirebaseAuthError(e))));
             }
-          } catch (e) {
+          } on Exception catch (e) {
             if (!completer.isCompleted) {
               completer.complete(Left(AuthFailure(e.toString())));
             }
@@ -185,7 +185,7 @@ class AuthRepositoryImpl implements AuthRepository {
         debugPrint('❌ [AuthRepositoryImpl] Error in verifyPhoneNumber: $e');
       }
       return Left(AuthFailure(_mapFirebaseAuthError(e)));
-    } catch (e) {
+    } on Exception catch (e) {
       if (kDebugMode) {
         debugPrint(
           '❌ [AuthRepositoryImpl] Unexpected error in verifyPhoneNumber: $e',
@@ -251,7 +251,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
               });
         }
-      } catch (e) {
+      } on Exception catch (e) {
         if (kDebugMode) {
           debugPrint(
             '⚠️ [AuthRepositoryImpl] Failed to update FCM token during phone login: $e',
@@ -265,7 +265,7 @@ class AuthRepositoryImpl implements AuthRepository {
         debugPrint('❌ [AuthRepositoryImpl] Error in signInWithPhoneNumber: $e');
       }
       return Left(AuthFailure(_mapFirebaseAuthError(e)));
-    } catch (e) {
+    } on Exception catch (e) {
       if (kDebugMode) {
         debugPrint(
           '❌ [AuthRepositoryImpl] Unexpected error in signInWithPhoneNumber: $e',
@@ -478,7 +478,7 @@ class AuthRepositoryImpl implements AuthRepository {
       UserModel userModel;
       try {
         userModel = UserModel.fromJson(data);
-      } catch (e, st) {
+      } on Object catch (e, st) {
         debugPrint(
           '❌ AuthRepositoryImpl.signIn: UserModel.fromJson failed: $e',
         );
@@ -588,7 +588,7 @@ class AuthRepositoryImpl implements AuthRepository {
           UserModel userModel;
           try {
             userModel = UserModel.fromJson(data);
-          } catch (e, st) {
+          } on Object catch (e, st) {
             if (kDebugMode) {
               debugPrint('❌ AuthRepositoryImpl.getCurrentUser: UserModel.fromJson failed: $e');
               debugPrint('   $st');
@@ -1082,7 +1082,7 @@ class AuthRepositoryImpl implements AuthRepository {
           // OTP sending failed — roll back the just-created email account
           try {
             await firebaseUser.delete();
-          } catch (deleteErr) {
+          } on Exception catch (deleteErr) {
             if (kDebugMode) {
               debugPrint(
                 r'⚠️ [SignUp] Rollback failed (delete user): $deleteErr',
@@ -1186,7 +1186,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (kDebugMode) {
         debugPrint(r'♻️ [SignUp] Firebase user rolled back: ${user.uid}');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (kDebugMode) {
         debugPrint(r'⚠️ [SignUp] Rollback (delete user) failed: $e');
       }

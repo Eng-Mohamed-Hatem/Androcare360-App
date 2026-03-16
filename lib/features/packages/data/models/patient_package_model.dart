@@ -86,7 +86,8 @@ class PatientPackageModel extends PatientPackageEntity {
       final usageRaw = data['servicesUsage'] as List<dynamic>? ?? [];
       final servicesRaw = data['packageServices'] as List<dynamic>? ?? [];
       final clinicId = (data['clinicId'] as String?) ?? 'general';
-      final patientId = (data['patientId'] as String?) ??
+      final patientId =
+          (data['patientId'] as String?) ??
           snapshot.reference.parent.parent!.id;
       final packageName =
           (data['packageName'] as String?) ?? 'باقة عيادة $clinicId';
@@ -128,7 +129,7 @@ class PatientPackageModel extends PatientPackageEntity {
         createdAt: _parseDate(data['createdAt']),
         updatedAt: _parseDate(data['updatedAt']),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint(
           '[PatientPackageModel] Parse error for ${snapshot.id}: $e',

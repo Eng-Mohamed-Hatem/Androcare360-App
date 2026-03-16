@@ -49,7 +49,7 @@ class MedicalScreeningRepositoryImpl implements MedicalScreeningRepository {
       return Left(
         ServerFailure(e.message ?? 'Unknown Firebase Error'),
       );
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       debugPrint('General Error in getMedicalScreening: $e\n$stackTrace');
       return const Left(
         ServerFailure('Failed to fetch medical screening data'),
@@ -88,7 +88,7 @@ class MedicalScreeningRepositoryImpl implements MedicalScreeningRepository {
       return Left(
         ServerFailure(e.message ?? 'Unknown Firebase Error'),
       );
-    } catch (e, stackTrace) {
+    } on Exception catch (e, stackTrace) {
       debugPrint('General Error in saveMedicalScreening: $e\n$stackTrace');
       return const Left(
         ServerFailure('Failed to save medical screening data'),

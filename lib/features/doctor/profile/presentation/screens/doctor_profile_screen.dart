@@ -156,7 +156,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: Colors.white.withOpacity(0.2),
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
                     backgroundImage:
                         user?.profileImage != null &&
                             user!.profileImage!.isNotEmpty

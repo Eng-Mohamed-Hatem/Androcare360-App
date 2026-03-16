@@ -125,7 +125,7 @@ class PackageModel extends PackageEntity {
         updatedAt:
             (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint(
           '[PackageModel.fromFirestore] Parse error for ${snapshot.id}: $e',

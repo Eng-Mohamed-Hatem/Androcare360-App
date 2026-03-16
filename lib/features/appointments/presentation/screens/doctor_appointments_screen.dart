@@ -569,7 +569,7 @@ class _StartCallButtonState extends ConsumerState<_StartCallButton> {
             );
           }
         }
-      } catch (e, stackTrace) {
+      } on Exception catch (e, stackTrace) {
         debugPrint('❌ [ID TRACE] Error during AppointmentId verification: $e');
         debugPrint('❌ [ID TRACE] StackTrace: $stackTrace');
         // Continue with call attempt even if verification fails

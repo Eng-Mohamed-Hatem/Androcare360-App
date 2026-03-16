@@ -29,7 +29,10 @@ class _AdminPatientEmrScreenState extends ConsumerState<AdminPatientEmrScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadPatientEmrHistory(widget.patientId);
+      ref
+          .read(adminProvider.notifier)
+          .loadPatientEmrHistory(widget.patientId)
+          .ignore();
     });
   }
 

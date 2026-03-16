@@ -48,7 +48,7 @@ class AdminPackagesGridPage extends ConsumerWidget {
                 MaterialPageRoute<void>(
                   builder: (context) => const AdminPackagesListPage(),
                 ),
-              );
+              ).ignore();
             },
           );
         },

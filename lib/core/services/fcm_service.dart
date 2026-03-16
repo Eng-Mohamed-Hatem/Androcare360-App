@@ -96,7 +96,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
         debugPrint('✅ FCM notification receipt logged to Firestore');
       }
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('❌ Error logging FCM notification receipt: $e');
     }
 
@@ -264,7 +264,7 @@ class FCMService {
     // 7. ✅ NEW: Listen for token refresh
     _messaging.onTokenRefresh.listen((newToken) {
       debugPrint('🔄 FCM Token refreshed');
-      _saveFCMToken(newToken);
+      _saveFCMToken(newToken).ignore();
     });
 
     debugPrint('✅ FCM Service initialized with VoIP support');
@@ -291,7 +291,7 @@ class FCMService {
       });
 
       debugPrint('✅ FCM token saved to Firestore for user: $userId');
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('❌ Error saving FCM token: $e');
     }
   }

@@ -1,4 +1,5 @@
 import 'package:elajtech/core/constants/app_colors.dart';
+import 'package:elajtech/core/presentation/screens/admin_approval_screen.dart';
 import 'package:elajtech/features/admin/presentation/providers/admin_provider.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_audit_log_screen.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_doctor_list_screen.dart';
@@ -32,8 +33,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     super.initState();
     // Preload doctor + patient counts for stats display
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(adminProvider.notifier).loadDoctors();
-      ref.read(adminProvider.notifier).loadPatients();
+      ref.read(adminProvider.notifier).loadDoctors().ignore();
+      ref.read(adminProvider.notifier).loadPatients().ignore();
     });
   }
 
@@ -149,6 +150,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
               const SizedBox(height: 12),
               _NavCard(
+                icon: Icons.verified_outlined,
+                title: 'مراجعة طلبات الأطباء',
+                subtitle: 'اعتماد أو رفض حسابات الأطباء الجديدة المعلقة',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AdminApprovalScreen(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _NavCard(
                 icon: Icons.medical_services_outlined,
                 title: 'إدارة الأطباء',
                 subtitle: 'إضافة وتعديل وتفعيل/تعطيل حسابات الأطباء',
@@ -194,7 +207,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     MaterialPageRoute<void>(
                       builder: (_) => const AdminPackagesGridPage(),
                     ),
-                  );
+                  ).ignore();
                 },
               ),
               const SizedBox(height: 48),
@@ -228,7 +241,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -285,7 +298,7 @@ class _NavCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: AppColors.primary),

@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -385,7 +385,7 @@ class AdminRepositoryImpl implements AdminRepository {
               debugPrint('⚠️ AdminRepo: Firebase error in $col: ${e.code}');
               debugPrint('   • Message: ${e.message}');
             }
-          } catch (e) {
+          } on Exception catch (e) {
             if (kDebugMode) {
               debugPrint('❌ AdminRepo: Unexpected error in $col: $e');
             }

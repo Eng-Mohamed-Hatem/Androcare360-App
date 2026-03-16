@@ -83,7 +83,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -105,7 +105,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   Text(
                     'AndroCare360 Admin Panel',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -206,14 +206,14 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     labelStyle: const TextStyle(color: Colors.white54),
     prefixIcon: Icon(icon, color: Colors.white54),
     filled: true,
-    fillColor: Colors.white.withOpacity(0.08),
+    fillColor: Colors.white.withValues(alpha: 0.08),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),

@@ -120,7 +120,7 @@ class _AdminPatientPackagesPageState
                               patientPackage: pkg,
                             ),
                           ),
-                        );
+                        ).ignore();
                       },
                       borderRadius: BorderRadius.circular(16),
                       child: Padding(
@@ -133,7 +133,9 @@ class _AdminPatientPackagesPageState
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -175,8 +177,8 @@ class _AdminPatientPackagesPageState
                                   ),
                                   decoration: BoxDecoration(
                                     color: isExpired
-                                        ? Colors.orange.withOpacity(0.1)
-                                        : Colors.green.withOpacity(0.1),
+                                        ? Colors.orange.withValues(alpha: 0.1)
+                                        : Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -198,10 +200,12 @@ class _AdminPatientPackagesPageState
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.1),
+                                      color: Colors.blue.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: Colors.blue.withOpacity(0.3),
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.3,
+                                        ),
                                       ),
                                     ),
                                     child: const Text(

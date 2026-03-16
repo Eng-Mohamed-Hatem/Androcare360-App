@@ -78,23 +78,7 @@ class _AdminPatientPackageContextPageState
       builder: (ctx) => AdminDocumentUploadBottomSheet(
         patientPackage: widget.patientPackage,
       ),
-    );
-  }
-
-  Future<void> _incrementUsage(String serviceId) async {
-    final success = await ref
-        .read(adminPatientPackageWriteProvider.notifier)
-        .updateServiceUsage(
-          patientId: widget.patientPackage.patientId,
-          patientPackageId: widget.patientPackage.id,
-          serviceId: serviceId,
-        );
-
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تحديث استخدام الخدمة بنجاح')),
-      );
-    }
+    ).ignore();
   }
 
   Future<void> _saveNotes() async {
@@ -136,6 +120,25 @@ class _AdminPatientPackageContextPageState
     final writeState = ref.watch(adminPatientPackageWriteProvider);
     final isBusy = writeState is AsyncLoading;
 
+    // Watch documents to determine which services have linked documents
+    final docsAsync = ref.watch(
+      adminPackageDocumentsProvider((
+        currentPkg.patientId,
+        currentPkg.id,
+      )),
+    );
+    final servicesWithDocs = <String>{};
+    docsAsync.maybeWhen(
+      data: (docs) {
+        for (final doc in docs) {
+          if (doc.serviceId != null) {
+            servicesWithDocs.add(doc.serviceId!);
+          }
+        }
+      },
+      orElse: () {},
+    );
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -169,11 +172,15 @@ class _AdminPatientPackageContextPageState
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'المريض: ${widget.patient.fullName}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'المريض: ${widget.patient.fullName}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -241,30 +248,148 @@ class _AdminPatientPackageContextPageState
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                Text(
-                  '${currentPkg.usedServicesCount} / ${currentPkg.totalServicesCount}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                Expanded(
+                  child: Text(
+                    '${servicesWithDocs.length} / ${currentPkg.totalServicesCount}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            ..._buildServiceUsageCards(currentPkg, isBusy: isBusy),
+            ..._buildServiceUsageCards(
+              currentPkg,
+              isBusy: isBusy,
+              servicesWithDocs: servicesWithDocs,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Documents
+            Row(
+              children: [
+                const Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.folder_shared_outlined,
+                        color: AppColors.primary,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'المستندات المرفقة',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _showUploadBottomSheet,
+                  icon: const Icon(Icons.add),
+                  label: const Text('رفع ملف'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Documents list using Provider
+            Consumer(
+              builder: (context, ref, _) {
+                final docsAsync = ref.watch(
+                  adminPackageDocumentsProvider((
+                    currentPkg.patientId,
+                    currentPkg.id,
+                  )),
+                );
+                return docsAsync.when(
+                  data: (docs) {
+                    if (docs.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text('لا توجد مستندات لهذه الباقة'),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: docs
+                          .map(
+                            (doc) => Card(
+                              elevation: 0,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(
+                                  color: AppColors.borderLight,
+                                ),
+                              ),
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.description_outlined,
+                                  color: AppColors.primary,
+                                ),
+                                title: Text(
+                                  doc.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${doc.documentType.arabicLabel} • ${DateFormat.yMMMd('ar').format(doc.uploadedAt)}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                trailing: const Icon(Icons.download, size: 20),
+                                onTap: () {
+                                  // TODO: View or download document
+                                },
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, st) => Center(child: Text('Error: $e')),
+                );
+              },
+            ),
 
             const SizedBox(height: 24),
 
             // Admin Notes Section (R2)
             Row(
               children: [
-                const Icon(Icons.note_alt_outlined, color: AppColors.primary),
-                const SizedBox(width: 8),
-                const Text(
-                  'ملاحظات الأدمن (خاصة)',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const Icon(
+                  Icons.note_alt_outlined,
+                  color: AppColors.primary,
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'ملاحظات الأدمن (خاصة)',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 if (!_isEditingNotes)
                   IconButton(
                     icon: const Icon(Icons.edit, size: 20),
@@ -343,104 +468,7 @@ class _AdminPatientPackageContextPageState
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Documents
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.folder_shared_outlined,
-                      color: AppColors.primary,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'المستندات المرفقة',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                TextButton.icon(
-                  onPressed: _showUploadBottomSheet,
-                  icon: const Icon(Icons.add),
-                  label: const Text('رفع ملف'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Documents list using Provider
-            Consumer(
-              builder: (context, ref, _) {
-                final docsAsync = ref.watch(
-                  adminPackageDocumentsProvider((
-                    currentPkg.patientId,
-                    currentPkg.id,
-                  )),
-                );
-                return docsAsync.when(
-                  data: (docs) {
-                    if (docs.isEmpty) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text('لا توجد مستندات لهذه الباقة'),
-                        ),
-                      );
-                    }
-                    return Column(
-                      children: docs
-                          .map(
-                            (doc) => Card(
-                              elevation: 0,
-                              margin: const EdgeInsets.only(bottom: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: const BorderSide(
-                                  color: AppColors.borderLight,
-                                ),
-                              ),
-                              child: ListTile(
-                                leading: const Icon(
-                                  Icons.description_outlined,
-                                  color: AppColors.primary,
-                                ),
-                                title: Text(
-                                  doc.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  '${doc.documentType.arabicLabel} • ${DateFormat.yMMMd('ar').format(doc.uploadedAt)}',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                trailing: const Icon(Icons.download, size: 20),
-                                onTap: () {
-                                  // TODO: View or download document
-                                },
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, st) => Center(child: Text('Error: $e')),
-                );
-              },
-            ),
+            const SizedBox(height: 42),
           ],
         ),
       ),
@@ -450,6 +478,7 @@ class _AdminPatientPackageContextPageState
   List<Widget> _buildServiceUsageCards(
     PatientPackageEntity package, {
     required bool isBusy,
+    required Set<String> servicesWithDocs,
   }) {
     final usageByServiceId = {
       for (final usage in package.servicesUsage) usage.serviceId: usage,
@@ -467,6 +496,7 @@ class _AdminPatientPackageContextPageState
           allowedCount: service.quantity,
           usedCount: usage?.usedCount ?? 0,
           isBusy: isBusy,
+          servicesWithDocs: servicesWithDocs,
         ),
       );
     }
@@ -482,6 +512,7 @@ class _AdminPatientPackageContextPageState
           allowedCount: 0,
           usedCount: usage.usedCount,
           isBusy: isBusy,
+          servicesWithDocs: servicesWithDocs,
         ),
       );
     }
@@ -507,7 +538,10 @@ class _AdminPatientPackageContextPageState
     required int allowedCount,
     required int usedCount,
     required bool isBusy,
+    required Set<String> servicesWithDocs,
   }) {
+    final hasLinkedDocument = servicesWithDocs.contains(serviceId);
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 8),
@@ -517,18 +551,26 @@ class _AdminPatientPackageContextPageState
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          serviceName,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        leading: hasLinkedDocument
+            ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+            : null,
+        title: Row(
+          children: [
+            if (hasLinkedDocument) const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                serviceName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
         subtitle: Text(
           'المسموح: $allowedCount • المستخدم: $usedCount',
           style: const TextStyle(fontSize: 12),
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-          onPressed: isBusy ? null : () => _incrementUsage(serviceId),
-          tooltip: 'تسجيل استخدام',
         ),
       ),
     );
@@ -550,17 +592,26 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.textSecondaryLight),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: AppColors.textSecondaryLight),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? AppColors.textPrimaryLight,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? AppColors.textPrimaryLight,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],

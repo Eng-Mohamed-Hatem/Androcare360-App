@@ -436,7 +436,8 @@ class VoIPCallService {
     debugPrint('✅ Call accepted');
     debugPrint('📦 Event body: ${event.body}');
 
-    final callId = event.body['id'] as String?;
+    final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
+    final callId = body['id'] as String?;
     if (callId == null) {
       debugPrint('❌ No call ID in event');
       return;
@@ -451,7 +452,10 @@ class VoIPCallService {
         '⚠️ _pendingCallData is null/empty, reading from event.body["extra"]',
       );
 
-      final extra = event.body['extra'] as Map<dynamic, dynamic>?;
+      final extraRaw = body['extra'];
+      final extra = extraRaw is Map<dynamic, dynamic>
+          ? Map<String, dynamic>.from(extraRaw)
+          : null;
       debugPrint('📦 Extra data from event: $extra');
 
       if (extra != null) {
@@ -459,6 +463,7 @@ class VoIPCallService {
         final agoraChannelName = extra['agoraChannelName'] as String?;
         final agoraUid = extra['agoraUid'] as int?;
         final appointmentId = extra['appointmentId'] as String? ?? '';
+        final callerName = body['nameCaller'] as String? ?? 'طبيب';
 
         debugPrint('🔗 Agora token from extra: $agoraToken');
 
@@ -466,7 +471,7 @@ class VoIPCallService {
           callData = PendingCallData(
             callId: callId,
             appointmentId: appointmentId,
-            callerName: event.body['nameCaller'] as String? ?? 'طبيب',
+            callerName: callerName,
             agoraToken: agoraToken,
             agoraChannelName: agoraChannelName,
             agoraUid: agoraUid,
@@ -518,7 +523,8 @@ class VoIPCallService {
   void _onCallDeclined(CallEvent event) {
     debugPrint('❌ Call declined');
 
-    final callId = event.body['id'] as String?;
+    final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
+    final callId = body['id'] as String?;
     if (callId == null) return;
 
     // ✅ NEW: Log call declined by user
@@ -567,7 +573,8 @@ class VoIPCallService {
   void _onCallEnded(CallEvent event) {
     debugPrint('📴 Call ended');
 
-    final callId = event.body['id'] as String?;
+    final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
+    final callId = body['id'] as String?;
 
     // ملاحظة: الخروج من الاجتماع يتم عبر تطبيق Zoom نفسه
 
@@ -593,7 +600,8 @@ class VoIPCallService {
   void _onCallTimeout(CallEvent event) {
     debugPrint('⏰ Call timeout - missed call');
 
-    final callId = event.body['id'] as String?;
+    final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
+    final callId = body['id'] as String?;
 
     // ✅ إخطار السيرفر بالمكالمة الفائتة
     final appointmentId = _pendingCallData?.appointmentId;

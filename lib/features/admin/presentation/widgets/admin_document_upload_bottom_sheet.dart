@@ -103,7 +103,36 @@ class _AdminDocumentUploadBottomSheetState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم رفع المستند بنجاح')),
       );
+      return;
     }
+
+    if (mounted) {
+      final writeState = ref.read(adminPatientPackageWriteProvider);
+      final message = writeState is AsyncError
+          ? _humanizeError(writeState.error)
+          : 'تعذر رفع المستند. حاول مرة أخرى.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  String _humanizeError(Object? error) {
+    final message = (error?.toString() ?? '').toLowerCase();
+    if (message.contains('permission-denied') ||
+        message.contains('storage/unauthorized')) {
+      return 'ليس لديك صلاحية لرفع المستند لهذا المريض.';
+    }
+    if (message.contains('size')) {
+      return 'حجم الملف يتجاوز الحد المسموح.';
+    }
+    return (error?.toString() ?? 'تعذر رفع المستند.').replaceAll(
+      'Exception: ',
+      '',
+    );
   }
 
   @override
@@ -111,14 +140,8 @@ class _AdminDocumentUploadBottomSheetState
     final writeState = ref.watch(adminPatientPackageWriteProvider);
     final isLoading = writeState is AsyncLoading;
 
-    // Build the list of service IDs available in the package for the dropdown
-    // Since we don't have the full package context here (we only have PatientPackageEntity),
-    // we can use servicesUsage keys if they exist, or just allow free text if we don't have it.
-    // Assuming we want exact service IDs, we might need the original package services.
-    // For now, we will extract them from servicesUsage as those are the instantiated ones.
-    final availableServiceIds = widget.patientPackage.servicesUsage
-        .map((s) => s.serviceId)
-        .toList();
+    // Build the list of services from packageServices (friendly names)
+    final availableServices = widget.patientPackage.packageServices;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -131,7 +154,7 @@ class _AdminDocumentUploadBottomSheetState
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -212,7 +235,7 @@ class _AdminDocumentUploadBottomSheetState
                 const SizedBox(height: 16),
 
                 // Service ID
-                if (availableServiceIds.isNotEmpty)
+                if (availableServices.isNotEmpty)
                   DropdownButtonFormField<String?>(
                     initialValue: _selectedServiceId,
                     decoration: const InputDecoration(
@@ -223,10 +246,10 @@ class _AdminDocumentUploadBottomSheetState
                       const DropdownMenuItem<String?>(
                         child: Text('بدون ربط بخدمة'),
                       ),
-                      ...availableServiceIds.map(
-                        (sid) => DropdownMenuItem(
-                          value: sid,
-                          child: Text(sid),
+                      ...availableServices.map(
+                        (service) => DropdownMenuItem(
+                          value: service.serviceId,
+                          child: Text(service.displayName),
                         ),
                       ),
                     ],
@@ -234,7 +257,7 @@ class _AdminDocumentUploadBottomSheetState
                         ? null
                         : (val) => setState(() => _selectedServiceId = val),
                   ),
-                if (availableServiceIds.isNotEmpty) const SizedBox(height: 16),
+                if (availableServices.isNotEmpty) const SizedBox(height: 16),
 
                 // File Picker
                 OutlinedButton.icon(

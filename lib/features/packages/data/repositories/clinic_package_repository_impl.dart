@@ -80,7 +80,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[$runtimeType] Unexpected error: $e');
         debugPrint(st.toString());
@@ -121,7 +121,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[$runtimeType] Unexpected error: $e');
         debugPrint(st.toString());
@@ -167,7 +167,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[$runtimeType] getPackageById Unexpected: $e');
         debugPrint(st.toString());
@@ -222,7 +222,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[$runtimeType] createPackage Unexpected: $e');
         debugPrint(st.toString());
@@ -277,7 +277,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[$runtimeType] updatePackage Unexpected: $e');
         debugPrint(st.toString());
@@ -308,7 +308,7 @@ abstract class BaseClinicPackageRepository implements PackageRepository {
         debugPrint(st.toString());
       }
       return Left(NetworkFailure(e.message ?? 'خطأ في الشبكة'));
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[$runtimeType] updatePackageStatus Unexpected: $e');
         debugPrint(st.toString());

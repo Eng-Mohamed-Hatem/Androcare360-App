@@ -9,7 +9,8 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:elajtech/features/packages/domain/failures/package_failures.dart' show PackageNotFoundFailure;
+import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
+    show PackageNotFoundFailure;
 import 'package:flutter/foundation.dart';
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
 
@@ -89,7 +90,7 @@ class PackageDocumentModel extends PackageDocumentEntity {
         uploadedAt:
             (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint(
           '[PackageDocumentModel.fromFirestore] Parse error ${snapshot.id}: $e',

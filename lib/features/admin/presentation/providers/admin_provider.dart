@@ -144,10 +144,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required String password,
   }) async {
     state = state.copyWith(isActionLoading: true, clearError: true);
-    final UserModel admin;
-    try {
-      admin = _admin;
-    } on StateError {
+    final user = _ref.read(authProvider).user;
+    if (user == null || user.userType != UserType.admin) {
       state = state.copyWith(
         isActionLoading: false,
         error: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.',
@@ -157,8 +155,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     final result = await _repo.createDoctor(
       doctor: doctor,
       password: password,
-      adminId: admin.id,
-      adminName: admin.fullName,
+      adminId: user.id,
+      adminName: user.fullName,
     );
     _handleResult<Unit>(
       result,
@@ -173,10 +171,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required UserModel previousDoctor,
   }) async {
     state = state.copyWith(isActionLoading: true, clearError: true);
-    final UserModel admin;
-    try {
-      admin = _admin;
-    } on StateError {
+    final user = _ref.read(authProvider).user;
+    if (user == null || user.userType != UserType.admin) {
       state = state.copyWith(
         isActionLoading: false,
         error: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.',
@@ -186,8 +182,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     final result = await _repo.updateDoctorProfile(
       updatedDoctor: updatedDoctor,
       previousDoctor: previousDoctor,
-      adminId: admin.id,
-      adminName: admin.fullName,
+      adminId: user.id,
+      adminName: user.fullName,
     );
     _handleResult<Unit>(
       result,
@@ -204,10 +200,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     required bool isActive,
   }) async {
     state = state.copyWith(isActionLoading: true, clearError: true);
-    final UserModel admin;
-    try {
-      admin = _admin;
-    } on StateError {
+    final user = _ref.read(authProvider).user;
+    if (user == null || user.userType != UserType.admin) {
       state = state.copyWith(
         isActionLoading: false,
         error: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.',
@@ -217,8 +211,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
     final result = await _togglePatientActiveStatus(
       targetUserId: targetUserId,
       isActive: isActive,
-      adminId: admin.id,
-      adminName: admin.fullName,
+      adminId: user.id,
+      adminName: user.fullName,
     );
     final action = isActive ? 'تفعيل' : 'تعطيل';
     _handleResult<Unit>(
@@ -226,8 +220,8 @@ class AdminNotifier extends StateNotifier<AdminState> {
       successMsg: 'تم $action الحساب بنجاح',
       // Refresh both lists so the UI badge updates immediately
       onSuccess: () {
-        loadDoctors();
-        loadPatients();
+        loadDoctors().ignore();
+        loadPatients().ignore();
       },
     );
   }

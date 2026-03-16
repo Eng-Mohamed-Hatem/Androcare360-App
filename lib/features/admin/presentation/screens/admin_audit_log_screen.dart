@@ -55,7 +55,7 @@ class AdminAuditLogScreen extends ConsumerWidget {
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
               itemCount: logs.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (_, i) {
                 final log = logs[i];
                 return _AuditLogTile(
@@ -86,7 +86,7 @@ class _AuditLogTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     leading: CircleAvatar(
-      backgroundColor: actionColor.withOpacity(0.15),
+      backgroundColor: actionColor.withValues(alpha: 0.15),
       child: Icon(
         _iconFor(log.action),
         color: actionColor,

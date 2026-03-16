@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/core/constants/app_strings.dart';
 import 'package:elajtech/core/providers/theme_provider.dart';
-import 'package:elajtech/core/services/data_cleanup_service.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/features/common/privacy_policy_screen.dart';
 // import 'package:elajtech/core/services/firestore_service.dart'; // Unused
@@ -352,85 +351,6 @@ class PatientProfileScreen extends ConsumerWidget {
                     },
                   ),
 
-                  const SizedBox(height: 32),
-                  const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'أدوات المطور (مؤقت)',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  _SettingsTile(
-                    icon: Icons.delete_forever,
-                    title: 'حذف جميع البيانات (أطباء ومواعيد)',
-                    iconColor: AppColors.error,
-                    titleColor: AppColors.error,
-                    onTap: () async {
-                      await showDialog<void>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('حذف البيانات'),
-                          content: const Text(
-                            'هل أنت متأكد؟ سيتم حذف جميع الأطباء والمواعيد والسجلات الطبية. لا يمكن التراجع عن هذا الإجراء.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('إلغاء'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                Navigator.pop(context); // Close dialog
-
-                                // Show loading
-                                unawaited(
-                                  showDialog<void>(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (context) => const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                );
-
-                                try {
-                                  await DataCleanupService.cleanupAllData();
-                                  if (context.mounted) {
-                                    Navigator.pop(context); // Close loading
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('تم حذف البيانات بنجاح'),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                  }
-                                } on Exception catch (e) {
-                                  if (context.mounted) {
-                                    Navigator.pop(context); // Close loading
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('حدث خطأ: $e'),
-                                        backgroundColor: AppColors.error,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                              child: const Text(
-                                'حذف نهائي',
-                                style: TextStyle(color: AppColors.error),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-
                   const SizedBox(height: 100),
                 ],
               ),
@@ -642,7 +562,7 @@ class _AppointmentsManagementScreenState
           builder: (context) => const Center(
             child: CircularProgressIndicator(),
           ),
-        );
+        ).ignore();
 
         // Check for conflicts
         final hasConflict = await ref
@@ -1205,7 +1125,7 @@ class _RescheduleDialogState extends State<_RescheduleDialog> {
           if (slotTime.isBefore(now)) {
             return TimeSlot(time: slot.time, isAvailable: false);
           }
-        } catch (_) {}
+        } on Exception catch (_) {}
       }
       return slot;
     }).toList();

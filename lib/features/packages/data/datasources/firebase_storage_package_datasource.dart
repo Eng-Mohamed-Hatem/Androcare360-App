@@ -18,7 +18,8 @@ library;
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:elajtech/features/packages/data/datasources/firestore_package_datasource.dart' show FirestorePackageDatasource;
+import 'package:elajtech/features/packages/data/datasources/firestore_package_datasource.dart'
+    show FirestorePackageDatasource;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
@@ -153,7 +154,7 @@ class FirebaseStoragePackageDatasource {
       return Left(
         UploadFailure('فشل رفع الملف: ${e.message ?? e.code}'),
       );
-    } catch (e, st) {
+    } on Exception catch (e, st) {
       if (kDebugMode) {
         debugPrint('[StorageDatasource] Unexpected error: $e');
         debugPrint(st.toString());

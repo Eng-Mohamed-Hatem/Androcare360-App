@@ -62,7 +62,7 @@ class UploadPackageDocumentUseCase {
           );
         }
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (kDebugMode) {
         debugPrint(
           '[UploadPackageDocumentUseCase] File length check failed: $e',
@@ -86,7 +86,7 @@ class UploadPackageDocumentUseCase {
     );
 
     // If successful, send best-effort FCM notification
-    result.fold(
+    await result.fold(
       (failure) {
         // Do nothing on failure
       },
@@ -119,7 +119,7 @@ class UploadPackageDocumentUseCase {
               ),
             );
           }
-        } catch (e) {
+        } on Exception catch (e) {
           if (kDebugMode) {
             debugPrint(
               '[UploadPackageDocumentUseCase] Unexpected error sending notification: $e',
