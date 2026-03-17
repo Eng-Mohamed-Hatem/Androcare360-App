@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/constants/app_constants.dart';
+import 'package:elajtech/core/domain/entities/doctor_application_action_result.dart';
 import 'package:elajtech/core/domain/entities/pending_doctor_list_item.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/core/data/repositories/admin_approval_repository.dart';
+import 'package:elajtech/features/admin/data/models/audit_log_model.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
@@ -69,6 +71,9 @@ class AdminApprovalRepositoryImpl implements AdminApprovalRepository {
   final FirebaseFirestore _firestore;
 
   static final String _usersCollection = AppConstants.collections.users;
+
+  CollectionReference<Map<String, dynamic>> get _auditLogs =>
+      _firestore.collection('audit_logs');
 
   @override
   Future<Either<Failure, List<PendingDoctorListItem>>>
@@ -145,63 +150,98 @@ class AdminApprovalRepositoryImpl implements AdminApprovalRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> approveDoctor(String doctorId) async {
+  Future<Either<Failure, DoctorApplicationActionResult>> approveDoctor({
+    required String doctorId,
+    required String adminId,
+    required String adminName,
+  }) async {
     try {
       if (kDebugMode) {
         debugPrint(
           '📲 [AdminApprovalRepository] Approving doctor: $doctorId',
         );
         debugPrint(
-          '[AdminApprovalRepository] action=approve doctorId=$doctorId',
+          '[AdminApprovalRepository] action=approve doctorId=$doctorId adminId=$adminId',
         );
       }
 
       final approvedAt = DateTime.now();
       final doctorRef = _firestore.collection(_usersCollection).doc(doctorId);
+      late final DoctorApplicationActionResult actionResult;
 
-      await _firestore.runTransaction((transaction) async {
+      await _firestore.runTransaction<void>((transaction) async {
         final snapshot = await transaction.get(doctorRef);
         final data = snapshot.data();
 
         if (!snapshot.exists || data == null) {
-          throw const _ApprovalStateException('not-found');
+          actionResult = const DoctorApplicationActionResult(
+            status: DoctorApplicationActionStatus.alreadyRejected,
+            message: 'تمت إزالة هذا الطلب أو رفضه من مسؤول آخر.',
+          );
+          return;
         }
 
         final userType = data['userType'] as String?;
         final isApproved = data['isApproved'] as bool? ?? false;
-        final isActive = data['isActive'] as bool? ?? true;
+        final reviewedByAdminName = data['reviewedByAdminName'] as String?;
+        final reviewedAt = data['reviewedAt'] as String?;
 
         if (userType != 'doctor') {
           throw const _ApprovalStateException('invalid-user-type');
         }
 
-        if (isApproved || isActive) {
-          throw const _ApprovalStateException('already-resolved');
+        if (isApproved) {
+          final reviewerName = reviewedByAdminName ?? 'مسؤول آخر';
+          final reviewedAtText = reviewedAt ?? 'وقت سابق';
+          actionResult = DoctorApplicationActionResult(
+            status: DoctorApplicationActionStatus.alreadyApproved,
+            message:
+                'تمت الموافقة على هذا الطلب بالفعل بواسطة $reviewerName في $reviewedAtText.',
+          );
+          return;
         }
 
         transaction.update(doctorRef, {
           'isApproved': true,
           'isActive': true,
           'approvedAt': approvedAt.toIso8601String(),
+          'reviewedAt': approvedAt.toIso8601String(),
+          'reviewedByAdminId': adminId,
+          'reviewedByAdminName': adminName,
+          'reviewDecision': 'approved',
         });
+
+        actionResult = const DoctorApplicationActionResult(
+          status: DoctorApplicationActionStatus.approved,
+          message: 'تمت الموافقة على الطبيب بنجاح.',
+        );
       });
 
-      if (kDebugMode) {
-        debugPrint(
-          '✅ [AdminApprovalRepository] Doctor approved successfully',
-        );
-        debugPrint(
-          '  - isApproved: true',
-        );
-        debugPrint(
-          '  - isActive: true',
-        );
-        debugPrint(
-          '  - approvedAt: $approvedAt',
+      if (actionResult.status == DoctorApplicationActionStatus.approved) {
+        await _writeAuditLog(
+          AuditLogModel(
+            id: '',
+            adminId: adminId,
+            adminName: adminName,
+            action: 'approve_doctor_application',
+            targetId: doctorId,
+            targetType: 'doctor',
+            timestamp: approvedAt,
+            metadata: {
+              'reviewDecision': 'approved',
+              'approvedAt': approvedAt.toIso8601String(),
+            },
+          ),
         );
       }
 
-      return const Right(unit);
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [AdminApprovalRepository] Approval result=${actionResult.status.name}',
+        );
+      }
+
+      return Right(actionResult);
     } on _ApprovalStateException catch (e) {
       return Left(ServerFailure(_mapApprovalStateError(e.code)));
     } on FirebaseException catch (e) {
@@ -231,49 +271,87 @@ class AdminApprovalRepositoryImpl implements AdminApprovalRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> rejectDoctor(String doctorId) async {
+  Future<Either<Failure, DoctorApplicationActionResult>> rejectDoctor({
+    required String doctorId,
+    required String adminId,
+    required String adminName,
+  }) async {
     try {
       if (kDebugMode) {
         debugPrint(
           '📲 [AdminApprovalRepository] Rejecting doctor: $doctorId',
         );
         debugPrint(
-          '[AdminApprovalRepository] action=reject doctorId=$doctorId',
+          '[AdminApprovalRepository] action=reject doctorId=$doctorId adminId=$adminId',
         );
       }
 
       final doctorRef = _firestore.collection(_usersCollection).doc(doctorId);
+      final rejectedAt = DateTime.now();
+      late final DoctorApplicationActionResult actionResult;
 
-      await _firestore.runTransaction((transaction) async {
+      await _firestore.runTransaction<void>((transaction) async {
         final snapshot = await transaction.get(doctorRef);
         final data = snapshot.data();
 
         if (!snapshot.exists || data == null) {
-          throw const _ApprovalStateException('not-found');
+          actionResult = const DoctorApplicationActionResult(
+            status: DoctorApplicationActionStatus.alreadyRejected,
+            message: 'تمت إزالة هذا الطلب أو رفضه من مسؤول آخر.',
+          );
+          return;
         }
 
         final userType = data['userType'] as String?;
         final isApproved = data['isApproved'] as bool? ?? false;
-        final isActive = data['isActive'] as bool? ?? true;
+        final reviewedByAdminName = data['reviewedByAdminName'] as String?;
 
         if (userType != 'doctor') {
           throw const _ApprovalStateException('invalid-user-type');
         }
 
-        if (isApproved || isActive) {
-          throw const _ApprovalStateException('already-resolved');
+        if (isApproved) {
+          actionResult = DoctorApplicationActionResult(
+            status: DoctorApplicationActionStatus.alreadyApproved,
+            message:
+                'تمت الموافقة على هذا الطلب بالفعل بواسطة ${reviewedByAdminName ?? 'مسؤول آخر'}، ولا يمكن رفضه الآن.',
+          );
+          return;
         }
 
         transaction.delete(doctorRef);
+
+        actionResult = const DoctorApplicationActionResult(
+          status: DoctorApplicationActionStatus.rejected,
+          message: 'تم رفض الطبيب وحذف الطلب.',
+        );
       });
 
-      if (kDebugMode) {
-        debugPrint(
-          '✅ [AdminApprovalRepository] Doctor rejected and deleted successfully',
+      if (actionResult.status == DoctorApplicationActionStatus.rejected) {
+        await _writeAuditLog(
+          AuditLogModel(
+            id: '',
+            adminId: adminId,
+            adminName: adminName,
+            action: 'reject_doctor_application',
+            targetId: doctorId,
+            targetType: 'doctor',
+            timestamp: rejectedAt,
+            metadata: {
+              'reviewDecision': 'rejected',
+              'reviewedAt': rejectedAt.toIso8601String(),
+            },
+          ),
         );
       }
 
-      return const Right(unit);
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [AdminApprovalRepository] Rejection result=${actionResult.status.name}',
+        );
+      }
+
+      return Right(actionResult);
     } on _ApprovalStateException catch (e) {
       return Left(ServerFailure(_mapApprovalStateError(e.code)));
     } on FirebaseException catch (e) {
@@ -329,6 +407,18 @@ class AdminApprovalRepositoryImpl implements AdminApprovalRepository {
         return 'تمت معالجة هذا الطلب بالفعل من مسؤول آخر';
       default:
         return 'حدث خطأ أثناء معالجة طلب الطبيب';
+    }
+  }
+
+  Future<void> _writeAuditLog(AuditLogModel log) async {
+    try {
+      await _auditLogs.add(log.toJson());
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          '⚠️ [AdminApprovalRepository] Failed to write audit log: $e',
+        );
+      }
     }
   }
 }

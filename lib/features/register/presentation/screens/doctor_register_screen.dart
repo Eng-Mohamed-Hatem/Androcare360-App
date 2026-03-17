@@ -1,9 +1,8 @@
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/core/constants/app_strings.dart';
-import 'package:elajtech/core/constants/medical_specializations.dart';
 import 'package:elajtech/core/utils/validators.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
-import 'package:elajtech/features/doctor/dashboard/presentation/screens/doctor_dashboard_screen.dart';
+import 'package:elajtech/shared/constants/clinic_types.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:elajtech/shared/widgets/custom_button.dart';
 import 'package:elajtech/shared/widgets/custom_text_field.dart';
@@ -31,8 +30,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
   final _confirmPasswordController = TextEditingController();
 
   // Selections
-  String? _selectedClinic;
-  final List<String> _selectedSpecializations = [];
+  String? _selectedClinicType;
   final List<String> _selectedConsultationTypes = [];
 
   bool _agreedToTerms = false;
@@ -62,20 +60,10 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
       return;
     }
 
-    if (_selectedClinic == null) {
+    if (_selectedClinicType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('يرجى اختيار العيادة (التخصص الرئيسي)'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    if (_selectedSpecializations.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى اختيار تخصص فرعي واحد على الأقل'),
+          content: Text('يرجى اختيار نوع العيادة'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -107,8 +95,10 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
               username: _usernameController.text.trim(),
               userType: UserType.doctor,
               licenseNumber: _licenseNumberController.text.trim(),
-              specializations: _selectedSpecializations,
-              clinicName: _selectedClinic,
+              specializations: <String>[
+                ClinicTypes.arabicLabel(_selectedClinicType!),
+              ],
+              clinicType: _selectedClinicType,
               clinicAddress: _clinicAddressController.text.trim(),
               consultationTypes: _selectedConsultationTypes,
               isRegistration: true,
@@ -128,20 +118,23 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
             return;
           }
 
+          if (authState.user?.userType == UserType.doctor) {
+            await ref.read(authProvider.notifier).logout();
+            if (!mounted) {
+              return;
+            }
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('تم تسجيل الطبيب بنجاح!'),
+              content: Text(
+                'تم إرسال طلب التسجيل بنجاح. سيتم تفعيل الحساب بعد مراجعة الإدارة.',
+              ),
               backgroundColor: AppColors.success,
             ),
           );
 
-          // Navigate to doctor dashboard
-          await Navigator.pushReplacement<void, void>(
-            context,
-            MaterialPageRoute<void>(
-              builder: (context) => const DoctorDashboardScreen(),
-            ),
-          );
+          Navigator.pop(context);
         }
       } on Exception {
         if (mounted) {
@@ -270,73 +263,34 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 1. Clinic (Main Category)
+              // 1. Clinic Type
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 decoration: const InputDecoration(
-                  labelText: 'العيادة (التخصص الرئيسي)',
+                  labelText: 'نوع العيادة',
                   prefixIcon: Icon(Icons.local_hospital_outlined),
                   border: OutlineInputBorder(),
                 ),
-                // ignore: deprecated_member_use
-                value: _selectedClinic,
-                items: MedicalSpecializations.mainCategories
+                initialValue: _selectedClinicType,
+                items: ClinicTypes.values
                     .map(
-                      (category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(category),
+                      (clinicType) => DropdownMenuItem(
+                        value: clinicType,
+                        child: Text(ClinicTypes.arabicLabel(clinicType)),
                       ),
                     )
                     .toList(),
                 onChanged: (value) {
                   setState(() {
-                    _selectedClinic = value;
-                    _selectedSpecializations.clear(); // Reset sub-specialties
+                    _selectedClinicType = value;
                   });
                 },
                 validator: (value) =>
-                    value == null ? 'يرجى اختيار العيادة' : null,
+                    value == null ? 'يرجى اختيار نوع العيادة' : null,
               ),
               const SizedBox(height: 16),
 
-              // 2. Sub-specialties (Checkboxes)
-              if (_selectedClinic != null) ...[
-                Text(
-                  'التخصصات الدقيقة (يمكن اختيار أكثر من تخصص)',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children:
-                        MedicalSpecializations.getSubSpecialties(
-                          _selectedClinic!,
-                        ).map((spec) {
-                          return CheckboxListTile(
-                            title: Text(spec),
-                            value: _selectedSpecializations.contains(spec),
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value ?? false) {
-                                  _selectedSpecializations.add(spec);
-                                } else {
-                                  _selectedSpecializations.remove(spec);
-                                }
-                              });
-                            },
-                            dense: true,
-                            activeColor: AppColors.primary,
-                          );
-                        }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // 3. Consultation Types
+              // 2. Consultation Types
               const Text(
                 'أنواع الاستشارات المتاحة',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -377,7 +331,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
                 ),
               ),
 
-              // 4. Clinic Address (Only if clinic consultation is selected, or always)
+              // 3. Clinic Address (Only if clinic consultation is selected, or always)
               // User said "Write clinic address", let's show it always or if clinic type is selected.
               // Best to show it if 'clinic' is selected or just always for profile completeness.
               if (_selectedConsultationTypes.contains('clinic')) ...[

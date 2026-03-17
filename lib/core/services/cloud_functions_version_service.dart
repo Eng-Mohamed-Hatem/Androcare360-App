@@ -159,7 +159,7 @@ class CloudFunctionsVersionService {
           .timeout(const Duration(seconds: 10));
 
       return result.data;
-    } on Exception catch (e) {
+    } on Exception {
       return null;
     }
   }

@@ -20,6 +20,11 @@
 ///     : 'General';
 /// ```
 ///
+/// **Approval Flow Fields (Doctor):**
+/// - `isApproved`: Admin approval status (true = visible to patients, false = pending)
+/// - `approvedAt`: Timestamp of admin approval
+/// - `specialty`: Selected specialty from predefined Arabic list
+///
 /// **Validation Rules:**
 /// - Never use the null-check operator (!) on specializations without checking isNotEmpty
 /// - Always provide a fallback default value (e.g., 'General') to prevent StateError
@@ -53,6 +58,7 @@
 /// ```
 library;
 
+import 'package:elajtech/shared/constants/clinic_types.dart';
 import 'package:elajtech/shared/utils/json_helpers.dart';
 
 class UserModel {
@@ -63,11 +69,19 @@ class UserModel {
     required this.userType,
     required this.createdAt,
     this.isActive = true,
+    this.isApproved = false,
     this.phoneNumber,
     this.username,
     this.profileImage,
     this.licenseNumber,
     this.specializations,
+    this.approvedAt,
+    this.specialty,
+    this.clinicType,
+    this.reviewedAt,
+    this.reviewedByAdminId,
+    this.reviewedByAdminName,
+    this.reviewDecision,
     this.workingHours,
     this.biography,
     this.yearsOfExperience,
@@ -105,6 +119,23 @@ class UserModel {
     username: json['username'] as String?,
     // Backward compat: missing isActive defaults to true
     isActive: json['isActive'] as bool? ?? true,
+    // Backward compat: missing isApproved defaults to true for active doctors (existing data)
+    // Otherwise defaults to false for new registrations
+    isApproved: json['isApproved'] != null
+        ? (json['isApproved'] as bool)
+        : ((json['userType'] as String? ?? 'patient') == 'doctor' &&
+              (json['isActive'] as bool? ?? true)),
+    approvedAt: json['approvedAt'] != null
+        ? JsonHelpers.parseDateTime(json['approvedAt'])
+        : null,
+    specialty: json['specialty'] as String?,
+    clinicType: _parseClinicType(json),
+    reviewedAt: json['reviewedAt'] != null
+        ? JsonHelpers.parseDateTime(json['reviewedAt'])
+        : null,
+    reviewedByAdminId: json['reviewedByAdminId'] as String?,
+    reviewedByAdminName: json['reviewedByAdminName'] as String?,
+    reviewDecision: json['reviewDecision'] as String?,
     userType: UserType.values.firstWhere(
       (e) => e.toString() == 'UserType.${json['userType']}',
       orElse: () => UserType.patient,
@@ -119,8 +150,8 @@ class UserModel {
         ? (json['specialization'] as List<dynamic>)
               .map((e) => e as String)
               .toList()
-        : json['specialization'] != null
-        ? [json['specialization'] as String]
+        : json['specializations'] != null
+        ? [json['specializations'] as String]
         : null,
     workingHours: json['workingHours'] != null
         ? (json['workingHours'] as Map<String, dynamic>).map(
@@ -182,6 +213,16 @@ class UserModel {
   /// Firestore documents that pre-date this field.
   final bool isActive;
 
+  /// Admin approval status for doctor accounts.
+  ///
+  /// **Only applies to doctors (userType = 'doctor')**
+  /// - `true`: Doctor has been reviewed and approved by admin, visible to patients
+  /// - `false`: Doctor account is pending admin review, not visible to patients
+  ///
+  /// Defaults to `false` for all newly created doctor accounts and for any existing
+  /// Firestore documents that pre-date this field.
+  final bool isApproved;
+
   /// URL to user's profile image (optional)
   final String? profileImage;
 
@@ -201,6 +242,41 @@ class UserModel {
   /// **Validation Rule:**
   /// Always provide a fallback default value to prevent StateError on empty lists.
   final List<String>? specializations;
+
+  /// Timestamp when doctor account was approved by admin.
+  ///
+  /// Only applies to doctors (userType = 'doctor').
+  /// Null until approval, then set to DateTime of approval.
+  final DateTime? approvedAt;
+
+  /// Doctor's selected specialty from the predefined list (approval flow).
+  ///
+  /// **Only applies to doctors (userType = 'doctor')**
+  /// - Must be one of the allowed Arabic labels:
+  ///   - عيادة الذكورة والعقم والبروستات
+  ///   - عيادة الأمراض المزمنة
+  ///   - عيادة السمنة والتغذية العلاجية
+  ///   - عيادة العلاج الطبيعي والتأهيل
+  ///   - عيادة الباطنة وطب الأسرة
+  ///
+  /// This field is required for doctor registration and is validated
+  /// against the predefined list in Specialties class.
+  final String? specialty;
+
+  /// Canonical database value for the doctor's selected clinic type.
+  final String? clinicType;
+
+  /// Timestamp of the most recent admin review action.
+  final DateTime? reviewedAt;
+
+  /// Admin ID that processed the doctor application.
+  final String? reviewedByAdminId;
+
+  /// Admin display name that processed the doctor application.
+  final String? reviewedByAdminName;
+
+  /// Most recent review decision (`approved` or `rejected`).
+  final String? reviewDecision;
 
   /// Working hours schedule for doctors (day -> list of time slots)
   ///
@@ -225,10 +301,10 @@ class UserModel {
   /// Types of consultations offered (e.g., ['video', 'clinic'])
   final List<String>? consultationTypes;
 
-  /// Name of the clinic where doctor practices
+  /// Name of clinic where doctor practices
   final String? clinicName;
 
-  /// Physical address of the clinic
+  /// Physical address of clinic
   final String? clinicAddress;
 
   /// Educational background (list of degree information)
@@ -252,7 +328,7 @@ class UserModel {
   /// ```
   final List<Map<String, String>>? certificates;
 
-  /// Timestamp when the user account was created
+  /// Timestamp when user account was created
   final DateTime createdAt;
 
   /// Firebase Cloud Messaging token for push notifications
@@ -267,7 +343,7 @@ class UserModel {
   /// storing in Firestore or sending via API. Note that the specializations
   /// field is stored as 'specialization' (singular) for backward compatibility.
   ///
-  /// Returns a Map<String, dynamic> containing all user data.
+  /// Returns a `Map<String, dynamic>` containing all user data.
   Map<String, dynamic> toJson() => {
     'id': id,
     'fcmToken': fcmToken,
@@ -277,6 +353,14 @@ class UserModel {
     'phoneNumber': phoneNumber,
     'username': username,
     'isActive': isActive,
+    'isApproved': isApproved,
+    'approvedAt': approvedAt?.toIso8601String(),
+    'specialty': specialty,
+    'clinicType': clinicType,
+    'reviewedAt': reviewedAt?.toIso8601String(),
+    'reviewedByAdminId': reviewedByAdminId,
+    'reviewedByAdminName': reviewedByAdminName,
+    'reviewDecision': reviewDecision,
     'userType': userType.name,
     'profileImage': profileImage,
     'licenseNumber': licenseNumber,
@@ -293,7 +377,7 @@ class UserModel {
     'createdAt': createdAt.toIso8601String(),
   };
 
-  /// Creates a copy of this UserModel with the specified fields replaced.
+  /// Creates a copy of this UserModel with specified fields replaced.
   ///
   /// This method allows creating a modified copy of the user while
   /// preserving all other fields. Useful for updating profile information,
@@ -302,7 +386,7 @@ class UserModel {
   /// All parameters are optional. If a parameter is not provided, the
   /// corresponding field from the original model is used.
   ///
-  /// Returns a new UserModel instance with the updated fields.
+  /// Returns a new UserModel instance with updated fields.
   UserModel copyWith({
     String? id,
     String? email,
@@ -310,10 +394,18 @@ class UserModel {
     String? phoneNumber,
     String? username,
     bool? isActive,
+    bool? isApproved,
     UserType? userType,
     String? profileImage,
     String? licenseNumber,
     List<String>? specializations,
+    DateTime? approvedAt,
+    String? specialty,
+    String? clinicType,
+    DateTime? reviewedAt,
+    String? reviewedByAdminId,
+    String? reviewedByAdminName,
+    String? reviewDecision,
     Map<String, List<String>>? workingHours,
     String? biography,
     int? yearsOfExperience,
@@ -335,6 +427,14 @@ class UserModel {
     phoneNumber: phoneNumber ?? this.phoneNumber,
     username: username ?? this.username,
     isActive: isActive ?? this.isActive,
+    isApproved: isApproved ?? this.isApproved,
+    approvedAt: approvedAt ?? this.approvedAt,
+    specialty: specialty ?? this.specialty,
+    clinicType: clinicType ?? this.clinicType,
+    reviewedAt: reviewedAt ?? this.reviewedAt,
+    reviewedByAdminId: reviewedByAdminId ?? this.reviewedByAdminId,
+    reviewedByAdminName: reviewedByAdminName ?? this.reviewedByAdminName,
+    reviewDecision: reviewDecision ?? this.reviewDecision,
     userType: userType ?? this.userType,
     profileImage: profileImage ?? this.profileImage,
     licenseNumber: licenseNumber ?? this.licenseNumber,
@@ -364,7 +464,7 @@ class UserModel {
 /// switch (user.userType) {
 ///   case UserType.doctor:  /* show doctor features */ break;
 ///   case UserType.patient: /* show patient features */ break;
-///   case UserType.admin:   /* show admin features */  break;
+///   case UserType.admin:   /* show admin features */ break;
 /// }
 /// ```
 enum UserType {
@@ -374,4 +474,20 @@ enum UserType {
   doctor, // طبيب
   /// Platform administrator role — full system access, managed by developers
   admin, // مسؤول النظام
+}
+
+String? _parseClinicType(Map<String, dynamic> json) {
+  final clinicType = json['clinicType'] as String?;
+  if (ClinicTypes.isValid(clinicType)) {
+    return clinicType!.trim();
+  }
+
+  final specialty = json['specialty'] as String?;
+  final mappedFromSpecialty = ClinicTypes.fromArabicLabel(specialty);
+  if (mappedFromSpecialty != null) {
+    return mappedFromSpecialty;
+  }
+
+  final clinicName = json['clinicName'] as String?;
+  return ClinicTypes.fromArabicLabel(clinicName);
 }

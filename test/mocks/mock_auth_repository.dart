@@ -45,6 +45,7 @@ class MockAuthRepository implements AuthRepository {
     String? phoneNumber,
     String? licenseNumber,
     List<String>? specializations,
+    String? clinicType,
     String? clinicName,
     String? clinicAddress,
     List<String>? consultationTypes,

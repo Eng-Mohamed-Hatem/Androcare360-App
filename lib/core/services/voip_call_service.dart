@@ -220,7 +220,16 @@ class VoIPCallService {
       case Event.actionCallStart:
         // بدأت المكالمة
         debugPrint('📞 Call started');
-      default:
+      case Event.actionDidUpdateDevicePushTokenVoip:
+      case Event.actionCallIncoming:
+      case Event.actionCallConnected:
+      case Event.actionCallCallback:
+      case Event.actionCallToggleHold:
+      case Event.actionCallToggleMute:
+      case Event.actionCallToggleDmtf:
+      case Event.actionCallToggleGroup:
+      case Event.actionCallToggleAudioSession:
+      case Event.actionCallCustom:
         debugPrint('📞 Unhandled event: ${event.event}');
     }
   }

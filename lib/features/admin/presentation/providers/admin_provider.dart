@@ -64,9 +64,9 @@ class AdminState {
 
 /// StateNotifier managing all admin panel operations.
 ///
-/// Accessed via [adminProvider]. Each method:
-/// - Sets [isActionLoading] true before the async call.
-/// - Writes either [error] or [successMessage] on completion.
+/// Accessed via `adminProvider`. Each method:
+/// - Sets `isActionLoading` true before the async call.
+/// - Writes either `error` or `successMessage` on completion.
 /// - Always resets loading flags even on error.
 class AdminNotifier extends StateNotifier<AdminState> {
   AdminNotifier(this._repo, this._ref, this._togglePatientActiveStatus)
@@ -77,17 +77,6 @@ class AdminNotifier extends StateNotifier<AdminState> {
   final TogglePatientActiveStatusUseCase _togglePatientActiveStatus;
 
   // ———— helpers ————
-
-  /// Returns the current admin user.
-  ///
-  /// Throws [StateError] if called without a signed-in admin.
-  UserModel get _admin {
-    final user = _ref.read(authProvider).user;
-    if (user == null || user.userType != UserType.admin) {
-      throw StateError('No admin user found');
-    }
-    return user;
-  }
 
   void _handleResult<T>(
     Either<Failure, T> result, {

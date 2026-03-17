@@ -9,6 +9,7 @@ import 'package:elajtech/features/auth/domain/repositories/auth_repository.dart'
 import 'package:elajtech/features/auth/domain/models/phone_verification_data.dart';
 import 'package:elajtech/core/services/fcm_service.dart';
 import 'package:elajtech/core/services/token_refresh_service.dart';
+import 'package:elajtech/shared/constants/clinic_types.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -289,6 +290,7 @@ class AuthRepositoryImpl implements AuthRepository {
   /// - [phoneNumber]: Phone number (optional, checked for uniqueness)
   /// - [licenseNumber]: Medical license number (optional, for doctors)
   /// - [specializations]: List of medical specializations (optional, for doctors)
+  /// - [clinicType]: Canonical clinic type value (optional, for doctors)
   /// - [clinicName]: Clinic name (optional, for doctors)
   /// - [clinicAddress]: Clinic address (optional, for doctors)
   /// - [consultationTypes]: Types of consultations offered (optional, for doctors)
@@ -325,6 +327,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? phoneNumber,
     String? licenseNumber,
     List<String>? specializations,
+    String? clinicType,
     String? clinicName,
     String? clinicAddress,
     List<String>? consultationTypes,
@@ -369,6 +372,23 @@ class AuthRepositoryImpl implements AuthRepository {
       await user.updateDisplayName(fullName);
       final fcmToken = await _fcmService.getToken();
 
+      final isDoctor = userType == UserType.doctor;
+      final effectiveClinicType = isDoctor
+          ? _resolveDoctorClinicType(
+              clinicType: clinicType,
+              specializations: specializations,
+              clinicName: clinicName,
+            )
+          : clinicType?.trim();
+
+      if (isDoctor && !ClinicTypes.isValid(effectiveClinicType)) {
+        return const Left(AuthFailure('يرجى اختيار نوع العيادة من القائمة'));
+      }
+
+      final effectiveSpecialty = isDoctor && effectiveClinicType != null
+          ? ClinicTypes.arabicLabel(effectiveClinicType)
+          : null;
+
       final newUser = UserModel(
         id: user.uid,
         email: email,
@@ -376,9 +396,16 @@ class AuthRepositoryImpl implements AuthRepository {
         userType: userType,
         phoneNumber: phoneNumber,
         username: username,
+        isActive: !isDoctor,
         licenseNumber: licenseNumber,
-        specializations: specializations,
-        clinicName: clinicName,
+        specializations: isDoctor
+            ? (effectiveSpecialty == null
+                  ? const <String>[]
+                  : <String>[effectiveSpecialty])
+            : specializations,
+        specialty: effectiveSpecialty,
+        clinicType: effectiveClinicType,
+        clinicName: isDoctor ? effectiveSpecialty : clinicName,
         clinicAddress: clinicAddress,
         consultationTypes: consultationTypes,
         createdAt: DateTime.now(),
@@ -390,6 +417,10 @@ class AuthRepositoryImpl implements AuthRepository {
           .doc(newUser.id)
           .set(newUser.toJson());
 
+      if (isDoctor) {
+        await _firebaseAuth.signOut();
+      }
+
       return Right(newUser);
     } on FirebaseAuthException catch (e) {
       return Left(AuthFailure(_mapFirebaseAuthError(e)));
@@ -400,6 +431,28 @@ class AuthRepositoryImpl implements AuthRepository {
     } on Exception catch (e) {
       return Left(AuthFailure(e.toString()));
     }
+  }
+
+  String? _resolveDoctorClinicType({
+    required String? clinicType,
+    required List<String>? specializations,
+    required String? clinicName,
+  }) {
+    final normalizedClinicType = clinicType?.trim();
+    if (ClinicTypes.isValid(normalizedClinicType)) {
+      return normalizedClinicType;
+    }
+
+    final firstSpecialization =
+        specializations != null && specializations.isNotEmpty
+        ? specializations.first.trim()
+        : null;
+    final fromSpecialization = ClinicTypes.fromArabicLabel(firstSpecialization);
+    if (fromSpecialization != null) {
+      return fromSpecialization;
+    }
+
+    return ClinicTypes.fromArabicLabel(clinicName?.trim());
   }
 
   /// Authenticates a user with email and password.
@@ -590,7 +643,9 @@ class AuthRepositoryImpl implements AuthRepository {
             userModel = UserModel.fromJson(data);
           } on Object catch (e, st) {
             if (kDebugMode) {
-              debugPrint('❌ AuthRepositoryImpl.getCurrentUser: UserModel.fromJson failed: $e');
+              debugPrint(
+                '❌ AuthRepositoryImpl.getCurrentUser: UserModel.fromJson failed: $e',
+              );
               debugPrint('   $st');
             }
             return Left(AuthFailure('تعذّر تحميل بيانات الحساب: $e'));
@@ -1085,7 +1140,7 @@ class AuthRepositoryImpl implements AuthRepository {
           } on Exception catch (deleteErr) {
             if (kDebugMode) {
               debugPrint(
-                r'⚠️ [SignUp] Rollback failed (delete user): $deleteErr',
+                '⚠️ [SignUp] Rollback failed (delete user): $deleteErr',
               );
             }
           }
@@ -1184,11 +1239,11 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await user.delete();
       if (kDebugMode) {
-        debugPrint(r'♻️ [SignUp] Firebase user rolled back: ${user.uid}');
+        debugPrint('♻️ [SignUp] Firebase user rolled back: ${user.uid}');
       }
     } on Exception catch (e) {
       if (kDebugMode) {
-        debugPrint(r'⚠️ [SignUp] Rollback (delete user) failed: $e');
+        debugPrint('⚠️ [SignUp] Rollback (delete user) failed: $e');
       }
     }
   }

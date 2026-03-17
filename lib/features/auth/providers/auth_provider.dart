@@ -167,6 +167,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     UserType userType = UserType.patient,
     String? licenseNumber,
     List<String>? specializations,
+    String? clinicType,
     String? clinicName,
     String? clinicAddress,
     List<String>? consultationTypes,
@@ -185,6 +186,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         phoneNumber: phoneNumber,
         licenseNumber: licenseNumber,
         specializations: specializations,
+        clinicType: clinicType,
         clinicName: clinicName,
         clinicAddress: clinicAddress,
         consultationTypes: consultationTypes,
@@ -200,8 +202,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
           );
         },
         (UserModel user) async {
+          final isPendingDoctorRegistration =
+              user.userType == UserType.doctor && !user.isApproved;
+
           // Initialize Background Service (Mobile only)
-          if (!kIsWeb) {
+          if (!kIsWeb && !isPendingDoctorRegistration) {
             try {
               await BackgroundService.init();
               await BackgroundService.registerPeriodicTask();
@@ -213,20 +218,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
           }
 
           // Save credentials for biometric login (non-fatal)
-          try {
-            await _saveCredentials(email, password);
-          } on Exception catch (credError) {
-            if (kDebugMode) {
-              debugPrint(
-                '⚠️ [AuthProvider] _saveCredentials failed during registration: $credError',
-              );
+          if (!isPendingDoctorRegistration) {
+            try {
+              await _saveCredentials(email, password);
+            } on Exception catch (credError) {
+              if (kDebugMode) {
+                debugPrint(
+                  '⚠️ [AuthProvider] _saveCredentials failed during registration: $credError',
+                );
+              }
             }
           }
 
           state = state.copyWith(
             user: user,
             isLoading: false,
-            isAuthenticated: true,
+            isAuthenticated: !isPendingDoctorRegistration,
             clearError: true,
           );
         },
