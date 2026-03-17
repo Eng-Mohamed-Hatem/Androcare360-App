@@ -1,4 +1,5 @@
 import 'package:elajtech/core/models/device_info_model.dart';
+import 'package:flutter/foundation.dart';
 
 /// Defines the type of call event being logged.
 ///
@@ -76,6 +77,7 @@ enum CallLogEventType {
 ///   metadata: {'channelName': 'appointment_456'},
 /// );
 /// ```
+@immutable
 class CallLogModel {
   /// Creates a CallLogModel instance.
   ///
@@ -161,7 +163,7 @@ class CallLogModel {
 
   /// Converts this CallLogModel to JSON format for Firestore storage.
   ///
-  /// Returns a Map<String, dynamic> containing all log data.
+  /// Returns a `Map<String, dynamic>` containing all log data.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

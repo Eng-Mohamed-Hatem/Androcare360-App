@@ -1,11 +1,11 @@
 /// GetPackageDetailsUseCase — حالة استخدام تفاصيل الباقة
 ///
 /// تقرأ هذه الحالة باقةً واحدة بمعرِّفَي العيادة والباقة من Firestore.
-/// تُعيد [ClinicUnavailableFailure] إذا كانت العيادة معطَّلة أو غير موجودة.
+/// تُعيد `ClinicUnavailableFailure` إذا كانت العيادة معطَّلة أو غير موجودة.
 ///
-/// **English**: Fetches a single clinic package by [clinicId] and [packageId].
-/// Returns [ClinicUnavailableFailure] if the clinic is unavailable, or
-/// [PackageNotFoundFailure] if the package document does not exist.
+/// **English**: Fetches a single clinic package by `clinicId` and `packageId`.
+/// Returns `ClinicUnavailableFailure` if the clinic is unavailable, or
+/// `PackageNotFoundFailure` if the package document does not exist.
 ///
 /// **Spec**: spec.md §7.9, §8.1, tasks.md T030.
 library;
@@ -14,7 +14,7 @@ import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
-    show ClinicUnavailableFailure, PackageNotFoundFailure;
+    show ClinicUnavailableFailure;
 import 'package:elajtech/features/packages/domain/repositories/package_repository.dart';
 
 /// Use case: fetch full details of a single clinic package.

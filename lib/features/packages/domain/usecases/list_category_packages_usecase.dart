@@ -3,9 +3,9 @@
 /// تُعيد هذه الحالة قائمة الباقات النشطة لعيادة وفئة معينة،
 /// مُرتَّبة بحيث تظهر الباقات المميزة أولاً ثم حسب `displayOrder`.
 ///
-/// **English**: Returns ACTIVE packages for a given [clinicId] and [category],
+/// **English**: Returns ACTIVE packages for a given `clinicId` and `category`,
 /// sorted: featured packages first, then by `displayOrder` ascending.
-/// Delegates to [PackageRepository.listCategoryPackages].
+/// Delegates to `PackageRepository.listCategoryPackages`.
 ///
 /// **Spec**: spec.md §9.3, §8.1, tasks.md T028.
 library;

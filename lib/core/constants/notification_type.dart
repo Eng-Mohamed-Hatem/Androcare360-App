@@ -22,8 +22,9 @@ enum NotificationType {
   unknown('unknown')
   ;
 
-  final String value;
   const NotificationType(this.value);
+
+  final String value;
 
   /// Parse string value to NotificationType enum
   static NotificationType fromString(String? value) {

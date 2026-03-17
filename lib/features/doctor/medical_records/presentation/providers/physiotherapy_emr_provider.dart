@@ -279,7 +279,7 @@ class PhysiotherapyEMRNotifier extends StateNotifier<PhysiotherapyEMRState> {
   ///
   /// When value is true, displays read-only summary
   /// When value is false, displays full edit form
-  void setViewMode(bool value) {
+  void setViewMode({required bool value}) {
     if (kDebugMode) {
       debugPrint('[PhysioEMRProvider] setViewMode: $value');
     }

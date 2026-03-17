@@ -339,8 +339,8 @@ class _DocumentUploadBottomSheetState extends State<DocumentUploadBottomSheet> {
   }
 
   Future<void> _pickFile() async {
-    // TODO: Implement actual file picker logic
-    // This should use file_picker package
+    // TODO(elajtech): Implement actual file picker logic.
+    // TODO(elajtech): Use the file_picker package here.
     setState(() {
       _selectedFile = 'example_document.pdf';
     });
@@ -365,14 +365,14 @@ class _DocumentUploadBottomSheetState extends State<DocumentUploadBottomSheet> {
       _isUploading = true;
     });
 
-    // TODO: Implement actual upload logic using UploadPackageDocumentUseCase
+    // TODO(elajtech): Implement upload logic using UploadPackageDocumentUseCase.
     await Future<void>.delayed(const Duration(seconds: 2));
 
     setState(() {
       _isUploading = false;
     });
 
-    // TODO: Show success message
+    // TODO(elajtech): Show a success message.
     widget.onUploadSuccess();
   }
 
@@ -392,7 +392,7 @@ class _DocumentUploadBottomSheetState extends State<DocumentUploadBottomSheet> {
   }
 
   String _getFileSizeText(String filePath) {
-    // TODO: Implement actual file size calculation
+    // TODO(elajtech): Implement actual file size calculation.
     return 'مقدار الحجم';
   }
 }

@@ -153,8 +153,8 @@ class RadiologyRequestRepositoryImpl implements RadiologyRequestRepository {
   /// - patientId: Unique patient identifier (required)
   ///
   /// Returns:
-  /// - Right(List<RadiologyRequestModel>): List of radiology requests (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<RadiologyRequestModel>)`: List of radiology requests (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
@@ -191,8 +191,8 @@ class RadiologyRequestRepositoryImpl implements RadiologyRequestRepository {
   /// - appointmentId: Unique appointment identifier (required)
   ///
   /// Returns:
-  /// - Right(List<RadiologyRequestModel>): List of radiology requests (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<RadiologyRequestModel>)`: List of radiology requests (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart

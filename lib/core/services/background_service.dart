@@ -33,8 +33,8 @@ import 'package:elajtech/shared/models/notification_model.dart';
 /// 8. Returns true on success, false on failure
 ///
 /// **Parameters:**
-/// - [task]: Task identifier (e.g., 'checkNotifications')
-/// - [inputData]: Optional data passed to the task (not used currently)
+/// - `task`: Task identifier (e.g., 'checkNotifications')
+/// - `inputData`: Optional data passed to the task (not used currently)
 ///
 /// **Returns:**
 /// - `true`: Task completed successfully
@@ -83,9 +83,9 @@ import 'package:elajtech/shared/models/notification_model.dart';
 /// - iOS: ~30 seconds execution time limit
 /// - Both: May be terminated by OS if taking too long
 ///
-/// @see BackgroundService.registerPeriodicTask for task registration
-/// @see NotificationService for notification display
-/// @see NotificationRepositoryImpl for notification data access
+/// See `BackgroundService.registerPeriodicTask` for task registration.
+/// See `NotificationService` for notification display.
+/// See `NotificationRepositoryImpl` for notification data access.
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {

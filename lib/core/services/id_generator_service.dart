@@ -67,11 +67,13 @@ import 'package:uuid/uuid.dart';
 /// توفر هذه الخدمة معرفات فريدة للرسائل والمحادثات والمستندات وغيرها.
 /// مع التأكد من عدم التضارب في المعرفات باستخدام UUID وخوارزميات مخصصة.
 class IdGeneratorService {
+  factory IdGeneratorService() => _instance;
+
   IdGeneratorService._internal();
-  // Singleton pattern
-  static IdGeneratorService? _instance;
-  static IdGeneratorService get instance =>
-      _instance ??= IdGeneratorService._internal();
+
+  static final IdGeneratorService _instance = IdGeneratorService._internal();
+
+  static IdGeneratorService get instance => _instance;
 
   static const _uuid = Uuid();
 

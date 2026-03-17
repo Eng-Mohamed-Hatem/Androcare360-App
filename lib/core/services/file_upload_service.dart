@@ -20,7 +20,7 @@
 /// - Human-readable file size formatting
 ///
 /// **Storage Structure:**
-/// ```
+/// ```text
 /// gs://bucket-name/
 ///   ├── chat_images/
 ///   │   └── {userId}/
@@ -43,12 +43,12 @@
 /// - Documents: PDF, TXT, DOC, DOCX, XLS, XLSX
 ///
 /// **Dependency Injection:**
-/// This service uses the Singleton pattern with lazy initialization.
-/// Access via `FileUploadService.instance`.
+/// This service uses a singleton-backed factory constructor.
+/// Access via `FileUploadService()`.
 ///
 /// Example usage:
 /// ```dart
-/// final uploadService = FileUploadService.instance;
+/// final uploadService = FileUploadService();
 ///
 /// // Upload image
 /// final imageFile = File('/path/to/image.jpg');
@@ -82,11 +82,10 @@ import 'package:elajtech/core/errors/exceptions.dart';
 /// توفر هذه الخدمة رفع آمن للملفات والصور إلى Firebase Storage مع دعم للصور
 /// وتنسيقات المستندات المختلفة مع التحقق من الصحة وفحوصات الأمان.
 class FileUploadService {
+  factory FileUploadService() => _instance;
+
   FileUploadService._internal();
-  // Singleton pattern
-  static FileUploadService? _instance;
-  static FileUploadService get instance =>
-      _instance ??= FileUploadService._internal();
+  static final FileUploadService _instance = FileUploadService._internal();
 
   static final FirebaseStorage _storage = FirebaseStorage.instance;
 
@@ -175,12 +174,12 @@ class FileUploadService {
   static Future<String> uploadImage(File imageFile, String userId) async {
     try {
       // التحقق من وجود الملف
-      if (!await imageFile.exists()) {
+      if (!imageFile.existsSync()) {
         throw Exception('ملف الصورة غير موجود');
       }
 
       // التحقق من حجم الملف (الحد الأقصى 10MB)
-      final fileSize = await imageFile.length();
+      final fileSize = imageFile.lengthSync();
       if (fileSize > 10 * 1024 * 1024) {
         throw Exception('حجم الصورة كبير جداً. الحد الأقصى 10MB');
       }
@@ -244,12 +243,12 @@ class FileUploadService {
   static Future<String> uploadFile(File file, String userId) async {
     try {
       // التحقق من وجود الملف
-      if (!await file.exists()) {
+      if (!file.existsSync()) {
         throw Exception('الملف غير موجود');
       }
 
       // التحقق من حجم الملف (الحد الأقصى 20MB للملفات)
-      final fileSize = await file.length();
+      final fileSize = file.lengthSync();
       if (fileSize > _maxFileSize) {
         final maxSizeMB = (_maxFileSize / (1024 * 1024)).toStringAsFixed(1);
         throw Exception('حجم الملف كبير جداً. الحد الأقصى $maxSizeMB MB');

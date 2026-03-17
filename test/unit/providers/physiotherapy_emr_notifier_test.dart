@@ -400,7 +400,7 @@ void main() {
       // Act
       container
           .read(physiotherapyEMRNotifierProvider.notifier)
-          .setViewMode(true);
+          .setViewMode(value: true);
 
       // Assert
       final state = container.read(physiotherapyEMRNotifierProvider);
@@ -416,7 +416,7 @@ void main() {
       // Act
       container
           .read(physiotherapyEMRNotifierProvider.notifier)
-          .setViewMode(false);
+          .setViewMode(value: false);
 
       // Assert
       final state = container.read(physiotherapyEMRNotifierProvider);

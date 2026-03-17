@@ -111,13 +111,13 @@ class InternalMedicineEMRRepositoryImpl
   /// Returns:
   /// - Right(void): EMR saved successfully
   /// - Left(Failure.firestore): Firestore operation failed
-  ///   - 'Firebase error: [code] - [message]': Firestore exception
+  ///   - `Firebase error: code - message`: Firestore exception
   /// - Left(Failure.unexpected): Unexpected runtime error
   ///
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Runtime exception
+  /// - `Unexpected error: ...`: Runtime exception
   ///
   /// Example:
   /// ```dart
@@ -224,7 +224,7 @@ class InternalMedicineEMRRepositoryImpl
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Parsing or runtime exception
+  /// - `Unexpected error: ...`: Parsing or runtime exception
   ///
   /// Example:
   /// ```dart
@@ -340,14 +340,14 @@ class InternalMedicineEMRRepositoryImpl
   /// - patientId: Unique patient identifier (required)
   ///
   /// Returns:
-  /// - Right(List<InternalMedicineEMRModel>): List of EMRs (may be empty)
-  /// - Left(Failure.firestore): Firestore operation failed
-  /// - Left(Failure.unexpected): Unexpected runtime error
+  /// - `Right(List<InternalMedicineEMRModel>)`: List of EMRs (may be empty)
+  /// - `Left(Failure.firestore)`: Firestore operation failed
+  /// - `Left(Failure.unexpected)`: Unexpected runtime error
   ///
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Query or runtime exception
+  /// - `Unexpected error: ...`: Query or runtime exception
   ///
   /// Example:
   /// ```dart

@@ -18,12 +18,12 @@ void main() {
   late MockAuthRepository mockAuthRepository;
   final getIt = GetIt.instance;
 
-  setUp(() {
+  setUp(() async {
     mockAuthRepository = MockAuthRepository();
 
     // Register mock in GetIt
     if (getIt.isRegistered<AuthRepository>()) {
-      getIt.unregister<AuthRepository>();
+      await getIt.unregister<AuthRepository>();
     }
     getIt.registerSingleton<AuthRepository>(mockAuthRepository);
   });

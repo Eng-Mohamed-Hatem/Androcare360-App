@@ -148,8 +148,8 @@ class LabRequestRepositoryImpl implements LabRequestRepository {
   /// - patientId: Unique patient identifier (required)
   ///
   /// Returns:
-  /// - Right(List<LabRequestModel>): List of lab requests (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<LabRequestModel>)`: List of lab requests (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
@@ -187,8 +187,8 @@ class LabRequestRepositoryImpl implements LabRequestRepository {
   /// - appointmentId: Unique appointment identifier (required)
   ///
   /// Returns:
-  /// - Right(List<LabRequestModel>): List of lab requests (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<LabRequestModel>)`: List of lab requests (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart

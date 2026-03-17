@@ -129,7 +129,7 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// - Left(Failure.firestore): Firestore operation failed
   ///   - 'Appointment ID is required': appointmentId is empty
   ///   - 'Cannot save locked EMR record': EMR is locked
-  ///   - 'Firebase error: [code] - [message]': Firestore exception
+  ///   - `Firebase error: code - message`: Firestore exception
   /// - Left(Failure.unexpected): Unexpected runtime error
   ///
   /// Possible Failures:
@@ -137,7 +137,7 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// - 'Cannot save locked EMR record': Record is locked (24h expired)
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Runtime exception
+  /// - `Unexpected error: ...`: Runtime exception
   ///
   /// Example:
   /// ```dart
@@ -295,7 +295,7 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Parsing or runtime exception
+  /// - `Unexpected error: ...`: Parsing or runtime exception
   ///
   /// Example:
   /// ```dart
@@ -403,14 +403,14 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// - patientId: Unique patient identifier (required)
   ///
   /// Returns:
-  /// - Right(List<NutritionEMREntity>): List of EMRs (may be empty)
-  /// - Left(Failure.firestore): Firestore operation failed
-  /// - Left(Failure.unexpected): Unexpected runtime error
+  /// - `Right(List<NutritionEMREntity>)`: List of EMRs (may be empty)
+  /// - `Left(Failure.firestore)`: Firestore operation failed
+  /// - `Left(Failure.unexpected)`: Unexpected runtime error
   ///
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Query or runtime exception
+  /// - `Unexpected error: ...`: Query or runtime exception
   ///
   /// Example:
   /// ```dart
@@ -521,7 +521,7 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// - 'Firebase error: not-found': EMR document does not exist
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Runtime exception
+  /// - `Unexpected error: ...`: Runtime exception
   ///
   /// Example:
   /// ```dart
@@ -592,7 +592,7 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Runtime exception
+  /// - `Unexpected error: ...`: Runtime exception
   ///
   /// Example:
   /// ```dart
@@ -694,14 +694,14 @@ class NutritionEMRRepositoryImpl implements NutritionEMRRepository {
   /// - emrId: Unique EMR document identifier (required)
   ///
   /// Returns:
-  /// - Right(Stream<NutritionEMREntity>): Real-time EMR stream
-  /// - Left(Failure.firestore): Firestore operation failed
-  /// - Left(Failure.unexpected): Unexpected runtime error
+  /// - `Right(Stream<NutritionEMREntity>)`: Real-time EMR stream
+  /// - `Left(Failure.firestore)`: Firestore operation failed
+  /// - `Left(Failure.unexpected)`: Unexpected runtime error
   ///
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Stream setup exception
+  /// - `Unexpected error: ...`: Stream setup exception
   ///
   /// Example:
   /// ```dart

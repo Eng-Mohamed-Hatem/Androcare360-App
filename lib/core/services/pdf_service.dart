@@ -108,7 +108,7 @@ class PdfService {
   /// - [prescription]: PrescriptionModel containing all prescription details
   ///
   /// **Returns:**
-  /// A Future<Uint8List> containing the PDF document bytes.
+  /// A `Future<Uint8List>` containing the PDF document bytes.
   ///
   /// **Throws:**
   /// - [Exception] if font loading fails
@@ -185,7 +185,7 @@ class PdfService {
   /// - [request]: LabRequestModel containing all lab request details
   ///
   /// **Returns:**
-  /// A Future<Uint8List> containing the PDF document bytes.
+  /// A `Future<Uint8List>` containing the PDF document bytes.
   ///
   /// **Throws:**
   /// - [Exception] if font loading fails
@@ -246,7 +246,7 @@ class PdfService {
   /// - [request]: RadiologyRequestModel containing all radiology request details
   ///
   /// **Returns:**
-  /// A Future<Uint8List> containing the PDF document bytes.
+  /// A `Future<Uint8List>` containing the PDF document bytes.
   ///
   /// **Throws:**
   /// - [Exception] if font loading fails
@@ -307,7 +307,7 @@ class PdfService {
   /// - [request]: DeviceRequestModel containing all device request details
   ///
   /// **Returns:**
-  /// A Future<Uint8List> containing the PDF document bytes.
+  /// A `Future<Uint8List>` containing the PDF document bytes.
   ///
   /// **Throws:**
   /// - [Exception] if font loading fails

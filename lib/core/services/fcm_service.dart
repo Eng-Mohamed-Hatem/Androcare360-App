@@ -1,3 +1,7 @@
+// This file is initialized via DI and startup wiring in `main.dart`, which
+// triggers false positives for `unreachable_from_main` on public members.
+// ignore_for_file: unreachable_from_main
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -430,7 +434,7 @@ class FCMService {
     final navigatorKey = getIt<GlobalKey<NavigatorState>>();
     if (navigatorKey.currentState != null) {
       debugPrint('🚀 Deep linking to appointment: $appointmentId');
-      // TODO: Implement actual navigation to AppointmentDetailsScreen
+      // TODO(elajtech): Implement navigation to AppointmentDetailsScreen.
       // For now, we'll just log it. In a real scenario, you'd push the route.
       // Example: navigatorKey.currentState!.pushNamed('/appointment_details', arguments: appointmentId);
     } else {

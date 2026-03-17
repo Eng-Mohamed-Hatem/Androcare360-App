@@ -64,6 +64,7 @@ void main() {
     }) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(useMaterial3: false),
           home: AgoraVideoCallScreen(
             appointment: appointment,
             firebaseAuth: firebaseAuth ?? mockAuth,

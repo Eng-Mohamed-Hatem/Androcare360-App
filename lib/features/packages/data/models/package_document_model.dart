@@ -1,9 +1,9 @@
 /// PackageDocumentModel — نموذج بيانات المستندات الطبية (Data Layer)
 ///
-/// يمتد من [PackageDocumentEntity] ويضيف منطق تحويل Firestore.
+/// يمتد من `PackageDocumentEntity` ويضيف منطق تحويل Firestore.
 ///
-/// **English**: Data-layer model extending [PackageDocumentEntity]. Implements
-/// the mandatory 3-guard Firestore safety pattern in [fromFirestore].
+/// **English**: Data-layer model extending `PackageDocumentEntity`. Implements
+/// the mandatory 3-guard Firestore safety pattern in `fromFirestore`.
 ///
 /// **Spec**: data-model.md §5.1, tasks.md T015.
 library;
@@ -17,11 +17,11 @@ import 'package:elajtech/features/packages/domain/entities/package_document_enti
 /// Data model for a medical document linked to a patient package.
 ///
 /// **English**
-/// Extends [PackageDocumentEntity] with Firestore serialization.
+/// Extends `PackageDocumentEntity` with Firestore serialization.
 /// Uses the 3-guard safety pattern: exists check, null data check, try-catch.
 ///
 /// **Arabic**
-/// نموذج بيانات يمتد من [PackageDocumentEntity] مع تسلسل Firestore.
+/// نموذج بيانات يمتد من `PackageDocumentEntity` مع تسلسل Firestore.
 /// يُطبِّق نمط الثلاثة فحوصات.
 class PackageDocumentModel extends PackageDocumentEntity {
   /// Creates a [PackageDocumentModel].

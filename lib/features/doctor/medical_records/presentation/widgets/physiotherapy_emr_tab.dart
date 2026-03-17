@@ -81,7 +81,9 @@ class PhysiotherapyEMRTabState extends ConsumerState<PhysiotherapyEMRTab> {
           debugPrint('[PhysioEMRTab] Existing EMR found, activating View Mode');
         }
         // Activate view mode if EMR exists
-        ref.read(physiotherapyEMRNotifierProvider.notifier).setViewMode(true);
+        ref
+            .read(physiotherapyEMRNotifierProvider.notifier)
+            .setViewMode(value: true);
 
         if (_isLocked) {
           debugPrint('[PhysioEMR] Record is locked due to date expiration.');
@@ -576,7 +578,9 @@ class PhysiotherapyEMRTabState extends ConsumerState<PhysiotherapyEMRTab> {
             '[PhysioEMRTab] Edit button pressed - switching to edit mode',
           );
         }
-        ref.read(physiotherapyEMRNotifierProvider.notifier).setViewMode(false);
+        ref
+            .read(physiotherapyEMRNotifierProvider.notifier)
+            .setViewMode(value: false);
       },
       icon: const Icon(Icons.edit),
       label: const Text('Edit EMR'),

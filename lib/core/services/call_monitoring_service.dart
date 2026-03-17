@@ -65,7 +65,7 @@ class CallMonitoringService {
   /// Constructor with dependency injection
   ///
   /// Parameters:
-  /// - [firestore]: Firestore instance (injected via GetIt)
+  /// - `firestore`: Firestore instance (injected via GetIt)
   CallMonitoringService(
     this._firestore,
   ) : _uuid = const Uuid();

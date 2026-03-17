@@ -107,12 +107,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen>
       return aptDay.isAtSameMomentAs(today) &&
           apt.status != AppointmentStatus.cancelled &&
           apt.status != AppointmentStatus.completed;
-    }).toList();
-
-    // Sort by time
-    todayAppointments.sort(
-      (a, b) => a.appointmentDate.compareTo(b.appointmentDate),
-    );
+    }).toList()..sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
     // Schedule Reminders for Doctor (30 mins before)
     WidgetsBinding.instance.addPostFrameCallback((_) {

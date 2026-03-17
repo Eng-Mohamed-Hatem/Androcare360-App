@@ -105,7 +105,8 @@ class PaymentSuccess {
 ///   },
 /// );
 /// ```
-abstract class PackagePaymentAdapter {
+// ignore: one_member_abstracts, adapter contract is kept explicit for DI and testing
+abstract interface class PackagePaymentAdapter {
   /// Initiates a payment for a clinic package.
   ///
   /// **Parameters**:

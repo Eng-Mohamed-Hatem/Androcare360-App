@@ -34,22 +34,14 @@ class DoctorAppointmentsScreen extends ConsumerWidget {
       return apt.status == AppointmentStatus.pending ||
           apt.status == AppointmentStatus.confirmed ||
           apt.status == AppointmentStatus.scheduled;
-    }).toList();
-
-    upcomingAppointments.sort(
-      (a, b) => a.appointmentDate.compareTo(b.appointmentDate),
-    );
+    }).toList()..sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
     // 2. Past Appointments (completed, cancelled, missed) - DESC
     final pastAppointments = myAppointments.where((apt) {
       return apt.status == AppointmentStatus.completed ||
           apt.status == AppointmentStatus.cancelled ||
           apt.status == AppointmentStatus.missed;
-    }).toList();
-
-    pastAppointments.sort(
-      (a, b) => b.appointmentDate.compareTo(a.appointmentDate),
-    );
+    }).toList()..sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
 
     return DefaultTabController(
       length: 2,

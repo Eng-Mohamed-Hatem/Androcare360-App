@@ -22,13 +22,13 @@ void main() {
     id: 'pkg1',
     clinicId: 'andrology',
     category: PackageCategory.andrologyInfertilityProstate,
-    name: '???? ????',
-    shortDescription: '???',
+    name: 'باقة نشطة',
+    shortDescription: 'وصف',
     services: const [
       PackageServiceItem(
         serviceId: 's1',
         serviceType: ServiceType.visit,
-        displayName: '???',
+        displayName: 'كشف',
       ),
     ],
     validityDays: 30,
@@ -48,13 +48,13 @@ void main() {
     id: 'pkg2',
     clinicId: 'andrology',
     category: PackageCategory.andrologyInfertilityProstate,
-    name: '???? ??? ????',
-    shortDescription: '???',
+    name: 'باقة غير نشطة',
+    shortDescription: 'وصف',
     services: const [
       PackageServiceItem(
         serviceId: 's1',
         serviceType: ServiceType.visit,
-        displayName: '???',
+        displayName: 'كشف',
       ),
     ],
     validityDays: 30,
@@ -78,8 +78,9 @@ void main() {
           () => MockAdminPackagesListNotifier(fetcher),
         ),
       ],
-      child: const MaterialApp(
-        home: AdminPackagesListPage(),
+      child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
+        home: const AdminPackagesListPage(),
       ),
     );
   }
@@ -96,7 +97,7 @@ void main() {
       await tester.pumpWidget(createSubject(() async => []));
       await tester.pumpAndSettle();
 
-      expect(find.text('?? ???? ?????'), findsOneWidget);
+      expect(find.text('لا توجد باقات'), findsOneWidget);
     });
 
     testWidgets('shows error state', (tester) async {
@@ -118,14 +119,14 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('???? ????'), findsOneWidget);
-        expect(find.text('???? ??? ????'), findsNothing);
+        expect(find.text('باقة نشطة'), findsOneWidget);
+        expect(find.text('باقة غير نشطة'), findsNothing);
 
-        await tester.tap(find.text('??? ?????? / ???????'));
+        await tester.tap(find.text('غير النشطة / المخفية'));
         await tester.pumpAndSettle();
 
-        expect(find.text('???? ??? ????'), findsOneWidget);
-        expect(find.text('???? ????'), findsNothing);
+        expect(find.text('باقة غير نشطة'), findsOneWidget);
+        expect(find.text('باقة نشطة'), findsNothing);
       },
     );
 
@@ -133,12 +134,12 @@ void main() {
       await tester.pumpWidget(createSubject(() async => [dummyPackageActive]));
       await tester.pumpAndSettle();
 
-      expect(find.text('???'), findsOneWidget);
-      await tester.tap(find.text('???'));
+      expect(find.text('نسخ'), findsOneWidget);
+      await tester.tap(find.text('نسخ'));
       await tester.pumpAndSettle();
 
-      expect(find.text('??? ??????'), findsOneWidget);
-      expect(find.textContaining('???? ????'), findsOneWidget);
+      expect(find.text('نسخ الباقة'), findsOneWidget);
+      expect(find.textContaining('هل تريد إنشاء نسخة من باقة'), findsOneWidget);
     });
 
     testWidgets('keeps bottom-safe padding for package list', (tester) async {

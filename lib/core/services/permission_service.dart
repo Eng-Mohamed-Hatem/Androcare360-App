@@ -742,7 +742,7 @@ class PermissionsService {
 /// يعرض أيقونة وعنوان وعنوان فرعي يشرح الغرض من الإذن.
 ///
 /// **Visual Structure:**
-/// ```
+/// ```text
 /// [Icon] Title
 ///        Subtitle (gray text)
 /// ```

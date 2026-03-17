@@ -40,17 +40,17 @@ import 'package:elajtech/features/packages/domain/repositories/patient_package_r
 /// result.fold((f) => handleFailure(f), (list) => updateUI(list));
 /// ```
 class GetPatientPackagesUseCase {
-  /// Creates a [GetPatientPackagesUseCase] with the given [repository].
+  /// Creates a `GetPatientPackagesUseCase` with the given `repository`.
   ///
-  /// يُنشئ حالة الاستخدام باستخدام [repository] المُمرَّر.
+  /// يُنشئ حالة الاستخدام باستخدام `repository` المُمرَّر.
   const GetPatientPackagesUseCase(this._repository);
 
   final PatientPackageRepository _repository;
 
   /// Executes the use case.
   ///
-  /// [patientId]: authenticated patient UID — never null (caller checks R4).
-  /// [now]: reference time for expiry re-derivation. Defaults to `DateTime.now()`.
+  /// `patientId`: authenticated patient UID — never null (caller checks R4).
+  /// `now`: reference time for expiry re-derivation. Defaults to `DateTime.now()`.
   ///
   /// Returns `Right(List<PatientPackageEntity>)` sorted newest-first,
   /// or `Left(Failure)` on any error.
@@ -71,12 +71,9 @@ class GetPatientPackagesUseCase {
       Left.new,
       (entities) {
         // Apply expiry re-derivation (spec.md §6.1 / CHK036)
-        final recomputed = entities
-            .map((e) => _sanitizeEntity(e, referenceTime))
-            .toList();
-
-        // Sort by purchaseDate descending (newest first — spec.md §8.1)
-        recomputed.sort((a, b) => b.purchaseDate.compareTo(a.purchaseDate));
+        final recomputed =
+            entities.map((e) => _sanitizeEntity(e, referenceTime)).toList()
+              ..sort((a, b) => b.purchaseDate.compareTo(a.purchaseDate));
 
         return Right(recomputed);
       },

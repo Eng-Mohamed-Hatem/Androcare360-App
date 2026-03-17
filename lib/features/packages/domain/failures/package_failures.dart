@@ -3,8 +3,6 @@ import 'package:dartz/dartz.dart' show Either;
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/packages/domain/usecases/purchase_package_usecase.dart'
     show PurchasePackageUseCase;
-import 'package:elajtech/features/packages/domain/usecases/update_clinic_package_usecase.dart'
-    show UpdateClinicPackageUseCase;
 import 'package:elajtech/features/packages/domain/usecases/upload_package_document_usecase.dart'
     show UploadPackageDocumentUseCase;
 
@@ -91,11 +89,11 @@ class ClinicUnavailableFailure extends Failure {
 // Optimistic-concurrency failures  (R1)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returned by [UpdateClinicPackageUseCase] when:
-/// - the [loadedAt] timestamp is null (immediate guard — no Firestore read), OR
-/// - the document's `updatedAt` in Firestore differs from [loadedAt].
+/// Returned by `UpdateClinicPackageUseCase` when:
+/// - the `loadedAt` timestamp is null (immediate guard — no Firestore read), OR
+/// - the document's `updatedAt` in Firestore differs from `loadedAt`.
 ///
-/// يُعاد عند اكتشاف تعارض في التحديث المتزامن أو عند غياب [loadedAt].
+/// يُعاد عند اكتشاف تعارض في التحديث المتزامن أو عند غياب `loadedAt`.
 class StaleDataFailure extends Failure {
   /// Creates a [StaleDataFailure] with a default Arabic message.
   const StaleDataFailure([

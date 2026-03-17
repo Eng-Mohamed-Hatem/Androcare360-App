@@ -34,14 +34,14 @@ void main() {
   late MockStorageService mockStorage;
   late MockAuthRepository mockAuthRepo;
 
-  setUp(() {
+  setUp(() async {
     mockRepo = MockAdminRepository();
     mockStorage = MockStorageService();
 
     // Setup GetIt for testing
     final getIt = GetIt.instance;
     if (getIt.isRegistered<StorageService>()) {
-      getIt.unregister<StorageService>();
+      await getIt.unregister<StorageService>();
     }
     getIt.registerSingleton<StorageService>(mockStorage);
 
@@ -63,6 +63,7 @@ void main() {
         ),
       ],
       child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
         home: AdminDoctorDetailScreen(doctor: doctor),
       ),
     );

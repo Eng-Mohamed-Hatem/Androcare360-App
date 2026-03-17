@@ -220,7 +220,7 @@ class AppointmentModel {
   /// storing in Firestore or sending via API. It handles DateTime conversions
   /// and Firestore Timestamp formatting.
   ///
-  /// Returns a Map<String, dynamic> containing all appointment data.
+  /// Returns a `Map<String, dynamic>` containing all appointment data.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

@@ -4,8 +4,6 @@ import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/core/services/background_service.dart';
 import 'package:elajtech/features/auth/domain/repositories/auth_repository.dart';
 import 'package:elajtech/features/doctor/domain/repositories/doctor_repository.dart';
-import 'package:elajtech/features/register/presentation/screens/sign_up_otp_screen.dart'
-    show SignUpOtpScreen;
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, debugPrint, defaultTargetPlatform, kDebugMode, kIsWeb;
@@ -210,7 +208,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             try {
               await BackgroundService.init();
               await BackgroundService.registerPeriodicTask();
-            } on Exception catch (e) {
+            } on Object catch (e) {
               if (kDebugMode) {
                 debugPrint('Background service initialization skipped: $e');
               }
@@ -444,7 +442,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         await BackgroundService.init();
         await BackgroundService.registerPeriodicTask();
-      } on Exception catch (e) {
+      } on Object catch (e) {
         if (kDebugMode) {
           debugPrint('⚠️ [AuthProvider] Background service init failed: $e');
         }
@@ -466,8 +464,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// بدء عملية ربط رقم الهاتف بالحساب الحالي.
   ///
-  /// يُرسل رمز OTP إلى [phoneNumber] ويخزّن [linkingVerificationId] في الحالة.
-  /// يجب استدعاء [confirmPhoneLinking] لاحقاً بعد إدخال المستخدم للرمز.
+  /// يُرسل رمز OTP إلى `phoneNumber` ويخزّن `linkingVerificationId` في الحالة.
+  /// يجب استدعاء `confirmPhoneLinking` لاحقاً بعد إدخال المستخدم للرمز.
   ///
   /// لا يؤثر هذا الأسلوب على حقول تسجيل الدخول العادية (verificationId, etc.).
   Future<void> startPhoneLinking({required String phoneNumber}) async {
@@ -516,11 +514,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// تأكيد ربط الهاتف باستخدام رمز OTP.
   ///
-  /// يستدعي [AuthRepository.linkPhoneToCurrentUser] ليربط المزوّد الهاتفي بالـ uid الحالي
+  /// يستدعي `AuthRepository.linkPhoneToCurrentUser` ليربط المزوّد الهاتفي بالـ uid الحالي
   /// دون تغيير الـ uid أو وثيقة Firestore الأساسية.
   ///
-  /// عند النجاح: يُحدَّث [state.user] برقم الهاتف الجديد وتُعيَّن [linkingSuccess]=true.
-  /// عند الفشل: تُعيَّن [linkingError] برسالة عربية واضحة.
+  /// عند النجاح: يُحدَّث `state.user` برقم الهاتف الجديد وتُعيَّن `linkingSuccess=true`.
+  /// عند الفشل: تُعيَّن `linkingError` برسالة عربية واضحة.
   Future<void> confirmPhoneLinking({required String smsCode}) async {
     final verificationId = state.linkingVerificationId;
     if (verificationId == null) {
@@ -578,9 +576,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// ⚠️ Patient sign-up only — Step 1.
   ///
-  /// Creates a Firebase email/password account and sends an OTP to [phoneNumber].
-  /// On success, [state.signUpVerificationId] is set and the caller should navigate
-  /// to [SignUpOtpScreen].  No Firestore document is written at this stage.
+  /// Creates a Firebase email/password account and sends an OTP to `phoneNumber`.
+  /// On success, `state.signUpVerificationId` is set and the caller should navigate
+  /// to `SignUpOtpScreen`. No Firestore document is written at this stage.
   Future<void> startSignUpWithEmailAndPhone({
     required String email,
     required String password,
@@ -633,8 +631,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   ///
   /// Confirms the OTP, links the phone to the email/password account, then
   /// creates the Firestore `users/{uid}` document.
-  /// On success: [state.isAuthenticated] = true and [state.user] is populated.
-  /// On failure: [state.signUpError] is set with an Arabic message.
+  /// On success: `state.isAuthenticated = true` and `state.user` is populated.
+  /// On failure: `state.signUpError` is set with an Arabic message.
   Future<void> confirmSignUpOtp({required String smsCode}) async {
     final verificationId = state.signUpVerificationId;
     if (verificationId == null) {
@@ -674,7 +672,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           try {
             await BackgroundService.init();
             await BackgroundService.registerPeriodicTask();
-          } on Exception catch (e) {
+          } on Object catch (e) {
             if (kDebugMode) {
               debugPrint('Background service init skipped: $e');
             }

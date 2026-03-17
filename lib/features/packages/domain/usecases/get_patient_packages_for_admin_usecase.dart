@@ -5,8 +5,8 @@
 /// حقل الملاحظات `notes` (R2).
 ///
 /// **English**: Domain use case for fetching a patient's packages for admins.
-/// Retrieves paginated results via [PatientPackageRepository.listPatientPackagesForAdmin].
-/// This version preserves the [notes] field (R2). Also dynamically re-derives
+/// Retrieves paginated results via `PatientPackageRepository.listPatientPackagesForAdmin`.
+/// This version preserves the `notes` field (R2). Also dynamically re-derives
 /// the `expired` status if an active package has passed its `expiryDate`.
 ///
 /// **Spec**: spec.md §7.8, §8.3, tasks.md T071.

@@ -1,11 +1,11 @@
 /// PatientPackageModel — نموذج بيانات مشتريات باقات المريض (Data Layer)
 ///
-/// يمتد من [PatientPackageEntity] ويضيف منطق تحويل Firestore مع تطبيق R2.
+/// يمتد من `PatientPackageEntity` ويضيف منطق تحويل Firestore مع تطبيق R2.
 ///
 /// **English**: Data-layer model extending [PatientPackageEntity]. Provides
 /// two factory constructors enforcing R2 (notes isolation):
-/// - [fromFirestoreForPatient]: always sets notes = null.
-/// - [fromFirestoreForAdmin]: maps notes normally.
+/// - `fromFirestoreForPatient`: always sets notes = null.
+/// - `fromFirestoreForAdmin`: maps notes normally.
 ///
 /// **Spec**: data-model.md §4.1, important-rules.md R2, tasks.md T014.
 library;
@@ -20,14 +20,14 @@ import 'package:elajtech/features/packages/domain/entities/patient_package_entit
 ///
 /// **English**
 /// Two Firestore factories enforce R2 at the model level:
-/// - [fromFirestoreForPatient]: strips `notes` unconditionally.
-/// - [fromFirestoreForAdmin]: includes `notes`.
+/// - `fromFirestoreForPatient`: strips `notes` unconditionally.
+/// - `fromFirestoreForAdmin`: includes `notes`.
 /// Both apply the mandatory 3-guard safety pattern.
 ///
 /// **Arabic**
 /// مُنشئان يُطبِّقان R2 على مستوى النموذج:
-/// - [fromFirestoreForPatient]: يُزيل `notes` دائمًا.
-/// - [fromFirestoreForAdmin]: يُضمِّن `notes`.
+/// - `fromFirestoreForPatient`: يُزيل `notes` دائمًا.
+/// - `fromFirestoreForAdmin`: يُضمِّن `notes`.
 /// كلاهما يُطبِّق نمط الثلاثة فحوصات.
 class PatientPackageModel extends PatientPackageEntity {
   /// Creates a [PatientPackageModel].

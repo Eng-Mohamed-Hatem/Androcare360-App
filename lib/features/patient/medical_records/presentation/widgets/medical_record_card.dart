@@ -54,7 +54,7 @@ class MedicalRecordCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        // TODO: Navigate to record details
+        // TODO(elajtech): Navigate to record details.
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(

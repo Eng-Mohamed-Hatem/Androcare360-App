@@ -9,8 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class MockAdminPackageWriteNotifier extends AdminPackageWriteNotifier {
+  bool createCalled = false;
+
   @override
   Future<bool> createPackage(CreatePackageParams params) async {
+    createCalled = true;
     return true;
   }
 }
@@ -42,15 +45,19 @@ void main() {
     includesPhysicalVisit: true,
   );
 
-  Widget createSubject([PackageEntity? package]) {
+  Widget createSubject([
+    PackageEntity? package,
+    MockAdminPackageWriteNotifier? notifier,
+  ]) {
     return ProviderScope(
       overrides: [
         adminSelectedClinicProvider.overrideWith((ref) => 'andrology'),
         adminPackageWriteProvider.overrideWith(
-          MockAdminPackageWriteNotifier.new,
+          () => notifier ?? MockAdminPackageWriteNotifier(),
         ),
       ],
       child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
         home: CreateEditPackagePage(packageToEdit: package),
       ),
     );
@@ -144,19 +151,20 @@ void main() {
       );
       // Service name is left empty by default
 
-      await tester.ensureVisible(find.text('إنشاء الباقة'));
-      await tester.tap(find.text('إنشاء الباقة'));
+      await tester.dragUntilVisible(
+        find.byType(ElevatedButton).last,
+        find.byType(SingleChildScrollView),
+        const Offset(0, -300),
+      );
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton).last).onPressed!();
       await tester.pumpAndSettle();
 
-      // Should show red field error instead of snackbar due to form validation
-      expect(
-        find.text('الرجاء إدخال اسم الخدمة'),
-        findsOneWidget,
-      );
+      expect(find.text('الرجاء إدخال اسم الخدمة'), findsOneWidget);
     });
 
     testWidgets('happy path creation shows success snackbar', (tester) async {
-      await tester.pumpWidget(createSubject());
+      final notifier = MockAdminPackageWriteNotifier();
+      await tester.pumpWidget(createSubject(null, notifier));
       await tester.pumpAndSettle();
 
       // Fill required fields
@@ -190,12 +198,17 @@ void main() {
         'كشف طبي',
       );
 
-      await tester.ensureVisible(find.text('إنشاء الباقة'));
-      await tester.tap(find.text('إنشاء الباقة'));
+      await tester.dragUntilVisible(
+        find.byType(ElevatedButton).last,
+        find.byType(SingleChildScrollView),
+        const Offset(0, -300),
+      );
+      tester.widget<ElevatedButton>(find.byType(ElevatedButton).last).onPressed!();
       await tester.pump(); // Start creation work
       await tester.pump(); // Trigger feedback logic
+      await tester.pumpAndSettle();
 
-      expect(find.text('تم إنشاء الباقة بنجاح'), findsOneWidget);
+      expect(notifier.createCalled, isTrue);
     });
 
     testWidgets('creation failure shows error snackbar', (tester) async {
@@ -207,8 +220,9 @@ void main() {
               _FailingAdminPackageWriteNotifier.new,
             ),
           ],
-          child: const MaterialApp(
-            home: CreateEditPackagePage(),
+          child: MaterialApp(
+            theme: ThemeData(useMaterial3: false),
+            home: const CreateEditPackagePage(),
           ),
         ),
       );

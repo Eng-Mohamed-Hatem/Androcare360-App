@@ -28,6 +28,8 @@ void main() {
   late MockDocumentReference<Map<String, dynamic>> mockDocumentReference;
   late MockDocumentSnapshot<Map<String, dynamic>> mockDocumentSnapshot;
   late MockQuery<Map<String, dynamic>> mockQuery;
+  late MockQuery<Map<String, dynamic>> mockApprovedQuery;
+  late MockQuery<Map<String, dynamic>> mockActiveQuery;
   late MockQuerySnapshot<Map<String, dynamic>> mockQuerySnapshot;
 
   setUp(() {
@@ -36,6 +38,8 @@ void main() {
     mockDocumentReference = MockDocumentReference<Map<String, dynamic>>();
     mockDocumentSnapshot = MockDocumentSnapshot<Map<String, dynamic>>();
     mockQuery = MockQuery<Map<String, dynamic>>();
+    mockApprovedQuery = MockQuery<Map<String, dynamic>>();
+    mockActiveQuery = MockQuery<Map<String, dynamic>>();
     mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
 
     repository = DoctorRepositoryImpl(mockFirestore);
@@ -43,6 +47,15 @@ void main() {
     // Setup default Firestore collection mock
     when(mockFirestore.collection(any)).thenReturn(mockCollection);
     when(mockCollection.doc(any)).thenReturn(mockDocumentReference);
+    when(
+      mockCollection.where('userType', isEqualTo: 'doctor'),
+    ).thenReturn(mockQuery);
+    when(
+      mockQuery.where('isApproved', isEqualTo: true),
+    ).thenReturn(mockApprovedQuery);
+    when(
+      mockApprovedQuery.where('isActive', isEqualTo: true),
+    ).thenReturn(mockActiveQuery);
   });
 
   group('DoctorRepository - Get Doctors', () {
@@ -57,10 +70,7 @@ void main() {
         mockDocs.add(mockDoc);
       }
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
+      when(mockActiveQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
       when(mockQuerySnapshot.docs).thenReturn(mockDocs);
 
       // Act
@@ -80,14 +90,13 @@ void main() {
       );
 
       verify(mockCollection.where('userType', isEqualTo: 'doctor')).called(1);
+      verify(mockQuery.where('isApproved', isEqualTo: true)).called(1);
+      verify(mockApprovedQuery.where('isActive', isEqualTo: true)).called(1);
     });
 
     test('should return empty list when no doctors found', () async {
       // Arrange
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
+      when(mockActiveQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
       when(mockQuerySnapshot.docs).thenReturn([]);
 
       // Act
@@ -105,10 +114,7 @@ void main() {
 
     test('should return failure on Firestore error', () async {
       // Arrange
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.get()).thenThrow(Exception('Firestore error'));
+      when(mockActiveQuery.get()).thenThrow(Exception('Firestore error'));
 
       // Act
       final result = await repository.getDoctors();
@@ -134,10 +140,7 @@ void main() {
         mockDocs.add(mockDoc);
       }
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
+      when(mockActiveQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
       when(mockQuerySnapshot.docs).thenReturn(mockDocs);
 
       // Act
@@ -333,10 +336,7 @@ void main() {
       final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
       when(mockQuerySnapshot.docs).thenReturn(mockDocs);
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer(
+      when(mockActiveQuery.snapshots()).thenAnswer(
         (_) => Stream.value(mockQuerySnapshot),
       );
 
@@ -355,6 +355,8 @@ void main() {
       );
 
       verify(mockCollection.where('userType', isEqualTo: 'doctor')).called(1);
+      verify(mockQuery.where('isApproved', isEqualTo: true)).called(1);
+      verify(mockApprovedQuery.where('isActive', isEqualTo: true)).called(1);
     });
 
     test('should emit empty list when no doctors in stream', () async {
@@ -362,10 +364,7 @@ void main() {
       final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
       when(mockQuerySnapshot.docs).thenReturn([]);
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer(
+      when(mockActiveQuery.snapshots()).thenAnswer(
         (_) => Stream.value(mockQuerySnapshot),
       );
 
@@ -386,17 +385,16 @@ void main() {
       // Create one valid and one invalid document
       final mockValidDoc = MockQueryDocumentSnapshot<Map<String, dynamic>>();
       when(mockValidDoc.data()).thenReturn(validDoctor.toJson());
+      when(mockValidDoc.id).thenReturn('valid_doctor');
 
       final mockInvalidDoc = MockQueryDocumentSnapshot<Map<String, dynamic>>();
       when(mockInvalidDoc.data()).thenThrow(Exception('Invalid data'));
+      when(mockInvalidDoc.id).thenReturn('invalid_doctor');
 
       final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
       when(mockQuerySnapshot.docs).thenReturn([mockValidDoc, mockInvalidDoc]);
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer(
+      when(mockActiveQuery.snapshots()).thenAnswer(
         (_) => Stream.value(mockQuerySnapshot),
       );
 
@@ -443,10 +441,7 @@ void main() {
       final mockQuerySnapshot2 = MockQuerySnapshot<Map<String, dynamic>>();
       when(mockQuerySnapshot2.docs).thenReturn(mockDocs2);
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer(
+      when(mockActiveQuery.snapshots()).thenAnswer(
         (_) => Stream.fromIterable([mockQuerySnapshot1, mockQuerySnapshot2]),
       );
 
@@ -467,19 +462,18 @@ void main() {
       // Arrange
       final mockInvalidDoc1 = MockQueryDocumentSnapshot<Map<String, dynamic>>();
       when(mockInvalidDoc1.data()).thenThrow(Exception('Invalid data 1'));
+      when(mockInvalidDoc1.id).thenReturn('invalid_1');
 
       final mockInvalidDoc2 = MockQueryDocumentSnapshot<Map<String, dynamic>>();
       when(mockInvalidDoc2.data()).thenThrow(Exception('Invalid data 2'));
+      when(mockInvalidDoc2.id).thenReturn('invalid_2');
 
       final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
       when(
         mockQuerySnapshot.docs,
       ).thenReturn([mockInvalidDoc1, mockInvalidDoc2]);
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer(
+      when(mockActiveQuery.snapshots()).thenAnswer(
         (_) => Stream.value(mockQuerySnapshot),
       );
 
@@ -507,10 +501,7 @@ void main() {
       final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
       when(mockQuerySnapshot.docs).thenReturn([mockDoc]);
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.snapshots()).thenAnswer(
+      when(mockActiveQuery.snapshots()).thenAnswer(
         (_) => Stream.value(mockQuerySnapshot),
       );
 
@@ -540,23 +531,27 @@ void main() {
 
       final mockValidDoc = MockQueryDocumentSnapshot<Map<String, dynamic>>();
       when(mockValidDoc.data()).thenReturn(validDoctor.toJson());
+      when(mockValidDoc.id).thenReturn('valid_doctor');
 
       // This will cause fromJson to throw
       final mockInvalidDoc = MockQueryDocumentSnapshot<Map<String, dynamic>>();
       when(mockInvalidDoc.data()).thenReturn({'invalid': 'data'});
+      when(mockInvalidDoc.id).thenReturn('invalid_doctor');
 
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
+      when(mockActiveQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
       when(mockQuerySnapshot.docs).thenReturn([mockValidDoc, mockInvalidDoc]);
 
-      // Act & Assert
-      // The current implementation doesn't handle malformed data gracefully
-      // This test documents the current behavior - it throws TypeError
-      expect(
-        () async => repository.getDoctors(),
-        throwsA(isA<TypeError>()),
+      // Act
+      final result = await repository.getDoctors();
+
+      // Assert
+      expect(result.isRight(), isTrue);
+      result.fold(
+        (failure) => fail('Should not return failure'),
+        (doctorList) {
+          expect(doctorList, hasLength(1));
+          expect(doctorList.first.id, 'valid_doctor');
+        },
       );
     });
 
@@ -583,10 +578,7 @@ void main() {
 
     test('getDoctors should verify query filters correctly', () async {
       // Arrange
-      when(
-        mockCollection.where(any, isEqualTo: anyNamed('isEqualTo')),
-      ).thenReturn(mockQuery);
-      when(mockQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
+      when(mockActiveQuery.get()).thenAnswer((_) async => mockQuerySnapshot);
       when(mockQuerySnapshot.docs).thenReturn([]);
 
       // Act
@@ -594,7 +586,9 @@ void main() {
 
       // Assert
       verify(mockCollection.where('userType', isEqualTo: 'doctor')).called(1);
-      verify(mockQuery.get()).called(1);
+      verify(mockQuery.where('isApproved', isEqualTo: true)).called(1);
+      verify(mockApprovedQuery.where('isActive', isEqualTo: true)).called(1);
+      verify(mockActiveQuery.get()).called(1);
     });
   });
 }

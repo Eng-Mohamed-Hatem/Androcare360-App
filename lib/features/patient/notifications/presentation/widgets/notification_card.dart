@@ -58,7 +58,7 @@ class NotificationCard extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        // TODO: Handle notification tap
+        // TODO(elajtech): Handle notification tap.
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

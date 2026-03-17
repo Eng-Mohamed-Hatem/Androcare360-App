@@ -32,10 +32,10 @@ class _MedicalScreeningScreenState
       _isInit = true;
       final patientId = ref.read(authProvider).user?.id;
       if (patientId != null) {
-        ref
-            .read(medicalScreeningProvider.notifier)
-            .loadData(patientId)
-            .ignore();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(medicalScreeningProvider.notifier).loadData(patientId).ignore();
+        });
       }
     }
   }

@@ -109,8 +109,8 @@ class UserRepositoryImpl implements UserRepository {
   /// - No ordering applied
   ///
   /// Returns:
-  /// - Right(List<UserModel>): List of all patient users
-  /// - Left(ServerFailure): Query failed
+  /// - `Right(List<UserModel>)`: List of all patient users
+  /// - `Left(ServerFailure)`: Query failed
   ///
   /// **Note:** This query may return a large dataset. Consider implementing
   /// pagination for production use with many patients.

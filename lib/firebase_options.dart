@@ -28,7 +28,7 @@ class DefaultFirebaseOptions {
           'DefaultFirebaseOptions have not been configured for linux - '
           'run flutterfire configure to add linux support.',
         );
-      default:
+      case TargetPlatform.fuchsia:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
         );

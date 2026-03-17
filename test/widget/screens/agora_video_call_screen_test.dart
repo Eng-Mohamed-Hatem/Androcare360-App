@@ -51,6 +51,7 @@ void main() {
     }) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(useMaterial3: false),
           home: AgoraVideoCallScreen(
             appointment: appointment,
             firebaseAuth: firebaseAuth ?? mockAuth,
@@ -382,7 +383,10 @@ void main() {
           if (decoration is BoxDecoration) {
             final color = decoration.color;
             return color != null &&
-                color.value == Colors.black.withOpacity(0.5).value;
+                color.a == 0.5 &&
+                color.r == Colors.black.r &&
+                color.g == Colors.black.g &&
+                color.b == Colors.black.b;
           }
           return false;
         });

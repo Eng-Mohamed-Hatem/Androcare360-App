@@ -175,7 +175,7 @@ class InternalMedicineEMRModel {
   /// This method serializes all EMR data into a Map suitable for storing
   /// in Firestore. All nested maps, lists, and DateTime values are properly formatted.
   ///
-  /// Returns a Map<String, dynamic> containing all EMR data.
+  /// Returns a `Map<String, dynamic>` containing all EMR data.
   Map<String, dynamic> toJson() => {
     'id': id,
     'patientId': patientId,

@@ -594,13 +594,14 @@ class ComprehensiveNutritionChecklist extends ConsumerWidget {
             final user = ref.read(authProvider).user;
             if (user == null) return;
 
-            final notifier = ref.read(nutritionEMRNotifierProvider.notifier);
-            notifier.updateField(
-              fieldName: item.fieldName,
-              value: newValue,
-              userId: user.id,
-              userName: user.fullName,
-            );
+            ref
+                .read(nutritionEMRNotifierProvider.notifier)
+                .updateField(
+                  fieldName: item.fieldName,
+                  value: newValue,
+                  userId: user.id,
+                  userName: user.fullName,
+                );
           }
         },
         title: Text(

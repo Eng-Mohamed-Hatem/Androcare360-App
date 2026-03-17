@@ -26,7 +26,8 @@ import 'package:elajtech/core/error/failures.dart';
 ///   (_) => showApprovalSuccess(),
 /// );
 /// ```
-abstract class ApproveDoctorUseCase {
+// ignore: one_member_abstracts, use case contract is kept explicit for DI and testing
+abstract interface class ApproveDoctorUseCase {
   /// Approves a pending doctor registration.
   ///
   /// Updates the doctor account to active and approved state:

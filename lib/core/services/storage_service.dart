@@ -19,7 +19,7 @@ import 'package:injectable/injectable.dart';
 /// - Automatic file overwrite for existing profile images
 ///
 /// **Storage Structure:**
-/// ```
+/// ```text
 /// gs://bucket-name/
 ///   └── profile_images/
 ///       ├── user123.jpg

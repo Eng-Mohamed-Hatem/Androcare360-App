@@ -10,7 +10,7 @@ class DeviceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: () {
-      // TODO: Navigate to device details
+      // TODO(elajtech): Navigate to device details.
     },
     borderRadius: BorderRadius.circular(16),
     child: Container(
@@ -112,7 +112,7 @@ class DeviceCard extends StatelessWidget {
                             minHeight: 32,
                           ),
                           onPressed: () {
-                            // TODO: Add to cart
+                            // TODO(elajtech): Add to cart.
                           },
                         ),
                       ),

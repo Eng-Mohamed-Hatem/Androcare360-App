@@ -41,12 +41,12 @@ void main() {
   late MockAuthRepository mockAuthRepository;
   final getIt = GetIt.instance;
 
-  setUp(() {
+  setUp(() async {
     mockAuthRepository = MockAuthRepository();
 
     // Register mock in GetIt
     if (getIt.isRegistered<AuthRepository>()) {
-      getIt.unregister<AuthRepository>();
+      await getIt.unregister<AuthRepository>();
     }
     getIt.registerSingleton<AuthRepository>(mockAuthRepository);
   });
@@ -838,6 +838,46 @@ void main() {
 
   group('AuthProvider - Account Status and Role Validation', () {
     test(
+      'should fail doctor login and sign out if doctor is not approved',
+      () async {
+        const email = 'pending-doctor@test.com';
+        const password = 'password123';
+        final pendingDoctor = UserFixtures.createDoctor(
+          email: email,
+          isApproved: false,
+          isActive: false,
+        );
+
+        when(
+          mockAuthRepository.getCurrentUser(),
+        ).thenAnswer((_) async => const Left(ServerFailure('No user')));
+        when(
+          mockAuthRepository.signIn(email: email, password: password),
+        ).thenAnswer((_) async => Right(pendingDoctor));
+        when(
+          mockAuthRepository.signOut(),
+        ).thenAnswer((_) async => const Right(unit));
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        await container
+            .read(authProvider.notifier)
+            .loginWithEmail(
+              email,
+              password,
+              userType: UserType.doctor,
+            );
+
+        final state = container.read(authProvider);
+        expect(state.isAuthenticated, false);
+        expect(state.user, isNull);
+        expect(state.error, contains('pending admin approval'));
+        verify(mockAuthRepository.signOut()).called(1);
+      },
+    );
+
+    test(
       'should fail login and sign out if user is inactive (isActive: false)',
       () async {
         // Arrange
@@ -873,6 +913,45 @@ void main() {
         expect(state.error, contains('معطّل'));
 
         // Verify signOut was called to clean up the Firebase Auth session
+        verify(mockAuthRepository.signOut()).called(1);
+      },
+    );
+
+    test(
+      'should fail doctor login with disabled account message when approved but inactive',
+      () async {
+        const email = 'inactive-doctor@test.com';
+        const password = 'password123';
+        final inactiveDoctor = UserFixtures.createDoctor(
+          email: email,
+          isActive: false,
+        );
+
+        when(
+          mockAuthRepository.getCurrentUser(),
+        ).thenAnswer((_) async => const Left(ServerFailure('No user')));
+        when(
+          mockAuthRepository.signIn(email: email, password: password),
+        ).thenAnswer((_) async => Right(inactiveDoctor));
+        when(
+          mockAuthRepository.signOut(),
+        ).thenAnswer((_) async => const Right(unit));
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        await container
+            .read(authProvider.notifier)
+            .loginWithEmail(
+              email,
+              password,
+              userType: UserType.doctor,
+            );
+
+        final state = container.read(authProvider);
+        expect(state.isAuthenticated, false);
+        expect(state.user, isNull);
+        expect(state.error, 'Account disabled, please contact support.');
         verify(mockAuthRepository.signOut()).called(1);
       },
     );

@@ -162,7 +162,7 @@ class DoctorModel {
   /// This method serializes all doctor data into a Map suitable for
   /// storing in Firestore or sending via API.
   ///
-  /// Returns a Map<String, dynamic> containing all doctor data.
+  /// Returns a `Map<String, dynamic>` containing all doctor data.
   Map<String, dynamic> toJson() => {
     'id': id,
     'fullName': fullName,

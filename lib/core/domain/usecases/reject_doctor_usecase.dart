@@ -27,7 +27,8 @@ import 'package:elajtech/core/error/failures.dart';
 ///   (_) => showRejectionSuccess(),
 /// );
 /// ```
-abstract class RejectDoctorUseCase {
+// ignore: one_member_abstracts, use case contract is kept explicit for DI and testing
+abstract interface class RejectDoctorUseCase {
   /// Rejects a pending doctor registration.
   ///
   /// Permanently deletes the doctor's user document and all

@@ -78,7 +78,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.auth_phone_login_title),
+        title: const Text(AppStrings.authPhoneLoginTitle),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -107,7 +107,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                 const SizedBox(height: 32),
 
                 Text(
-                  AppStrings.auth_phone_login_title,
+                  AppStrings.authPhoneLoginTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

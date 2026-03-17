@@ -19,7 +19,7 @@ class MedicalDevicesShopScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () {
-              // TODO: Navigate to cart
+              // TODO(elajtech): Navigate to cart.
             },
           ),
         ],
@@ -47,10 +47,10 @@ class MedicalDevicesShopScreen extends ConsumerWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: const [
-                _CategoryChip('الكل', true),
-                _CategoryChip('أجهزة القياس', false),
-                _CategoryChip('أجهزة العلاج', false),
-                _CategoryChip('مستلزمات طبية', false),
+                _CategoryChip('الكل', isSelected: true),
+                _CategoryChip('أجهزة القياس', isSelected: false),
+                _CategoryChip('أجهزة العلاج', isSelected: false),
+                _CategoryChip('مستلزمات طبية', isSelected: false),
               ],
             ),
           ),
@@ -79,7 +79,7 @@ class MedicalDevicesShopScreen extends ConsumerWidget {
 }
 
 class _CategoryChip extends StatelessWidget {
-  const _CategoryChip(this.label, this.isSelected);
+  const _CategoryChip(this.label, {required this.isSelected});
   final String label;
   final bool isSelected;
 

@@ -189,7 +189,7 @@ class AgoraService {
   /// Requests both camera and microphone permissions required for video calls.
   /// This is called automatically during initialization.
   ///
-  /// Throws: [PermissionException] if permissions are denied
+  /// Throws `PermissionException` if permissions are denied.
   Future<void> _requestPermissions() async {
     await [Permission.camera, Permission.microphone].request();
   }
@@ -203,7 +203,7 @@ class AgoraService {
   /// - Local audio/video state changes
   /// - Error events
   ///
-  /// All events are broadcast through the [eventStream] for UI consumption.
+  /// All events are broadcast through `eventStream` for UI consumption.
   /// Critical errors are logged to CallMonitoringService for debugging.
   void _registerEventHandlers() {
     _engine!.registerEventHandler(
@@ -917,11 +917,11 @@ enum AgoraEventType {
 ///
 /// Contains event-specific data for Agora events.
 /// Different event types use different fields:
-/// - [joinedChannel]/[leftChannel]: uses [channelId] and [uid]
-/// - [userJoined]/[userLeft]: uses [channelId] and [uid]
-/// - [localAudioMuteChanged]/[localVideoMuteChanged]: uses [isMuted]
-/// - [connectionStateChanged]: uses [connectionState]
-/// - [error]: uses [error]
+/// - `joinedChannel`/`leftChannel`: uses `channelId` and `uid`
+/// - `userJoined`/`userLeft`: uses `channelId` and `uid`
+/// - `localAudioMuteChanged`/`localVideoMuteChanged`: uses `isMuted`
+/// - `connectionStateChanged`: uses `connectionState`
+/// - `error`: uses `error`
 class AgoraEvent {
   /// Creates an Agora event
   ///

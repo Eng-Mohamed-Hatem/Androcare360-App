@@ -51,7 +51,7 @@ class PackageDocumentRepositoryImpl implements PackageDocumentRepository {
   final FirestorePackageDatasource _firestoreDatasource;
   final FirebaseStoragePackageDatasource _storageDatasource;
 
-  final _uuid = const Uuid();
+  static const _uuid = Uuid();
 
   @override
   Stream<List<PackageDocumentEntity>> streamDocumentsByPatientPackage({

@@ -154,8 +154,8 @@ class DeviceRequestRepositoryImpl implements DeviceRequestRepository {
   /// - patientId: Unique patient identifier (required)
   ///
   /// Returns:
-  /// - Right(List<DeviceRequestModel>): List of device requests (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<DeviceRequestModel>)`: List of device requests (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
@@ -193,8 +193,8 @@ class DeviceRequestRepositoryImpl implements DeviceRequestRepository {
   /// - appointmentId: Unique appointment identifier (required)
   ///
   /// Returns:
-  /// - Right(List<DeviceRequestModel>): List of device requests (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<DeviceRequestModel>)`: List of device requests (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart

@@ -11,7 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// شاشة ربط رقم الهاتف بالحساب الحالي — الخطوة 1: إدخال رقم الهاتف
 ///
 /// تتاح لكل من المريض والطبيب المسجّلَين بالبريد الإلكتروني.
-/// تُرسل رمز OTP عبر Firebase Phone Auth وتنتقل إلى [LinkPhoneOtpScreen].
+/// تُرسل رمز OTP عبر Firebase Phone Auth وتنتقل إلى `LinkPhoneOtpScreen`.
 class LinkPhoneScreen extends ConsumerStatefulWidget {
   const LinkPhoneScreen({super.key});
 
@@ -23,7 +23,7 @@ class _LinkPhoneScreenState extends ConsumerState<LinkPhoneScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
 
-  /// المرجع المُستخدَم لمراقبة تغيّر حالة [linkingVerificationId].
+  /// المرجع المُستخدَم لمراقبة تغيّر حالة `linkingVerificationId`.
   String? _previousVerificationId;
 
   @override
@@ -32,7 +32,7 @@ class _LinkPhoneScreenState extends ConsumerState<LinkPhoneScreen> {
     super.dispose();
   }
 
-  /// يُرسل OTP ثم ينتظر حتى يصل [linkingVerificationId] الجديد.
+  /// يُرسل OTP ثم ينتظر حتى يصل `linkingVerificationId` الجديد.
   Future<void> _sendOtp() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 

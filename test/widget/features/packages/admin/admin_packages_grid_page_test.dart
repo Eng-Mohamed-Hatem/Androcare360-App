@@ -6,9 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget createTestWidget() {
-    return const ProviderScope(
+    return ProviderScope(
       child: MaterialApp(
-        home: AdminPackagesGridPage(),
+        theme: ThemeData(useMaterial3: false),
+        home: const AdminPackagesGridPage(),
       ),
     );
   }
@@ -35,8 +36,9 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: AdminPackagesGridPage(),
+        child: MaterialApp(
+          theme: ThemeData(useMaterial3: false),
+          home: const AdminPackagesGridPage(),
         ),
       ),
     );

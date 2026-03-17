@@ -4,6 +4,7 @@ import 'package:elajtech/core/constants/app_constants.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/doctor/domain/repositories/doctor_repository.dart';
 import 'package:elajtech/shared/models/user_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 /// Doctor Repository implementation for the AndroCare360 system.
@@ -85,13 +86,13 @@ class DoctorRepositoryImpl implements DoctorRepository {
   /// Parameters: None
   ///
   /// Returns:
-  /// - Right(List<UserModel>): List of doctor profiles (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<UserModel>)`: List of doctor profiles (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Query or parsing exception
+  /// - `Unexpected error: ...`: Query or parsing exception
   ///
   /// Example:
   /// ```dart
@@ -110,14 +111,30 @@ class DoctorRepositoryImpl implements DoctorRepository {
   @override
   Future<Either<Failure, List<UserModel>>> getDoctors() async {
     try {
-      final query = await _firestore
-          .collection(AppConstants.collections.users)
-          .where('userType', isEqualTo: 'doctor')
-          .get();
+      final query = await _approvedDoctorsQuery().get();
+      final doctors = <UserModel>[];
 
-      final doctors = query.docs
-          .map((doc) => UserModel.fromJson(doc.data()))
-          .toList();
+      for (final doc in query.docs) {
+        try {
+          doctors.add(UserModel.fromJson(doc.data()));
+        } on Object catch (error, stackTrace) {
+          if (kDebugMode) {
+            debugPrint(
+              '❌ [DoctorRepository] Failed to parse visible doctor ${doc.id}: '
+              '$error',
+            );
+            debugPrint('$stackTrace');
+          }
+        }
+      }
+
+      if (kDebugMode) {
+        debugPrint('🔍 [DoctorRepository] Visible doctor query completed');
+        debugPrint(
+          '   filters: userType=doctor, isApproved=true, isActive=true',
+        );
+        debugPrint('   resultCount: ${doctors.length}');
+      }
 
       return Right(doctors);
     } on Exception catch (e) {
@@ -145,7 +162,7 @@ class DoctorRepositoryImpl implements DoctorRepository {
   /// Parameters: None
   ///
   /// Returns:
-  /// - Stream<List<UserModel>>: Real-time doctor list stream
+  /// - `Stream<List<UserModel>>`: Real-time doctor list stream
   ///
   /// Example:
   /// ```dart
@@ -156,23 +173,34 @@ class DoctorRepositoryImpl implements DoctorRepository {
   /// );
   /// ```
   @override
-  Stream<List<UserModel>> getDoctorsStream() => _firestore
-      .collection(AppConstants.collections.users)
-      .where('userType', isEqualTo: 'doctor')
-      .snapshots()
-      .map(
-        (snapshot) => snapshot.docs
-            .map((doc) {
-              try {
-                return UserModel.fromJson(doc.data());
-              } on Exception catch (_) {
-                return null;
-              }
-            })
-            .where((user) => user != null)
-            .cast<UserModel>()
-            .toList(),
-      );
+  Stream<List<UserModel>> getDoctorsStream() =>
+      _approvedDoctorsQuery().snapshots().map((snapshot) {
+        final doctors = <UserModel>[];
+
+        for (final doc in snapshot.docs) {
+          try {
+            doctors.add(UserModel.fromJson(doc.data()));
+          } on Object catch (error, stackTrace) {
+            if (kDebugMode) {
+              debugPrint(
+                '❌ [DoctorRepository] Failed to parse visible doctor '
+                '${doc.id} from stream: $error',
+              );
+              debugPrint('$stackTrace');
+            }
+          }
+        }
+
+        if (kDebugMode) {
+          debugPrint('🔍 [DoctorRepository] Visible doctor stream update');
+          debugPrint(
+            '   filters: userType=doctor, isApproved=true, isActive=true',
+          );
+          debugPrint('   resultCount: ${doctors.length}');
+        }
+
+        return doctors;
+      });
 
   /// Retrieve a specific doctor by ID.
   ///
@@ -197,7 +225,7 @@ class DoctorRepositoryImpl implements DoctorRepository {
   /// - 'Doctor not found': Document doesn't exist in Firestore
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Parsing or runtime exception
+  /// - `Unexpected error: ...`: Parsing or runtime exception
   ///
   /// Example:
   /// ```dart
@@ -228,4 +256,10 @@ class DoctorRepositoryImpl implements DoctorRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  Query<Map<String, dynamic>> _approvedDoctorsQuery() => _firestore
+      .collection(AppConstants.collections.users)
+      .where('userType', isEqualTo: 'doctor')
+      .where('isApproved', isEqualTo: true)
+      .where('isActive', isEqualTo: true);
 }

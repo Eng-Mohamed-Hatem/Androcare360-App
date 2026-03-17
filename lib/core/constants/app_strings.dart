@@ -292,18 +292,17 @@ We may update this Privacy Policy periodically. Continued use of the app means y
       'قد نقوم بتحديث سياسة الخصوصية من حين لآخر، ويُعتبر استمرار استخدامك للتطبيق قبولًا بأحدث نسخة منها';
 
   // Phone Auth - تسجيل الدخول بالهاتف
-  static const String auth_phone_login_title = 'تسجيل الدخول برقم الهاتف';
-  static const String auth_phone_number_hint =
-      'رقم الهاتف (مثال: +96612345678)';
-  static const String auth_phone_invalid_number =
+  static const String authPhoneLoginTitle = 'تسجيل الدخول برقم الهاتف';
+  static const String authPhoneNumberHint = 'رقم الهاتف (مثال: +96612345678)';
+  static const String authPhoneInvalidNumber =
       'رقم هاتف غير صحيح، يرجى الاستخدام بصيغة +966';
-  static const String auth_otp_title = 'رمز التحقق';
-  static const String auth_otp_invalid_code = 'رمز التحقق غير صحيح';
-  static const String auth_otp_session_expired =
+  static const String authOtpTitle = 'رمز التحقق';
+  static const String authOtpInvalidCode = 'رمز التحقق غير صحيح';
+  static const String authOtpSessionExpired =
       'انتهت صلاحية الجلسة، حاول مرة أخرى';
-  static const String auth_otp_resend = 'إعادة إرسال الرمز';
-  static const String auth_otp_too_many_requests =
+  static const String authOtpResend = 'إعادة إرسال الرمز';
+  static const String authOtpTooManyRequests =
       'طلبات كثيرة جداً، يرجى المحاولة لاحقاً';
-  static const String auth_phone_user_not_found =
+  static const String authPhoneUserNotFound =
       'رقم الهاتف غير مسجل، يرجى التواصل مع الإدارة';
 }

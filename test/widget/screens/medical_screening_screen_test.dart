@@ -63,8 +63,8 @@ void main() {
     );
   });
 
-  tearDown(() {
-    GetIt.instance.reset();
+  tearDown(() async {
+    await GetIt.instance.reset();
   });
 
   Widget createWidgetUnderTest() {
@@ -74,8 +74,9 @@ void main() {
           return _MockAuthNotifier(mockUser: mockUser)..setUser(mockUser);
         }),
       ],
-      child: const MaterialApp(
-        home: MedicalScreeningScreen(),
+      child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
+        home: const MedicalScreeningScreen(),
       ),
     );
   }

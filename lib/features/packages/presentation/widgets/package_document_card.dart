@@ -3,7 +3,7 @@
 /// يعرض هذا الودجت معلومات مستند طبي واحد مرتبط بباقة المريض، مع زر
 /// للفتح/التحميل عبر `url_launcher`.
 ///
-/// **English**: Card widget displaying a single [PackageDocumentEntity] with
+/// **English**: Card widget displaying a single `PackageDocumentEntity` with
 /// Arabic title, document type label, formatted upload date, and an
 /// open/download button that launches the `fileUrl` with `url_launcher`.
 ///
@@ -19,8 +19,8 @@ import 'package:url_launcher/url_launcher.dart';
 /// Card displaying a single medical document linked to a patient package.
 ///
 /// **English**
-/// Shows: document [title] (Arabic), [documentType] Arabic label, formatted
-/// [uploadedAt] (`DateFormat.yMMMMd('ar')`), and a button to open the file.
+/// Shows: document `title` (Arabic), `documentType` Arabic label, formatted
+/// `uploadedAt` (`DateFormat.yMMMMd('ar')`), and a button to open the file.
 ///
 /// **Arabic**
 /// يعرض: عنوان المستند، نوعه، تاريخ الرفع، وزر لفتح الملف.

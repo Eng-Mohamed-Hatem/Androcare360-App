@@ -1,12 +1,12 @@
 /// Base per-clinic package repository — قاعدة مستودع باقات العيادة
 ///
 /// يُقدِّم هذا الملف فئتين:
-/// - [BaseClinicPackageRepository]: تطبيق أساسي مشترك للمستودعات الخمسة.
-/// - التطبيقات الخمسة المتخصصة تمتد منه ولا تحتاج إلا إلى تعريف [clinicId].
+/// - `BaseClinicPackageRepository`: تطبيق أساسي مشترك للمستودعات الخمسة.
+/// - التطبيقات الخمسة المتخصصة تمتد منه ولا تحتاج إلا إلى تعريف `clinicId`.
 ///
-/// **English**: Shared base implementation of [PackageRepository] for the five
+/// **English**: Shared base implementation of `PackageRepository` for the five
 /// per-clinic implementations. Eliminates code duplication (DRY). Each clinic
-/// implementation sets only its own [clinicId] constant.
+/// implementation sets only its own `clinicId` constant.
 ///
 /// **Use of named qualifier**: Since all five implement the same interface, they
 /// are NOT registered in GetIt as `PackageRepository`. Instead, each is exposed
@@ -27,21 +27,22 @@ import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/failures/package_failures.dart';
 import 'package:elajtech/features/packages/domain/repositories/package_repository.dart';
 
-/// Abstract base for per-clinic [PackageRepository] implementations.
+/// Abstract base for per-clinic `PackageRepository` implementations.
 ///
 /// **English**
-/// Concrete subclasses must set [clinicId] and call [super(datasource)].
-/// All three [PackageRepository] methods are implemented here and delegate
-/// to [FirestorePackageDatasource].
+/// Concrete subclasses must set `clinicId` and call `super(datasource)`.
+/// All three `PackageRepository` methods are implemented here and delegate
+/// to `FirestorePackageDatasource`.
 ///
 /// **Arabic**
-/// الفئة الأساسية للمستودعات الخمسة. الفئات الفرعية تُعيِّن [clinicId] فحسب.
-/// جميع أساليب [PackageRepository] مُطبَّقة هنا وتُفوِّض إلى [FirestorePackageDatasource].
+/// الفئة الأساسية للمستودعات الخمسة. الفئات الفرعية تُعيِّن `clinicId` فحسب.
+/// جميع أساليب `PackageRepository` مُطبَّقة هنا وتُفوِّض إلى `FirestorePackageDatasource`.
 abstract class BaseClinicPackageRepository implements PackageRepository {
   /// Creates a [BaseClinicPackageRepository] with the datasource.
   ///
   /// يُنشئ المستودع الأساسي مع مصدر البيانات المُحقَن.
-  const BaseClinicPackageRepository(this._datasource);
+  const BaseClinicPackageRepository(FirestorePackageDatasource datasource)
+    : _datasource = datasource;
 
   final FirestorePackageDatasource _datasource;
 

@@ -219,7 +219,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
-        return const Left(AuthFailure(AppStrings.auth_phone_invalid_number));
+        return const Left(AuthFailure(AppStrings.authPhoneInvalidNumber));
       }
 
       // Check Firestore (Rule: Must use databaseId: 'elajtech')
@@ -235,7 +235,7 @@ class AuthRepositoryImpl implements AuthRepository {
           );
         }
         await _firebaseAuth.signOut();
-        return const Left(AuthFailure(AppStrings.auth_phone_user_not_found));
+        return const Left(AuthFailure(AppStrings.authPhoneUserNotFound));
       }
 
       final user = UserModel.fromJson(doc.data()!);
@@ -1380,13 +1380,13 @@ class AuthRepositoryImpl implements AuthRepository {
       case 'user-disabled':
         return 'تم تعطيل هذا الحساب.';
       case 'invalid-phone-number':
-        return AppStrings.auth_phone_invalid_number;
+        return AppStrings.authPhoneInvalidNumber;
       case 'too-many-requests':
-        return AppStrings.auth_otp_too_many_requests;
+        return AppStrings.authOtpTooManyRequests;
       case 'session-expired':
-        return AppStrings.auth_otp_session_expired;
+        return AppStrings.authOtpSessionExpired;
       case 'invalid-verification-code':
-        return AppStrings.auth_otp_invalid_code;
+        return AppStrings.authOtpInvalidCode;
       // ── Linking-specific codes ──────────────────────────────────────────
       case 'credential-already-in-use':
         return 'رقم الهاتف مرتبط بحساب آخر. يرجى التواصل مع الإدارة.';

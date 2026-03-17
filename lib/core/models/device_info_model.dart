@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Represents device information for technical troubleshooting.
 ///
 /// This model stores comprehensive device and system information that is
@@ -23,6 +25,7 @@
 ///   availableMemoryMB: 4096,
 /// );
 /// ```
+@immutable
 class DeviceInfoModel {
   /// Creates a DeviceInfoModel instance.
   ///
@@ -91,7 +94,7 @@ class DeviceInfoModel {
 
   /// Converts this DeviceInfoModel to JSON format for Firestore storage.
   ///
-  /// Returns a Map<String, dynamic> containing all device information.
+  /// Returns a `Map<String, dynamic>` containing all device information.
   Map<String, dynamic> toJson() {
     return {
       'platform': platform,

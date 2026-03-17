@@ -94,7 +94,7 @@ class PhysiotherapyEMRModel {
     }
   }
 
-  /// Helper to parse Map<String, List<String>> from Firestore
+  /// Helper to parse `Map<String, List<String>>` from Firestore.
   static Map<String, List<String>> _parseMap(dynamic data) {
     if (data == null) return <String, List<String>>{};
 

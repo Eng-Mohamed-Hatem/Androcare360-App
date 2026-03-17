@@ -52,8 +52,9 @@ void main() {
           category: category,
         )).overrideWith((ref) => fetcher()),
       ],
-      child: const MaterialApp(
-        home: CategoryPackagesListPage(
+      child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
+        home: const CategoryPackagesListPage(
           clinicId: clinicId,
           category: category,
           pageTitle: pageTitle,

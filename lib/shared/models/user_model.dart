@@ -150,8 +150,10 @@ class UserModel {
         ? (json['specialization'] as List<dynamic>)
               .map((e) => e as String)
               .toList()
-        : json['specializations'] != null
+        : (json['specializations'] is String)
         ? [json['specializations'] as String]
+        : (json['specialization'] is String)
+        ? [json['specialization'] as String]
         : null,
     workingHours: json['workingHours'] != null
         ? (json['workingHours'] as Map<String, dynamic>).map(

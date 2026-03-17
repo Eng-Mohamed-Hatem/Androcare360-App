@@ -12,11 +12,13 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 /// تراقب هذه الخدمة حالة الاتصال بالإنترنت،
 /// وتنبه التطبيق عند تغيير حالة الاتصال.
 class ConnectionService {
+  factory ConnectionService() => _instance;
+
   ConnectionService._internal();
-  // Singleton pattern
-  static ConnectionService? _instance;
-  static ConnectionService get instance =>
-      _instance ??= ConnectionService._internal();
+
+  static final ConnectionService _instance = ConnectionService._internal();
+
+  static ConnectionService get instance => _instance;
 
   static final _connectivity = Connectivity();
   static final _connectionController = StreamController<bool>.broadcast();

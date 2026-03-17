@@ -203,8 +203,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   /// - [patientId]: ID of the patient (required)
   ///
   /// Returns:
-  /// - Right(List<AppointmentModel>): List of patient's appointments
-  /// - Left(ServerFailure): Query failed
+  /// - `Right(List<AppointmentModel>)`: List of patient's appointments
+  /// - `Left(ServerFailure)`: Query failed
   ///
   /// Example:
   /// ```dart
@@ -244,8 +244,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   /// - [doctorId]: ID of the doctor (required)
   ///
   /// Returns:
-  /// - Right(List<AppointmentModel>): List of doctor's appointments
-  /// - Left(ServerFailure): Query failed
+  /// - `Right(List<AppointmentModel>)`: List of doctor's appointments
+  /// - `Left(ServerFailure)`: Query failed
   ///
   /// Example:
   /// ```dart
@@ -605,7 +605,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         debugPrint('🔍 [Conflict Validation] Running validation service...');
       }
 
-      final validationResult = AppointmentConflictValidationService.instance
+      final validationResult = AppointmentConflictValidationService()
           .checkConflict(
             newAppointment: newAppointment,
             existingAppointments: allAppointments,
@@ -680,8 +680,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   /// - [patientId]: ID of the patient (required)
   ///
   /// Returns:
-  /// - Right(List<AppointmentModel>): List of active appointments
-  /// - Left(ServerFailure): Query failed
+  /// - `Right(List<AppointmentModel>)`: List of active appointments
+  /// - `Left(ServerFailure)`: Query failed
   ///
   /// Example:
   /// ```dart
@@ -746,8 +746,8 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   /// - [date]: Date to query appointments for (required)
   ///
   /// Returns:
-  /// - Right(List<AppointmentModel>): List of appointments for the date
-  /// - Left(ServerFailure): Query failed
+  /// - `Right(List<AppointmentModel>)`: List of appointments for the date
+  /// - `Left(ServerFailure)`: Query failed
   ///
   /// Example:
   /// ```dart
@@ -858,21 +858,21 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         }
 
         // 3. Mark slot as busy (Locking)
-        transaction.set(slotRef, {
-          'appointmentId': appointment.id,
-          'patientId': appointment.patientId,
-          'doctorId': appointment.doctorId,
-          'timestamp': Timestamp.fromDate(appointmentTimestamp),
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-
-        // 4. Save the actual appointment
-        transaction.set(
-          appointmentRef,
-          appointment
-              .copyWith(appointmentTimestamp: appointmentTimestamp)
-              .toJson(),
-        );
+        transaction
+          ..set(slotRef, {
+            'appointmentId': appointment.id,
+            'patientId': appointment.patientId,
+            'doctorId': appointment.doctorId,
+            'timestamp': Timestamp.fromDate(appointmentTimestamp),
+            'createdAt': FieldValue.serverTimestamp(),
+          })
+          // 4. Save the actual appointment
+          ..set(
+            appointmentRef,
+            appointment
+                .copyWith(appointmentTimestamp: appointmentTimestamp)
+                .toJson(),
+          );
       });
 
       if (kDebugMode) {

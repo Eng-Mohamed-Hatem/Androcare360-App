@@ -90,7 +90,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.auth_otp_title),
+        title: const Text(AppStrings.authOtpTitle),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -113,7 +113,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 const SizedBox(height: 32),
 
                 Text(
-                  AppStrings.auth_otp_title,
+                  AppStrings.authOtpTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -171,7 +171,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     TextButton(
                       onPressed: isPhoneLoading ? null : _handleResendCode,
                       child: const Text(
-                        AppStrings.auth_otp_resend,
+                        AppStrings.authOtpResend,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),

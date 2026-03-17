@@ -15,12 +15,12 @@ import 'package:elajtech/features/nutrition/domain/entities/nutrition_emr_entity
 abstract class NutritionEMRRepository {
   /// Create or update a nutrition EMR record
   ///
-  /// If[emr.id] exists in Firestore, it updates the record.
+  /// If `emr.id` exists in Firestore, it updates the record.
   /// Otherwise, it creates a new record.
   ///
   /// **Security:**
-  /// - Validates [emr.appointmentId] is not empty
-  /// - Checks if record is not locked ([emr.isLocked] == false)
+  /// - Validates `emr.appointmentId` is not empty
+  /// - Checks if record is not locked (`emr.isLocked == false`)
   /// - Verifies 24-hour window hasn't expired
   ///
   /// **Audit Trail:**
@@ -28,8 +28,8 @@ abstract class NutritionEMRRepository {
   /// - Logs user ID, timestamp, and action type
   ///
   /// Returns:
-  /// - [Right(void)] on success
-  /// - [Left(ServerFailure)] if validation fails or Firestore error occurs
+  /// - `Right(void)` on success
+  /// - `Left(ServerFailure)` if validation fails or Firestore error occurs
   Future<Either<Failure, void>> saveEMR(NutritionEMREntity emr);
 
   /// Fetch nutrition EMR by appointment ID
@@ -42,12 +42,12 @@ abstract class NutritionEMRRepository {
   /// **Query:** `where('appointmentId', isEqualTo: appointmentId).limit(1)`
   ///
   /// Parameters:
-  /// - [appointmentId]: The appointment identifier
+  /// - `appointmentId`: The appointment identifier
   ///
   /// Returns:
-  /// - [Right(NutritionEMREntity)] if found
-  /// - [Right(null)] if no EMR exists for this appointment
-  /// - [Left(ServerFailure)] on Firestore error
+  /// - `Right(NutritionEMREntity)` if found
+  /// - `Right(null)` if no EMR exists for this appointment
+  /// - `Left(ServerFailure)` on Firestore error
   Future<Either<Failure, NutritionEMREntity?>> getEMRByAppointmentId(
     String appointmentId,
   );
@@ -62,11 +62,11 @@ abstract class NutritionEMRRepository {
   /// **Query:** `where('patientId', isEqualTo: patientId).orderBy('createdAt', descending: true)`
   ///
   /// Parameters:
-  /// - [patientId]: The patient identifier
+  /// - `patientId`: The patient identifier
   ///
   /// Returns:
-  /// - [Right(List<NutritionEMREntity>)] list of EMRs (may be empty)
-  /// - [Left(ServerFailure)] on Firestore error
+  /// - `Right(List<NutritionEMREntity>)` list of EMRs (may be empty)
+  /// - `Left(ServerFailure)` on Firestore error
   Future<Either<Failure, List<NutritionEMREntity>>> getEMRsByPatientId(
     String patientId,
   );
@@ -76,34 +76,34 @@ abstract class NutritionEMRRepository {
   /// Locks the record immediately, preventing any further modifications.
   /// Used in special cases when early locking is required (e.g., administrative closure).
   ///
-  /// **Normal Behavior:** Records auto-lock after 24 hours via [lockedUntil] field.
+  /// **Normal Behavior:** Records auto-lock after 24 hours via `lockedUntil`.
   /// **This Method:** Forces immediate lock regardless of time.
   ///
   /// Parameters:
-  /// - [emrId]: The EMR record identifier
+  /// - `emrId`: The EMR record identifier
   ///
   /// Returns:
-  /// - [Right(void)] on success
-  /// - [Left(ServerFailure)] on Firestore error
+  /// - `Right(void)` on success
+  /// - `Left(ServerFailure)` on Firestore error
   Future<Either<Failure, void>> lockEMR(String emrId);
 
   /// Check if appointment's 24-hour edit window has expired
   ///
-  /// Determines if the time window for editing has passed based on [createdAt].
+  /// Determines if the time window for editing has passed based on `createdAt`.
   /// Used by UI to show lock indicators and prevent edit attempts.
   ///
   /// **Logic:**
   /// - Fetches EMR by appointment ID
-  /// - Compares [DateTime.now()] with [emr.lockedUntil]
+  /// - Compares `DateTime.now()` with `emr.lockedUntil`
   /// - Returns true if current time > lockedUntil
   ///
   /// Parameters:
-  /// - [appointmentId]: The appointment identifier
+  /// - `appointmentId`: The appointment identifier
   ///
   /// Returns:
-  /// - [Right(true)] if expired or locked
-  /// - [Right(false)] if still within edit window
-  /// - [Left(ServerFailure)] on error or EMR not found
+  /// - `Right(true)` if expired or locked
+  /// - `Right(false)` if still within edit window
+  /// - `Left(ServerFailure)` on error or EMR not found
   Future<Either<Failure, bool>> isAppointmentExpired(String appointmentId);
 
   /// Stream of EMR changes for real-time  UI updates

@@ -76,7 +76,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
           TextButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
-                // TODO: Implement password change
+                // TODO(elajtech): Implement password change.
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

@@ -11,7 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 class MockPurchaseNotifier extends StateNotifier<PurchaseNotifierState>
     implements PurchasePackageNotifier {
-  MockPurchaseNotifier(super.state);
+  // ignore: use_super_parameters, keep explicit parameter name for test readability
+  MockPurchaseNotifier(PurchaseNotifierState state) : super(state);
 
   bool purchaseCalled = false;
   PackageEntity? purchasedPackage;
@@ -77,8 +78,9 @@ void main() {
         isPackagePurchasedProvider(packageId)
             .overrideWith((ref) => isPurchased),
       ],
-      child: const MaterialApp(
-        home: PackageDetailsPage(
+      child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
+        home: const PackageDetailsPage(
           clinicId: clinicId,
           packageId: packageId,
         ),

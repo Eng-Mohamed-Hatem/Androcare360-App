@@ -4,7 +4,7 @@
 /// كل تطبيق عيادة ينفذ هذه الواجهة باستخدام `clinicId` الخاص بها.
 ///
 /// **English**: Domain-layer repository interface for clinic package definitions.
-/// Each per-clinic implementation is bound to a specific [clinicId] and
+/// Each per-clinic implementation is bound to a specific `clinicId` and
 /// delegates to `FirestorePackageDatasource`. Use cases depend only on this
 /// abstract type — never on a concrete implementation.
 ///
@@ -15,7 +15,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
-import 'package:elajtech/features/packages/domain/failures/package_failures.dart' show ClinicUnavailableFailure, PackageNotFoundFailure;
+import 'package:elajtech/features/packages/domain/failures/package_failures.dart'
+    show ClinicUnavailableFailure, PackageNotFoundFailure;
 
 /// Abstract repository for reading and writing clinic package definitions.
 ///
@@ -23,9 +24,9 @@ import 'package:elajtech/features/packages/domain/failures/package_failures.dart
 /// All methods return `Either<Failure, T>` from dartz. Methods follow naming
 /// conventions: `list*` returns lists, `get*` returns a single entity.
 ///
-/// - [listCategoryPackages]: Patient-facing — only `ACTIVE` packages.
-/// - [listClinicPackagesForAdmin]: Admin-facing — all statuses, paginated.
-/// - [getPackageById]: Single package lookup for details screen.
+/// - `listCategoryPackages`: Patient-facing — only `ACTIVE` packages.
+/// - `listClinicPackagesForAdmin`: Admin-facing — all statuses, paginated.
+/// - `getPackageById`: Single package lookup for details screen.
 ///
 /// **Arabic**
 /// واجهة مجردة لقراءة وكتابة تعريفات باقات العيادة.
@@ -79,7 +80,7 @@ abstract class PackageRepository {
   Future<Either<Failure, String>> createPackage(PackageEntity package);
 
   /// Updates an existing clinic package.
-  /// 
+  ///
   /// **English**: Returns [Unit] on success.
   ///
   /// **Arabic**: يُحدّث بيانات باقة موجودة.

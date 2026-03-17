@@ -125,8 +125,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
   /// - userId: Unique user identifier (required)
   ///
   /// Returns:
-  /// - Right(List<NotificationModel>): List of notifications (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<NotificationModel>)`: List of notifications (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
@@ -166,7 +166,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
   /// - userId: Unique user identifier (required)
   ///
   /// Returns:
-  /// - Stream<List<NotificationModel>>: Real-time notifications stream
+  /// - `Stream<List<NotificationModel>>`: Real-time notifications stream
   ///
   /// Example:
   /// ```dart

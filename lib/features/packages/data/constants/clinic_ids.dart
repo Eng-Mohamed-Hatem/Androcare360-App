@@ -12,7 +12,7 @@
 /// Open Firebase Console → Firestore → elajtech database → "Start collection"
 /// and create the `clinics` collection with one document per clinic listed
 /// below. Each document must contain at minimum:
-/// ```
+/// ```text
 /// clinics/andrology
 ///   name: "عيادة الذكوره والعقم والبروستاتة"
 ///   isActive: true
@@ -48,7 +48,8 @@
 /// البيانات وفي [ClinicAccessResolver].
 library;
 
-import 'package:elajtech/core/auth/clinic_access_resolver.dart' show ClinicAccessResolver;
+import 'package:elajtech/core/auth/clinic_access_resolver.dart'
+    show ClinicAccessResolver;
 
 /// Namespace class grouping all clinic identifier constants.
 ///

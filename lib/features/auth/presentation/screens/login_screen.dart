@@ -33,9 +33,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  /// Handles patient login — routing is managed by [AuthWrapper] which
-  /// watches [authProvider] and switches between admin / doctor / patient
-  /// screens automatically when [isAuthenticated] becomes true.
+  /// Handles patient login — routing is managed by `AuthWrapper` which
+  /// watches `authProvider` and switches between admin / doctor / patient
+  /// screens automatically when `isAuthenticated` becomes true.
   Future<void> _handleLogin() async {
     if (_isLoading) return;
     FocusScope.of(context).unfocus();

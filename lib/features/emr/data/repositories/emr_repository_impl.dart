@@ -114,14 +114,14 @@ class EMRRepositoryImpl implements EMRRepository {
   /// - Right(Unit): EMR saved successfully (Unit from dartz)
   /// - Left(Failure.firestore): Firestore operation failed
   ///   - 'appointmentId مطلوب لحفظ السجل الطبي (EMR)': appointmentId is empty
-  ///   - 'Firebase error: [code] - [message]': Firestore exception
+  ///   - `Firebase error: code - message`: Firestore exception
   /// - Left(Failure.unexpected): Unexpected runtime error
   ///
   /// Possible Failures:
   /// - 'appointmentId مطلوب لحفظ السجل الطبي (EMR)': Validation failed (Arabic message)
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Runtime exception
+  /// - `Unexpected error: ...`: Runtime exception
   ///
   /// Example:
   /// ```dart
@@ -222,7 +222,7 @@ class EMRRepositoryImpl implements EMRRepository {
   /// Possible Failures:
   /// - 'Firebase error: permission-denied': Insufficient Firestore permissions
   /// - 'Firebase error: unavailable': Network connectivity issue
-  /// - 'Unexpected error: [details]': Parsing or runtime exception
+  /// - `Unexpected error: ...`: Parsing or runtime exception
   ///
   /// Example:
   /// ```dart

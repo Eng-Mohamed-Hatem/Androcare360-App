@@ -236,7 +236,7 @@ class NutritionEMRModel {
   /// Specialization identifier for this EMR (default: Nutrition clinic)
   final String specialization;
 
-  /// Helper method to parse Map<String, List<String>> from JSON data.
+  /// Helper method to parse `Map<String, List<String>>` from JSON data.
   ///
   /// This method safely converts dynamic JSON data into the required format,
   /// handling null values and type conversions.
@@ -260,7 +260,7 @@ class NutritionEMRModel {
   /// This method serializes all EMR data into a Map suitable for storing
   /// in Firestore. All nested maps and DateTime values are properly formatted.
   ///
-  /// Returns a Map<String, dynamic> containing all EMR data.
+  /// Returns a `Map<String, dynamic>` containing all EMR data.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

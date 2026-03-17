@@ -52,11 +52,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// توفر هذه الخدمة تشفير قوي للرسائل قبل إرسالها إلى Firestore،
 /// وفك تشفيرها عند الاستلام. يتم استخدام مفتاح تشفير فريد لكل جهاز.
 class EncryptionService {
+  factory EncryptionService() => _instance;
+
   EncryptionService._internal();
-  // Singleton pattern
-  static EncryptionService? _instance;
-  static EncryptionService get instance =>
-      _instance ??= EncryptionService._internal();
+
+  static final EncryptionService _instance = EncryptionService._internal();
+
+  static EncryptionService get instance => _instance;
 
   // التخزين الآمن للمفتاح
   static const _storage = FlutterSecureStorage(

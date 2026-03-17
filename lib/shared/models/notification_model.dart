@@ -98,7 +98,7 @@ class NotificationModel {
 
   /// Converts this NotificationModel to JSON format for Firestore storage.
   ///
-  /// Returns a Map<String, dynamic> containing all notification data.
+  /// Returns a `Map<String, dynamic>` containing all notification data.
   Map<String, dynamic> toJson() => {
     'userId': userId,
     'id': id,

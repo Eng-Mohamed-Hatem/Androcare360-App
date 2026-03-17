@@ -30,6 +30,7 @@ void main() {
         adminRepositoryProvider.overrideWithValue(_FakeAdminRepository()),
       ],
       child: MaterialApp(
+        theme: ThemeData(useMaterial3: false),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

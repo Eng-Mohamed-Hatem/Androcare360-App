@@ -213,12 +213,17 @@ enum ConflictType {
 ///
 /// **Access Pattern:**
 /// ```dart
-/// final service = AppointmentConflictValidationService.instance;
+/// final service = AppointmentConflictValidationService();
 /// ```
 class AppointmentConflictValidationService {
+  factory AppointmentConflictValidationService() => _instance;
+
   AppointmentConflictValidationService._internal();
-  // Singleton pattern
-  static AppointmentConflictValidationService? _instance;
+
+  static final AppointmentConflictValidationService _instance =
+      AppointmentConflictValidationService._internal();
+
+  static AppointmentConflictValidationService get instance => _instance;
 
   /// Gets the singleton instance of the service.
   /// يحصل على نسخة Singleton من الخدمة.
@@ -227,10 +232,8 @@ class AppointmentConflictValidationService {
   ///
   /// **Example:**
   /// ```dart
-  /// final service = AppointmentConflictValidationService.instance;
+  /// final service = AppointmentConflictValidationService();
   /// ```
-  static AppointmentConflictValidationService get instance =>
-      _instance ??= AppointmentConflictValidationService._internal();
 
   /// Configuration parameters for conflict validation.
   /// معاملات التحقق من التضارب.
@@ -259,15 +262,15 @@ class AppointmentConflictValidationService {
   /// - [existingAppointments]: List of all active appointments for that day (all doctors and patients) / قائمة بجميع المواعيد النشطة في ذلك اليوم
   ///
   /// **Returns:**
-  /// A [ConflictValidationResult] indicating:
-  /// - Whether a conflict exists ([hasConflict])
-  /// - Type of conflict if any ([conflictType])
-  /// - Details of conflicting appointment ([conflictingAppointment])
-  /// - User-friendly error message ([message])
+  /// A `ConflictValidationResult` indicating:
+  /// - Whether a conflict exists (`hasConflict`)
+  /// - Type of conflict if any (`conflictType`)
+  /// - Details of conflicting appointment (`conflictingAppointment`)
+  /// - User-friendly error message (`message`)
   ///
   /// **Example:**
   /// ```dart
-  /// final service = AppointmentConflictValidationService.instance;
+  /// final service = AppointmentConflictValidationService();
   ///
   /// final result = service.checkConflict(
   ///   newAppointment: proposedAppointment,

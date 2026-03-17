@@ -153,8 +153,8 @@ class PrescriptionRepositoryImpl implements PrescriptionRepository {
   /// - patientId: Unique patient identifier (required)
   ///
   /// Returns:
-  /// - Right(List<PrescriptionModel>): List of prescriptions (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<PrescriptionModel>)`: List of prescriptions (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
@@ -194,8 +194,8 @@ class PrescriptionRepositoryImpl implements PrescriptionRepository {
   /// - doctorId: Unique doctor identifier (required)
   ///
   /// Returns:
-  /// - Right(List<PrescriptionModel>): List of prescriptions (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<PrescriptionModel>)`: List of prescriptions (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
@@ -235,8 +235,8 @@ class PrescriptionRepositoryImpl implements PrescriptionRepository {
   /// - appointmentId: Unique appointment identifier (required)
   ///
   /// Returns:
-  /// - Right(List<PrescriptionModel>): List of prescriptions (may be empty)
-  /// - Left(ServerFailure): Firestore operation failed
+  /// - `Right(List<PrescriptionModel>)`: List of prescriptions (may be empty)
+  /// - `Left(ServerFailure)`: Firestore operation failed
   ///
   /// Example:
   /// ```dart
