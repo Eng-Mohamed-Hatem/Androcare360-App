@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
+import 'package:elajtech/core/data/repositories/admin_approval_repository.dart';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/core/domain/entities/pending_doctor_list_item.dart';
 import 'package:elajtech/core/domain/usecases/approve_doctor_usecase.dart';
-import 'package:elajtech/core/domain/usecases/get_pending_doctors_usecase.dart';
 import 'package:elajtech/core/domain/usecases/reject_doctor_usecase.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
@@ -26,13 +26,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class AdminApprovalNotifier extends StateNotifier<AdminApprovalState> {
   AdminApprovalNotifier(
     this._ref,
-    this._getPendingDoctorsUseCase,
+    this._repository,
     this._approveDoctorUseCase,
     this._rejectDoctorUseCase,
   ) : super(const AdminApprovalState());
 
   final Ref _ref;
-  final GetPendingDoctorsUseCase _getPendingDoctorsUseCase;
+  final AdminApprovalRepository _repository;
   final ApproveDoctorUseCase _approveDoctorUseCase;
   final RejectDoctorUseCase _rejectDoctorUseCase;
 
@@ -65,7 +65,7 @@ class AdminApprovalNotifier extends StateNotifier<AdminApprovalState> {
       clearSuccess: true,
     );
 
-    final result = await _getPendingDoctorsUseCase();
+    final result = await _repository.getPendingDoctors();
     _handleDoctorsResult(result);
   }
 
@@ -263,10 +263,10 @@ class AdminApprovalState {
   }
 }
 
-final getPendingDoctorsUseCaseProvider = Provider<GetPendingDoctorsUseCase>((
+final adminApprovalRepositoryProvider = Provider<AdminApprovalRepository>((
   ref,
 ) {
-  return getIt<GetPendingDoctorsUseCase>();
+  return getIt<AdminApprovalRepository>();
 });
 
 final approveDoctorUseCaseProvider = Provider<ApproveDoctorUseCase>((ref) {
@@ -292,7 +292,7 @@ adminApprovalProvider =
       (ref) {
         return AdminApprovalNotifier(
           ref,
-          ref.watch(getPendingDoctorsUseCaseProvider),
+          ref.watch(adminApprovalRepositoryProvider),
           ref.watch(approveDoctorUseCaseProvider),
           ref.watch(rejectDoctorUseCaseProvider),
         );

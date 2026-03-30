@@ -6,6 +6,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/constants/app_constants.dart';
 import 'package:elajtech/core/error/failures.dart';
+import 'package:elajtech/core/models/paginated_result.dart';
 import 'package:elajtech/features/appointments/domain/repositories/appointment_repository.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:elajtech/core/services/appointment_conflict_validation_service.dart';
@@ -230,6 +231,32 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
           .toList();
 
       return Right(appointments);
+    } on Exception catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedResult<AppointmentModel>>>
+  getAppointmentsForPatientPage(
+    String patientId, {
+    int limit = 10,
+  }) async {
+    try {
+      final query = await _firestore
+          .collection(AppConstants.collections.appointments)
+          .where('patientId', isEqualTo: patientId)
+          .orderBy('appointmentDate', descending: true)
+          .limit(limit + 1)
+          .get();
+
+      final hasMore = query.docs.length > limit;
+      final appointments = query.docs
+          .take(limit)
+          .map((doc) => AppointmentModel.fromJson(doc.data()))
+          .toList();
+
+      return Right(PaginatedResult(items: appointments, hasMore: hasMore));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }

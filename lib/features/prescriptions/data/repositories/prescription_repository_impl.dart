@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/constants/app_constants.dart';
 import 'package:elajtech/core/error/failures.dart';
+import 'package:elajtech/core/models/paginated_result.dart';
 import 'package:elajtech/features/prescriptions/domain/repositories/prescription_repository.dart';
 import 'package:elajtech/shared/models/prescription_model.dart';
 import 'package:injectable/injectable.dart';
@@ -180,6 +181,32 @@ class PrescriptionRepositoryImpl implements PrescriptionRepository {
           .toList();
 
       return Right(prescriptions);
+    } on Exception catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedResult<PrescriptionModel>>>
+  getPrescriptionsForPatientPage(
+    String patientId, {
+    int limit = 10,
+  }) async {
+    try {
+      final query = await _firestore
+          .collection(AppConstants.collections.prescriptions)
+          .where('patientId', isEqualTo: patientId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit + 1)
+          .get();
+
+      final hasMore = query.docs.length > limit;
+      final prescriptions = query.docs
+          .take(limit)
+          .map((doc) => PrescriptionModel.fromJson(doc.data()))
+          .toList();
+
+      return Right(PaginatedResult(items: prescriptions, hasMore: hasMore));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }

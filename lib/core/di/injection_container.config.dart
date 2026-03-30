@@ -12,11 +12,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
 import 'package:cloud_functions/cloud_functions.dart' as _i809;
 import 'package:elajtech/core/auth/clinic_access_resolver.dart' as _i838;
+import 'package:elajtech/core/data/repositories/admin_approval_repository.dart'
+    as _i468;
+import 'package:elajtech/core/data/repositories/admin_approval_repository_impl.dart'
+    as _i501;
+import 'package:elajtech/core/data/repositories/doctor_registration_repository.dart'
+    as _i56;
+import 'package:elajtech/core/data/repositories/doctor_registration_repository_impl.dart'
+    as _i155;
 import 'package:elajtech/core/di/core_module.dart' as _i35;
 import 'package:elajtech/core/di/firebase_module.dart' as _i859;
+import 'package:elajtech/core/domain/usecases/approve_doctor_usecase.dart'
+    as _i421;
+import 'package:elajtech/core/domain/usecases/approve_doctor_usecase_impl.dart'
+    as _i670;
+import 'package:elajtech/core/domain/usecases/get_pending_doctors_usecase.dart'
+    as _i897;
+import 'package:elajtech/core/domain/usecases/get_pending_doctors_usecase_impl.dart'
+    as _i200;
+import 'package:elajtech/core/domain/usecases/register_doctor_usecase.dart'
+    as _i512;
+import 'package:elajtech/core/domain/usecases/register_doctor_usecase_impl.dart'
+    as _i408;
+import 'package:elajtech/core/domain/usecases/reject_doctor_usecase.dart'
+    as _i256;
+import 'package:elajtech/core/domain/usecases/reject_doctor_usecase_impl.dart'
+    as _i824;
+import 'package:elajtech/core/presentation/providers/doctor_registration_provider.dart'
+    as _i969;
 import 'package:elajtech/core/services/call_monitoring_service.dart' as _i748;
 import 'package:elajtech/core/services/cloud_functions_version_service.dart'
     as _i108;
+import 'package:elajtech/core/services/doctor_approval_migration_service.dart'
+    as _i738;
 import 'package:elajtech/core/services/fcm_service.dart' as _i990;
 import 'package:elajtech/core/services/storage_service.dart' as _i1028;
 import 'package:elajtech/core/services/token_refresh_service.dart' as _i839;
@@ -182,8 +210,20 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i399.PackagePaymentAdapter>(
       () => const _i827.PackagePaymentAdapterImpl(),
     );
+    gh.lazySingleton<_i56.DoctorRegistrationRepository>(
+      () => _i155.DoctorRegistrationRepositoryImpl(
+        gh<_i59.FirebaseAuth>(),
+        gh<_i974.FirebaseFirestore>(),
+      ),
+    );
     gh.lazySingleton<_i1026.MedicalScreeningRepository>(
       () => _i902.MedicalScreeningRepositoryImpl(),
+    );
+    gh.lazySingleton<_i512.RegisterDoctorUseCase>(
+      () => _i408.RegisterDoctorUseCaseImpl(
+        gh<_i56.DoctorRegistrationRepository>(),
+        gh<_i809.FirebaseFunctions>(),
+      ),
     );
     gh.lazySingleton<_i281.InternalMedicineEMRRepository>(
       () => _i283.InternalMedicineEMRRepositoryImpl(
@@ -235,8 +275,14 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i558.LabRequestRepository>(
       () => _i1022.LabRequestRepositoryImpl(gh<_i974.FirebaseFirestore>()),
     );
+    gh.lazySingleton<_i468.AdminApprovalRepository>(
+      () => _i501.AdminApprovalRepositoryImpl(gh<_i974.FirebaseFirestore>()),
+    );
     gh.lazySingleton<_i748.CallMonitoringService>(
       () => _i748.CallMonitoringService(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i738.DoctorApprovalMigrationService>(
+      () => _i738.DoctorApprovalMigrationService(gh<_i974.FirebaseFirestore>()),
     );
     gh.lazySingleton<_i220.FirestorePackageDatasource>(
       () => _i220.FirestorePackageDatasource(gh<_i974.FirebaseFirestore>()),
@@ -248,6 +294,11 @@ extension GetItInjectableX on _i174.GetIt {
       () =>
           _i674.UpdatePackageServiceUsageUseCase(gh<_i974.FirebaseFirestore>()),
     );
+    gh.lazySingleton<_i969.DoctorRegistrationNotifier>(
+      () => coreModule.doctorRegistrationNotifier(
+        gh<_i512.RegisterDoctorUseCase>(),
+      ),
+    );
     gh.lazySingleton<_i563.NutritionEMRRepository>(
       () => _i772.NutritionEMRRepositoryImpl(gh<_i974.FirebaseFirestore>()),
     );
@@ -257,8 +308,19 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i580.DoctorRepository>(
       () => _i601.DoctorRepositoryImpl(gh<_i974.FirebaseFirestore>()),
     );
+    gh.lazySingleton<_i897.GetPendingDoctorsUseCase>(
+      () => _i200.GetPendingDoctorsUseCaseImpl(
+        gh<_i468.AdminApprovalRepository>(),
+      ),
+    );
     gh.lazySingleton<_i691.PhysiotherapyEMRRepository>(
       () => _i980.PhysiotherapyEMRRepositoryImpl(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i421.ApproveDoctorUseCase>(
+      () => _i670.ApproveDoctorUseCaseImpl(
+        gh<_i468.AdminApprovalRepository>(),
+        gh<_i809.FirebaseFunctions>(),
+      ),
     );
     gh.lazySingleton<_i265.AndrologyPackageRepository>(
       () => _i265.AndrologyPackageRepository(
@@ -293,6 +355,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i15.VoIPCallService>(
       () => _i15.VoIPCallService(gh<_i748.CallMonitoringService>()),
+    );
+    gh.lazySingleton<_i256.RejectDoctorUseCase>(
+      () => _i824.RejectDoctorUseCaseImpl(gh<_i468.AdminApprovalRepository>()),
     );
     gh.lazySingleton<_i1063.UploadPackageDocumentUseCase>(
       () => _i1063.UploadPackageDocumentUseCase(

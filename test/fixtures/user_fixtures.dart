@@ -23,6 +23,7 @@ class UserFixtures {
     List<String>? specializations,
     String? email,
     bool isActive = true,
+    bool isApproved = true,
   }) {
     return UserModel(
       id: id ?? 'doctor_test_001',
@@ -31,6 +32,7 @@ class UserFixtures {
       phoneNumber: '+966500000001',
       userType: UserType.doctor,
       isActive: isActive,
+      isApproved: isApproved,
       specializations: specializations ?? ['Nutrition'],
       licenseNumber: 'LIC-12345',
       biography: 'Experienced nutritionist with 10 years of practice',

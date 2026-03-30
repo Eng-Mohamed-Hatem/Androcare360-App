@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
+import 'package:elajtech/core/models/paginated_result.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 
 /// Appointment Repository Interface
@@ -17,6 +18,12 @@ abstract class AppointmentRepository {
   Future<Either<Failure, List<AppointmentModel>>> getAppointmentsForPatient(
     String patientId,
   );
+
+  Future<Either<Failure, PaginatedResult<AppointmentModel>>>
+  getAppointmentsForPatientPage(
+    String patientId, {
+    int limit = 10,
+  });
 
   /// Get Appointments for Doctor
   Future<Either<Failure, List<AppointmentModel>>> getAppointmentsForDoctor(

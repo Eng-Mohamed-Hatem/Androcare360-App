@@ -2,10 +2,10 @@
 library;
 
 import 'package:dartz/dartz.dart';
+import 'package:elajtech/core/data/repositories/admin_approval_repository.dart';
 import 'package:elajtech/core/domain/entities/doctor_application_action_result.dart';
 import 'package:elajtech/core/domain/entities/pending_doctor_list_item.dart';
 import 'package:elajtech/core/domain/usecases/approve_doctor_usecase.dart';
-import 'package:elajtech/core/domain/usecases/get_pending_doctors_usecase.dart';
 import 'package:elajtech/core/domain/usecases/reject_doctor_usecase.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/core/presentation/providers/admin_approval_provider.dart';
@@ -18,16 +18,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../mocks/mock_auth_repository.dart';
 
-class _PerformanceGetPendingDoctorsUseCase implements GetPendingDoctorsUseCase {
-  _PerformanceGetPendingDoctorsUseCase(this.doctors);
+class _PerformanceAdminApprovalRepository implements AdminApprovalRepository {
+  _PerformanceAdminApprovalRepository(this.doctors);
 
   final List<PendingDoctorListItem> doctors;
   int callCount = 0;
 
   @override
-  Future<Either<Failure, List<PendingDoctorListItem>>> call() async {
+  Future<Either<Failure, List<PendingDoctorListItem>>> getPendingDoctors() async {
     callCount++;
     return Right(doctors);
+  }
+
+  @override
+  Future<Either<Failure, DoctorApplicationActionResult>> approveDoctor({
+    required String doctorId,
+    required String adminId,
+    required String adminName,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Either<Failure, DoctorApplicationActionResult>> rejectDoctor({
+    required String doctorId,
+    required String adminId,
+    required String adminName,
+  }) async {
+    throw UnimplementedError();
   }
 }
 
@@ -81,7 +99,7 @@ void main() {
     testWidgets(
       'loads 150 pending doctors within 3 seconds and remains scrollable',
       (tester) async {
-        final getPendingDoctorsUseCase = _PerformanceGetPendingDoctorsUseCase(
+        final repository = _PerformanceAdminApprovalRepository(
           List<PendingDoctorListItem>.generate(
             150,
             (index) => PendingDoctorListItem(
@@ -109,9 +127,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              getPendingDoctorsUseCaseProvider.overrideWithValue(
-                getPendingDoctorsUseCase,
-              ),
+              adminApprovalRepositoryProvider.overrideWithValue(repository),
               approveDoctorUseCaseProvider.overrideWithValue(
                 _NoopApproveDoctorUseCase(),
               ),
@@ -138,7 +154,7 @@ void main() {
         stopwatch.stop();
 
         expect(stopwatch.elapsed, lessThan(const Duration(seconds: 3)));
-        expect(getPendingDoctorsUseCase.callCount, 1);
+        expect(repository.callCount, 1);
         expect(find.text('Dr Performance 0'), findsOneWidget);
 
         await tester.scrollUntilVisible(

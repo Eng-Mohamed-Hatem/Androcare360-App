@@ -4,11 +4,10 @@ library;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/data/repositories/admin_approval_repository_impl.dart';
-import 'package:elajtech/core/data/repositories/doctor_registration_repository_impl.dart';
 import 'package:elajtech/core/domain/entities/doctor_application_action_result.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:elajtech/shared/models/user_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,16 +32,14 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Concurrent Admin Actions Integration Tests', () {
-    late FirebaseApp registrationApp;
     late FirebaseApp adminAppA;
     late FirebaseApp adminAppB;
+    late FirebaseApp seedApp;
 
-    late FirebaseAuth registrationAuth;
-    late FirebaseFirestore registrationDb;
+    late FirebaseFirestore seedDb;
     late FirebaseFirestore adminDbA;
     late FirebaseFirestore adminDbB;
 
-    late DoctorRegistrationRepositoryImpl registrationRepository;
     late AdminApprovalRepositoryImpl approvalRepositoryA;
     late AdminApprovalRepositoryImpl approvalRepositoryB;
 
@@ -52,8 +49,8 @@ void main() {
       await FirebaseEmulatorHelper.clearFirestore();
       await FirebaseEmulatorHelper.signOutTestUser();
 
-      registrationApp = await Firebase.initializeApp(
-        name: 'admin-approval-registration',
+      seedApp = await Firebase.initializeApp(
+        name: 'admin-approval-seed',
         options: DefaultFirebaseOptions.currentPlatform,
       );
       adminAppA = await Firebase.initializeApp(
@@ -65,41 +62,28 @@ void main() {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      registrationAuth = FirebaseAuth.instanceFor(app: registrationApp);
-      await registrationAuth.useAuthEmulator(
-        FirebaseEmulatorHelper.authHost,
-        FirebaseEmulatorHelper.authPort,
-      );
+      seedDb = FirebaseFirestore.instanceFor(
+        app: seedApp,
+        databaseId: FirebaseEmulatorHelper.databaseId,
+      )..useFirestoreEmulator(
+          FirebaseEmulatorHelper.firestoreHost,
+          FirebaseEmulatorHelper.firestorePort,
+        );
+      adminDbA = FirebaseFirestore.instanceFor(
+        app: adminAppA,
+        databaseId: FirebaseEmulatorHelper.databaseId,
+      )..useFirestoreEmulator(
+          FirebaseEmulatorHelper.firestoreHost,
+          FirebaseEmulatorHelper.firestorePort,
+        );
+      adminDbB = FirebaseFirestore.instanceFor(
+        app: adminAppB,
+        databaseId: FirebaseEmulatorHelper.databaseId,
+      )..useFirestoreEmulator(
+          FirebaseEmulatorHelper.firestoreHost,
+          FirebaseEmulatorHelper.firestorePort,
+        );
 
-      registrationDb =
-          FirebaseFirestore.instanceFor(
-            app: registrationApp,
-            databaseId: FirebaseEmulatorHelper.databaseId,
-          )..useFirestoreEmulator(
-            FirebaseEmulatorHelper.firestoreHost,
-            FirebaseEmulatorHelper.firestorePort,
-          );
-      adminDbA =
-          FirebaseFirestore.instanceFor(
-            app: adminAppA,
-            databaseId: FirebaseEmulatorHelper.databaseId,
-          )..useFirestoreEmulator(
-            FirebaseEmulatorHelper.firestoreHost,
-            FirebaseEmulatorHelper.firestorePort,
-          );
-      adminDbB =
-          FirebaseFirestore.instanceFor(
-            app: adminAppB,
-            databaseId: FirebaseEmulatorHelper.databaseId,
-          )..useFirestoreEmulator(
-            FirebaseEmulatorHelper.firestoreHost,
-            FirebaseEmulatorHelper.firestorePort,
-          );
-
-      registrationRepository = DoctorRegistrationRepositoryImpl(
-        registrationAuth,
-        registrationDb,
-      );
       approvalRepositoryA = AdminApprovalRepositoryImpl(adminDbA);
       approvalRepositoryB = AdminApprovalRepositoryImpl(adminDbB);
     });
@@ -112,31 +96,22 @@ void main() {
     test(
       'simultaneous approve and reject requests allow only one successful outcome',
       () async {
-        final registrationResult = await registrationRepository.registerDoctor(
-          fullName: 'Dr Concurrent Candidate',
-          email: _uniqueEmail('concurrent-doctor'),
-          phoneNumber: '+201234567892',
-          specialty: 'عيادة السمنة والتغذية العلاجية',
-        );
-        expect(registrationResult.isRight(), isTrue);
-
-        final doctorId = registrationAuth.currentUser?.uid;
-        expect(doctorId, isNotNull);
-        final doctorIdValue = doctorId!;
+        const doctorId = 'doctor_concurrent';
+        await _seedPendingDoctor(seedDb, doctorId: doctorId);
 
         final results =
             await Future.wait<Either<Failure, DoctorApplicationActionResult>>([
-              approvalRepositoryA.approveDoctor(
-                doctorId: doctorIdValue,
-                adminId: 'admin_a',
-                adminName: 'Admin A',
-              ),
-              approvalRepositoryB.rejectDoctor(
-                doctorId: doctorIdValue,
-                adminId: 'admin_b',
-                adminName: 'Admin B',
-              ),
-            ]);
+          approvalRepositoryA.approveDoctor(
+            doctorId: doctorId,
+            adminId: 'admin_a',
+            adminName: 'Admin A',
+          ),
+          approvalRepositoryB.rejectDoctor(
+            doctorId: doctorId,
+            adminId: 'admin_b',
+            adminName: 'Admin B',
+          ),
+        ]);
 
         expect(results.every((result) => result.isRight()), isTrue);
 
@@ -154,10 +129,7 @@ void main() {
           isTrue,
         );
 
-        final doctorSnapshot = await registrationDb
-            .collection('users')
-            .doc(doctorIdValue)
-            .get();
+        final doctorSnapshot = await seedDb.collection('users').doc(doctorId).get();
 
         if (doctorSnapshot.exists) {
           final data = doctorSnapshot.data();
@@ -175,7 +147,7 @@ void main() {
             .getOrElse(() => const [])
             .map((doctor) => doctor.doctorId)
             .toSet();
-        expect(remainingPendingIds.contains(doctorIdValue), isFalse);
+        expect(remainingPendingIds.contains(doctorId), isFalse);
       },
     );
   });
@@ -183,18 +155,31 @@ void main() {
 
 Future<void> _deleteNamedApps() async {
   const appNames = <String>{
-    'admin-approval-registration',
+    'admin-approval-seed',
     'admin-approval-admin-a',
     'admin-approval-admin-b',
   };
 
-  for (final app
-      in Firebase.apps.where((app) => appNames.contains(app.name)).toList()) {
+  for (final app in Firebase.apps.where((app) => appNames.contains(app.name)).toList()) {
     await app.delete();
   }
 }
 
-String _uniqueEmail(String prefix) {
-  final timestamp = DateTime.now().microsecondsSinceEpoch;
-  return '$prefix-$timestamp@example.com';
+Future<void> _seedPendingDoctor(
+  FirebaseFirestore firestore, {
+  required String doctorId,
+}) {
+  final doctor = UserModel(
+    id: doctorId,
+    email: 'doctor.concurrent@example.com',
+    fullName: 'Dr Concurrent Candidate',
+    userType: UserType.doctor,
+    phoneNumber: '+201234567892',
+    specialty: 'عيادة السمنة والتغذية العلاجية',
+    isApproved: false,
+    isActive: false,
+    createdAt: DateTime.now(),
+  );
+
+  return firestore.collection('users').doc(doctorId).set(doctor.toJson());
 }

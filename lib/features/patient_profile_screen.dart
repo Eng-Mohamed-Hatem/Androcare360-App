@@ -8,10 +8,8 @@ import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/features/common/privacy_policy_screen.dart';
 // import 'package:elajtech/core/services/firestore_service.dart'; // Unused
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
-import 'package:elajtech/features/patient/medical_records/presentation/screens/medical_records_screen.dart'
-    hide appointmentsProvider;
+import 'package:elajtech/features/patient/navigation/presentation/helpers/patient_navigation_helper.dart';
 import 'package:elajtech/features/patient/profile/presentation/screens/edit_profile_screen.dart';
-import 'package:elajtech/features/packages/presentation/pages/my_packages_page.dart';
 import 'package:elajtech/features/auth/presentation/screens/link_phone_screen.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:elajtech/shared/models/notification_model.dart';
@@ -166,12 +164,7 @@ class PatientProfileScreen extends ConsumerWidget {
                     icon: Icons.medical_services_outlined,
                     title: AppStrings.medicalRecords,
                     onTap: () async {
-                      await Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) => const MedicalRecordsScreen(),
-                        ),
-                      );
+                      await PatientNavigationHelper.openMedicalRecords(context);
                     },
                   ),
                   _SettingsTile(
@@ -191,12 +184,7 @@ class PatientProfileScreen extends ConsumerWidget {
                     icon: Icons.card_membership_outlined,
                     title: 'باقاتي',
                     onTap: () async {
-                      await Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) => const MyPackagesPage(),
-                        ),
-                      );
+                      await PatientNavigationHelper.openMyPackages(context);
                     },
                   ),
                   _SettingsTile(
@@ -1061,13 +1049,7 @@ class _AppointmentCard extends StatelessWidget {
       child: isCompletedAndTappable
           ? InkWell(
               onTap: () async {
-                // Navigate to Medical Records Screen
-                await Navigator.push<void>(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) => const MedicalRecordsScreen(),
-                  ),
-                );
+                await PatientNavigationHelper.openMedicalRecords(context);
               },
               borderRadius: BorderRadius.circular(12),
               child: cardContent,

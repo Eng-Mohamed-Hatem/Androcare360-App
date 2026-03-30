@@ -1,5 +1,6 @@
 import 'package:elajtech/core/constants/app_strings.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
+import 'package:elajtech/features/packages/presentation/pages/my_packages_page.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/lab_tests_info_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/medical_screening_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/patient_home_screen.dart';
@@ -59,6 +60,44 @@ void main() {
         ),
       );
     }
+
+    testWidgets(
+      'Tapping My Packages navigates to MyPackagesPage',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        final myPackagesCard = find.text('باقاتي');
+        expect(myPackagesCard, findsOneWidget);
+
+        await tester.ensureVisible(myPackagesCard);
+        await tester.pumpAndSettle();
+
+        await tester.tap(myPackagesCard);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MyPackagesPage), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Tapping Medical Records navigates to MedicalRecordsScreen',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        final medicalRecordsCard = find.text(AppStrings.medicalRecords);
+        expect(medicalRecordsCard, findsOneWidget);
+
+        await tester.ensureVisible(medicalRecordsCard);
+        await tester.pumpAndSettle();
+
+        await tester.tap(medicalRecordsCard);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MedicalRecordsScreen), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'Tapping My Lab Tests navigates to MedicalRecordsScreen with initialIndex 2',

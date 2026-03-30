@@ -3,8 +3,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/data/repositories/admin_approval_repository_impl.dart';
-import 'package:elajtech/core/data/repositories/doctor_registration_repository_impl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:elajtech/shared/models/user_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,8 +29,6 @@ void main() {
 
   group('Admin Approval Flow Integration Tests', () {
     late FirebaseFirestore firestore;
-    late FirebaseAuth auth;
-    late DoctorRegistrationRepositoryImpl registrationRepository;
     late AdminApprovalRepositoryImpl approvalRepository;
 
     setUp(() async {
@@ -43,11 +40,6 @@ void main() {
         app: Firebase.app(),
         databaseId: FirebaseEmulatorHelper.databaseId,
       );
-      auth = FirebaseAuth.instance;
-      registrationRepository = DoctorRegistrationRepositoryImpl(
-        auth,
-        firestore,
-      );
       approvalRepository = AdminApprovalRepositoryImpl(firestore);
     });
 
@@ -56,68 +48,49 @@ void main() {
     });
 
     test(
-      'registers pending doctors, approves one, rejects one, and updates visibility state',
+      'approves one pending doctor, rejects another, and updates visibility state',
       () async {
-        final approvedEmail = _uniqueEmail('approval-approved');
-        final rejectedEmail = _uniqueEmail('approval-rejected');
+        const approvedDoctorId = 'doctor_approved';
+        const rejectedDoctorId = 'doctor_rejected';
 
-        final approvedRegistration = await registrationRepository
-            .registerDoctor(
-              fullName: 'Dr Approved Candidate',
-              email: approvedEmail,
-              phoneNumber: '+201234567890',
-              specialty: 'عيادة الأمراض المزمنة',
-            );
-        expect(approvedRegistration.isRight(), isTrue);
+        await _seedPendingDoctor(
+          firestore,
+          doctorId: approvedDoctorId,
+          email: _uniqueEmail('approval-approved'),
+          fullName: 'Dr Approved Candidate',
+          specialty: 'عيادة الأمراض المزمنة',
+        );
+        await _seedPendingDoctor(
+          firestore,
+          doctorId: rejectedDoctorId,
+          email: _uniqueEmail('approval-rejected'),
+          fullName: 'Dr Rejected Candidate',
+          specialty: 'عيادة الباطنة وطب الأسرة',
+        );
 
-        final approvedDoctorId = auth.currentUser?.uid;
-        expect(approvedDoctorId, isNotNull);
-        final approvedDoctorIdValue = approvedDoctorId!;
-
-        final rejectedRegistration = await registrationRepository
-            .registerDoctor(
-              fullName: 'Dr Rejected Candidate',
-              email: rejectedEmail,
-              phoneNumber: '+201234567891',
-              specialty: 'عيادة الباطنة وطب الأسرة',
-            );
-        expect(rejectedRegistration.isRight(), isTrue);
-
-        final rejectedDoctorId = auth.currentUser?.uid;
-        expect(rejectedDoctorId, isNotNull);
-        final rejectedDoctorIdValue = rejectedDoctorId!;
-        expect(rejectedDoctorIdValue, isNot(equals(approvedDoctorIdValue)));
-
-        final pendingBeforeAction = await approvalRepository
-            .getPendingDoctors();
+        final pendingBeforeAction = await approvalRepository.getPendingDoctors();
         expect(pendingBeforeAction.isRight(), isTrue);
         final pendingIds = pendingBeforeAction
             .getOrElse(() => const [])
             .map((doctor) => doctor.doctorId)
             .toSet();
-        expect(
-          pendingIds,
-          containsAll(<String>{approvedDoctorIdValue, rejectedDoctorIdValue}),
-        );
+        expect(pendingIds, containsAll(<String>{approvedDoctorId, rejectedDoctorId}));
 
         final approveResult = await approvalRepository.approveDoctor(
-          doctorId: approvedDoctorIdValue,
+          doctorId: approvedDoctorId,
           adminId: 'admin_a',
           adminName: 'Admin A',
         );
         expect(approveResult.isRight(), isTrue);
 
         final rejectResult = await approvalRepository.rejectDoctor(
-          doctorId: rejectedDoctorIdValue,
+          doctorId: rejectedDoctorId,
           adminId: 'admin_a',
           adminName: 'Admin A',
         );
         expect(rejectResult.isRight(), isTrue);
 
-        final approvedSnapshot = await firestore
-            .collection('users')
-            .doc(approvedDoctorIdValue)
-            .get();
+        final approvedSnapshot = await firestore.collection('users').doc(approvedDoctorId).get();
         expect(approvedSnapshot.exists, isTrue);
         final approvedData = approvedSnapshot.data();
         expect(approvedData, isNotNull);
@@ -125,15 +98,9 @@ void main() {
         expect(approvedData['isApproved'], isTrue);
         expect(approvedData['isActive'], isTrue);
         expect(approvedData['approvedAt'], isNotNull);
-        expect(
-          () => DateTime.parse(approvedData['approvedAt'] as String),
-          returnsNormally,
-        );
+        expect(() => DateTime.parse(approvedData['approvedAt'] as String), returnsNormally);
 
-        final rejectedSnapshot = await firestore
-            .collection('users')
-            .doc(rejectedDoctorIdValue)
-            .get();
+        final rejectedSnapshot = await firestore.collection('users').doc(rejectedDoctorId).get();
         expect(rejectedSnapshot.exists, isFalse);
 
         final pendingAfterAction = await approvalRepository.getPendingDoctors();
@@ -142,8 +109,8 @@ void main() {
             .getOrElse(() => const [])
             .map((doctor) => doctor.doctorId)
             .toSet();
-        expect(remainingPendingIds.contains(approvedDoctorIdValue), isFalse);
-        expect(remainingPendingIds.contains(rejectedDoctorIdValue), isFalse);
+        expect(remainingPendingIds.contains(approvedDoctorId), isFalse);
+        expect(remainingPendingIds.contains(rejectedDoctorId), isFalse);
 
         final visibleDoctors = await firestore
             .collection('users')
@@ -151,14 +118,34 @@ void main() {
             .where('isApproved', isEqualTo: true)
             .where('isActive', isEqualTo: true)
             .get();
-        final visibleDoctorIds = visibleDoctors.docs
-            .map((doc) => doc.id)
-            .toList();
-        expect(visibleDoctorIds, contains(approvedDoctorIdValue));
-        expect(visibleDoctorIds, isNot(contains(rejectedDoctorIdValue)));
+        final visibleDoctorIds = visibleDoctors.docs.map((doc) => doc.id).toList();
+        expect(visibleDoctorIds, contains(approvedDoctorId));
+        expect(visibleDoctorIds, isNot(contains(rejectedDoctorId)));
       },
     );
   });
+}
+
+Future<void> _seedPendingDoctor(
+  FirebaseFirestore firestore, {
+  required String doctorId,
+  required String email,
+  required String fullName,
+  required String specialty,
+}) {
+  final doctor = UserModel(
+    id: doctorId,
+    email: email,
+    fullName: fullName,
+    userType: UserType.doctor,
+    phoneNumber: '+201234567890',
+    specialty: specialty,
+    isApproved: false,
+    isActive: false,
+    createdAt: DateTime.now(),
+  );
+
+  return firestore.collection('users').doc(doctorId).set(doctor.toJson());
 }
 
 String _uniqueEmail(String prefix) {

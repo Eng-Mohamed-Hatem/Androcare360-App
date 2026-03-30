@@ -13,13 +13,12 @@ import 'package:elajtech/features/patient/home/presentation/screens/lab_tests_in
 import 'package:elajtech/features/patient/home/presentation/screens/medical_departments_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/sub_specialties_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/widgets/doctor_card.dart';
+import 'package:elajtech/features/patient/navigation/presentation/helpers/patient_navigation_helper.dart';
 import 'package:elajtech/features/patient/notifications/presentation/screens/notifications_screen.dart';
 import 'package:elajtech/features/patient/self_assessment/presentation/screens/self_assessment_list_screen.dart';
-import 'package:elajtech/features/patient_profile_screen.dart';
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/devices_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/medical_screening_screen.dart';
-import 'package:elajtech/features/patient/medical_records/presentation/screens/medical_records_screen.dart';
 import 'package:elajtech/shared/providers/registered_doctors_provider.dart';
 
 /// Patient Home Screen - الصفحة الرئيسية للمريض
@@ -43,12 +42,7 @@ class PatientHomeScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () async {
-              await Navigator.push<void>(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (context) => const PatientProfileScreen(),
-                ),
-              );
+              await PatientNavigationHelper.openProfile(context);
             },
             tooltip: 'الملف الشخصي',
           ),
@@ -213,12 +207,9 @@ class PatientHomeScreen extends ConsumerWidget {
                         title: AppStrings.myDevices,
                         color: Colors.indigo,
                         onTap: () async {
-                          await Navigator.push<void>(
+                          await PatientNavigationHelper.openMedicalRecords(
                             context,
-                            MaterialPageRoute<void>(
-                              builder: (context) =>
-                                  const MedicalRecordsScreen(initialIndex: 4),
-                            ),
+                            initialIndex: 4,
                           );
                         },
                       ),
@@ -256,12 +247,9 @@ class PatientHomeScreen extends ConsumerWidget {
                         title: AppStrings.myLabTests,
                         color: Colors.teal,
                         onTap: () async {
-                          await Navigator.push<void>(
+                          await PatientNavigationHelper.openMedicalRecords(
                             context,
-                            MaterialPageRoute<void>(
-                              builder: (context) =>
-                                  const MedicalRecordsScreen(initialIndex: 2),
-                            ),
+                            initialIndex: 2,
                           );
                         },
                       ),
@@ -288,7 +276,41 @@ class PatientHomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 12),
 
-              // Fourth Row of Quick Actions (Medical Screening - Right slot RTL)
+              // Fourth Row of Quick Actions (Medical History + My Packages)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _QuickActionCard(
+                        icon: Icons.folder_outlined,
+                        title: AppStrings.medicalRecords,
+                        color: Colors.blueGrey,
+                        onTap: () async {
+                          await PatientNavigationHelper.openMedicalRecords(
+                            context,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _QuickActionCard(
+                        icon: Icons.card_membership_outlined,
+                        title: 'باقاتي',
+                        color: AppColors.primary,
+                        onTap: () async {
+                          await PatientNavigationHelper.openMyPackages(context);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Fifth Row of Quick Actions (Medical Screening)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(

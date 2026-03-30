@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
+import 'package:elajtech/core/data/repositories/admin_approval_repository.dart';
 import 'package:elajtech/core/domain/entities/doctor_application_action_result.dart';
 import 'package:elajtech/core/domain/entities/pending_doctor_list_item.dart';
 import 'package:elajtech/core/domain/usecases/approve_doctor_usecase.dart';
-import 'package:elajtech/core/domain/usecases/get_pending_doctors_usecase.dart';
 import 'package:elajtech/core/domain/usecases/reject_doctor_usecase.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/core/presentation/providers/admin_approval_provider.dart';
@@ -15,16 +15,35 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../mocks/mock_auth_repository.dart';
 
-class _FakeGetPendingDoctorsUseCase implements GetPendingDoctorsUseCase {
-  _FakeGetPendingDoctorsUseCase(this.result);
+class _FakeAdminApprovalRepository implements AdminApprovalRepository {
+  _FakeAdminApprovalRepository(this.result);
 
   final Either<Failure, List<PendingDoctorListItem>> result;
   int callCount = 0;
 
   @override
-  Future<Either<Failure, List<PendingDoctorListItem>>> call() async {
+  Future<Either<Failure, List<PendingDoctorListItem>>>
+  getPendingDoctors() async {
     callCount++;
     return result;
+  }
+
+  @override
+  Future<Either<Failure, DoctorApplicationActionResult>> approveDoctor({
+    required String doctorId,
+    required String adminId,
+    required String adminName,
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Either<Failure, DoctorApplicationActionResult>> rejectDoctor({
+    required String doctorId,
+    required String adminId,
+    required String adminName,
+  }) async {
+    throw UnimplementedError();
   }
 }
 
@@ -95,7 +114,7 @@ PendingDoctorListItem _pendingDoctor({
 }
 
 Widget _buildWidget({
-  required GetPendingDoctorsUseCase getPendingDoctorsUseCase,
+  required _FakeAdminApprovalRepository repository,
   required ApproveDoctorUseCase approveDoctorUseCase,
   required RejectDoctorUseCase rejectDoctorUseCase,
   UserModel? currentUser,
@@ -104,9 +123,7 @@ Widget _buildWidget({
 
   return ProviderScope(
     overrides: [
-      getPendingDoctorsUseCaseProvider.overrideWithValue(
-        getPendingDoctorsUseCase,
-      ),
+      adminApprovalRepositoryProvider.overrideWithValue(repository),
       approveDoctorUseCaseProvider.overrideWithValue(approveDoctorUseCase),
       rejectDoctorUseCaseProvider.overrideWithValue(rejectDoctorUseCase),
       authProvider.overrideWith(
@@ -120,7 +137,7 @@ Widget _buildWidget({
     ],
     child: MaterialApp(
       theme: ThemeData(useMaterial3: false),
-      home: AdminApprovalScreen(),
+      home: const AdminApprovalScreen(),
     ),
   );
 }
@@ -132,7 +149,7 @@ void main() {
     testWidgets('shows pending doctors with approve and reject actions', (
       tester,
     ) async {
-      final getPendingDoctorsUseCase = _FakeGetPendingDoctorsUseCase(
+      final repository = _FakeAdminApprovalRepository(
         right([
           _pendingDoctor(id: 'doctor_1', name: 'Dr. Ahmed Ali'),
           _pendingDoctor(id: 'doctor_2', name: 'Dr. Sara Hassan'),
@@ -141,7 +158,7 @@ void main() {
 
       await tester.pumpWidget(
         _buildWidget(
-          getPendingDoctorsUseCase: getPendingDoctorsUseCase,
+          repository: repository,
           approveDoctorUseCase: _FakeApproveDoctorUseCase(
             right(
               const DoctorApplicationActionResult(
@@ -166,7 +183,7 @@ void main() {
       expect(find.text('Dr. Sara Hassan'), findsOneWidget);
       expect(find.text('موافقة'), findsNWidgets(2));
       expect(find.text('رفض'), findsNWidgets(2));
-      expect(getPendingDoctorsUseCase.callCount, 1);
+      expect(repository.callCount, 1);
     });
 
     testWidgets('approves a doctor and removes it from the pending list', (
@@ -183,7 +200,7 @@ void main() {
 
       await tester.pumpWidget(
         _buildWidget(
-          getPendingDoctorsUseCase: _FakeGetPendingDoctorsUseCase(
+          repository: _FakeAdminApprovalRepository(
             right([
               _pendingDoctor(id: 'doctor_1', name: 'Dr. Ahmed Ali'),
             ]),
@@ -226,7 +243,7 @@ void main() {
 
         await tester.pumpWidget(
           _buildWidget(
-            getPendingDoctorsUseCase: _FakeGetPendingDoctorsUseCase(
+            repository: _FakeAdminApprovalRepository(
               right([
                 _pendingDoctor(id: 'doctor_1', name: 'Dr. Ahmed Ali'),
               ]),
@@ -246,6 +263,7 @@ void main() {
 
         await tester.tap(find.text('رفض'));
         await tester.pumpAndSettle();
+
         expect(
           find.text(
             'هل أنت متأكد من رفض هذا الطبيب؟ سيتم حذف الطلب من النظام.',
@@ -275,9 +293,7 @@ void main() {
       await tester.pumpWidget(
         _buildWidget(
           currentUser: patient,
-          getPendingDoctorsUseCase: _FakeGetPendingDoctorsUseCase(
-            right(const []),
-          ),
+          repository: _FakeAdminApprovalRepository(right(const [])),
           approveDoctorUseCase: _FakeApproveDoctorUseCase(
             right(
               const DoctorApplicationActionResult(
