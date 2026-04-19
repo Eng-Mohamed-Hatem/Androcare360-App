@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/core/services/voip_call_service.dart';
+import 'package:elajtech/features/patient/consultation/presentation/providers/consultation_call_providers.dart';
+import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Incoming Call Screen - شاشة المكالمة الواردة
 ///
@@ -18,7 +21,7 @@ import 'package:flutter/material.dart';
 /// ملاحظة:
 /// - هذه الشاشة تُستخدم كـ fallback عندما لا يعمل CallKit الأصلي
 /// - عادة يعالج CallKit/ConnectionService العرض تلقائياً
-class IncomingCallScreen extends StatefulWidget {
+class IncomingCallScreen extends ConsumerStatefulWidget {
   const IncomingCallScreen({
     required this.callerName,
     required this.appointmentId,
@@ -44,10 +47,10 @@ class IncomingCallScreen extends StatefulWidget {
   final VoidCallback? onDecline;
 
   @override
-  State<IncomingCallScreen> createState() => _IncomingCallScreenState();
+  ConsumerState<IncomingCallScreen> createState() => _IncomingCallScreenState();
 }
 
-class _IncomingCallScreenState extends State<IncomingCallScreen>
+class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -98,6 +101,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     if (_isAnswering) return;
 
     setState(() => _isAnswering = true);
+    ref.read(consultationCallControllerProvider.notifier).markJoinStarted();
 
     widget.onAnswer?.call();
 
@@ -122,132 +126,171 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF1B2838),
-    body: SafeArea(
-      child: Column(
-        children: [
-          const Spacer(),
+  Widget build(BuildContext context) {
+    final callState = ref.watch(consultationCallControllerProvider);
 
-          // معلومات المتصل
-          Column(
-            children: [
-              // اسم نوع المكالمة
-              Text(
-                'استشارة فيديو واردة',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-              ),
-              const SizedBox(height: 24),
+    return Scaffold(
+      backgroundColor: const Color(0xFF1B2838),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                const Spacer(),
 
-              // صورة المتصل مع أنيميشن النبض
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) => Transform.scale(
-                  scale: _pulseAnimation.value,
-                  child: child,
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
+                // معلومات المتصل
+                Column(
                   children: [
-                    // موجات متحركة خلف الصورة
-                    ...List.generate(3, _buildWaveRing),
+                    // اسم نوع المكالمة
+                    Text(
+                      'استشارة فيديو واردة',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
 
-                    // صورة المتصل
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.5),
-                            blurRadius: 30,
-                            spreadRadius: 5,
+                    // صورة المتصل مع أنيميشن النبض
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, child) => Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: child,
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // موجات متحركة خلف الصورة
+                          ...List.generate(3, _buildWaveRing),
+
+                          // صورة المتصل
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.primary,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  blurRadius: 30,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child:
+                                widget.callerAvatar != null &&
+                                    widget.callerAvatar!.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      widget.callerAvatar!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              _buildDefaultAvatar(),
+                                    ),
+                                  )
+                                : _buildDefaultAvatar(),
                           ),
                         ],
                       ),
-                      child:
-                          widget.callerAvatar != null &&
-                              widget.callerAvatar!.isNotEmpty
-                          ? ClipOval(
-                              child: Image.network(
-                                widget.callerAvatar!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildDefaultAvatar(),
-                              ),
-                            )
-                          : _buildDefaultAvatar(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // اسم المتصل
+                    Text(
+                      widget.callerName,
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // وصف المكالمة
+                    Text(
+                      'يتصل بك الآن...',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
                     ),
                   ],
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const Spacer(flex: 2),
 
-              // اسم المتصل
-              Text(
-                widget.callerName,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
+                // أزرار الرد والرفض
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 48),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // زر الرفض
+                      _buildCallButton(
+                        icon: Icons.call_end,
+                        color: AppColors.error,
+                        label: 'رفض',
+                        onTap: () => unawaited(_declineCall()),
+                        isLoading: _isDeclining,
+                      ),
 
-              const SizedBox(height: 8),
-
-              // وصف المكالمة
-              Text(
-                'يتصل بك الآن...',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-
-          const Spacer(flex: 2),
-
-          // أزرار الرد والرفض
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // زر الرفض
-                _buildCallButton(
-                  icon: Icons.call_end,
-                  color: AppColors.error,
-                  label: 'رفض',
-                  onTap: () => unawaited(_declineCall()),
-                  isLoading: _isDeclining,
+                      // زر الرد
+                      _buildCallButton(
+                        icon: Icons.videocam,
+                        color: AppColors.success,
+                        label: 'رد',
+                        onTap: () => unawaited(_answerCall()),
+                        isLoading: _isAnswering,
+                      ),
+                    ],
+                  ),
                 ),
 
-                // زر الرد
-                _buildCallButton(
-                  icon: Icons.videocam,
-                  color: AppColors.success,
-                  label: 'رد',
-                  onTap: () => unawaited(_answerCall()),
-                  isLoading: _isAnswering,
-                ),
+                const SizedBox(height: 48),
               ],
             ),
-          ),
-
-          const SizedBox(height: 48),
-        ],
+            if (_isAnswering || callState.isConnecting)
+              const Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black54,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Connecting...',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   /// بناء حلقة موجة متحركة
   Widget _buildWaveRing(int index) => AnimatedBuilder(
@@ -337,4 +380,42 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
       ),
     ],
   );
+}
+
+bool shouldRestoreIncomingCall(
+  AppointmentStatus status, {
+  bool hasFreshJoinAuthorization = false,
+  bool hasAcceptedFromCallKit = false,
+  bool hasActiveNativeCall = false,
+}) {
+  if (hasFreshJoinAuthorization ||
+      hasAcceptedFromCallKit ||
+      hasActiveNativeCall) {
+    debugPrint(
+      '📞 [IncomingCallScreen] shouldRestoreIncomingCall'
+      ' | status=${status.name}'
+      ' | hasFreshJoinAuthorization=$hasFreshJoinAuthorization'
+      ' | hasAcceptedFromCallKit=$hasAcceptedFromCallKit'
+      ' | hasActiveNativeCall=$hasActiveNativeCall'
+      ' | decision=true',
+    );
+    return true;
+  }
+
+  final shouldRestore =
+      status == AppointmentStatus.calling ||
+      status == AppointmentStatus.inProgress ||
+      status == AppointmentStatus.confirmed ||
+      status == AppointmentStatus.scheduled;
+
+  debugPrint(
+    '📞 [IncomingCallScreen] shouldRestoreIncomingCall'
+    ' | status=${status.name}'
+    ' | hasFreshJoinAuthorization=$hasFreshJoinAuthorization'
+    ' | hasAcceptedFromCallKit=$hasAcceptedFromCallKit'
+    ' | hasActiveNativeCall=$hasActiveNativeCall'
+    ' | decision=$shouldRestore',
+  );
+
+  return shouldRestore;
 }

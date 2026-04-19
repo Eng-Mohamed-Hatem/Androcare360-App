@@ -93,11 +93,10 @@ void main() {
   setUp(() {
     mockRepo = MockPatientPackageRepository();
     // Override DI for tests
-    getIt.allowReassignment = true;
-    getIt.registerLazySingleton<PatientPackageRepository>(() => mockRepo);
-    getIt.registerLazySingleton<PackagePaymentAdapter>(
-      FakePaymentService.new,
-    );
+    getIt
+      ..allowReassignment = true
+      ..registerLazySingleton<PatientPackageRepository>(() => mockRepo)
+      ..registerLazySingleton<PackagePaymentAdapter>(FakePaymentService.new);
   });
 
   UserModel mockUserObject(String id) => UserModel(

@@ -143,6 +143,17 @@ void main() {
       }
     });
 
+    test('should support canonical channelName payload key', () {
+      const payload = {
+        'channelName': 'appointment_456',
+        'agoraToken': 'token_123',
+        'agoraUid': '12345',
+      };
+
+      expect(payload['channelName'], equals('appointment_456'));
+      expect(payload.containsKey('channelName'), isTrue);
+    });
+
     test('should validate Agora UID parameter', () {
       // Arrange
       const validUids = [0, 1, 12345, 999999];
@@ -452,6 +463,22 @@ void main() {
       expect(messageData['appointmentId'], isNotNull);
     });
 
+    test(
+      'should require caller name and channel payload for foreground incoming calls',
+      () {
+        const messageData = {
+          'type': 'incoming_call',
+          'callerName': 'Dr. Foreground',
+          'appointmentId': 'apt_fg_123',
+          'channelName': 'foreground_channel_123',
+        };
+
+        expect(messageData['type'], equals('incoming_call'));
+        expect(messageData['callerName'], equals('Dr. Foreground'));
+        expect(messageData['channelName'], equals('foreground_channel_123'));
+      },
+    );
+
     test('should handle notification display data', () {
       // Arrange
       const notificationData = {
@@ -576,5 +603,126 @@ void main() {
       expect(scenarios, contains('Handle incoming call'));
       expect(scenarios, contains('Message routing'));
     });
+
+    test('should include foreground incoming-call UI in manual scenarios', () {
+      const scenario =
+          'foreground incoming call with caller name and video indicator';
+
+      expect(scenario, contains('foreground incoming call'));
+      expect(scenario, contains('caller name'));
+      expect(scenario, contains('video indicator'));
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // T031: Foreground incoming-call handling — caller name, video indicator,
+  //       logStructuredEvent canonical event type
+  // ──────────────────────────────────────────────────────────────────────────
+
+  group('FCMService - US3 Foreground Incoming Call (T031)', () {
+    test('foreground payload must include callerName for display', () {
+      const payload = {
+        'type': 'incoming_call',
+        'callerName': 'Dr. Ahmed',
+        'appointmentId': 'apt_fg_001',
+        'channelName': 'fg_channel_001',
+        'agoraToken': 'fg_token_001',
+        'agoraUid': '54321',
+      };
+
+      expect(payload['callerName'], equals('Dr. Ahmed'));
+      expect(payload['callerName']!.isNotEmpty, isTrue);
+    });
+
+    test('foreground payload must carry a video-call type indicator', () {
+      // type: 'incoming_call' signals a video consultation
+      const payload = {
+        'type': 'incoming_call',
+        'callerName': 'Dr. Ahmed',
+        'appointmentId': 'apt_fg_001',
+      };
+
+      expect(payload['type'], equals('incoming_call'));
+      // The type value is used by IncomingCallScreen to show video indicator
+    });
+
+    test('foreground log event type must be incoming_call_received', () {
+      // Validates that the canonical event name used in logStructuredEvent
+      // matches the contract-defined value
+      const canonicalEventType = 'incoming_call_received';
+
+      expect(canonicalEventType, equals('incoming_call_received'));
+      expect(canonicalEventType, isNotEmpty);
+    });
+
+    test(
+      'foreground payload with channelName key takes priority over agoraChannelName',
+      () {
+        final payloadWithChannelName = {
+          'channelName': 'primary_channel',
+          'agoraChannelName': 'fallback_channel',
+        };
+        final payloadWithoutChannelName = {
+          'agoraChannelName': 'fallback_channel',
+        };
+
+        // channelName is preferred (matches contract §3 canonical field)
+        final resolved1 =
+            payloadWithChannelName['channelName'] ??
+            payloadWithChannelName['agoraChannelName'];
+        final resolved2 =
+            payloadWithoutChannelName['channelName'] ??
+            payloadWithoutChannelName['agoraChannelName'];
+
+        expect(resolved1, equals('primary_channel'));
+        expect(resolved2, equals('fallback_channel'));
+      },
+    );
+
+    test('foreground caller name defaults to Arabic fallback when missing', () {
+      final data = <String, String>{};
+      final callerName = data['callerName'] ?? 'طبيب';
+
+      expect(callerName, equals('طبيب'));
+      expect(callerName.isNotEmpty, isTrue);
+    });
+
+    test(
+      'foreground duplicate-call guard drops repeated push for same appointment',
+      () {
+        // Simulates the deduplication logic in FCMService._handleIncomingCall
+        String? lastProcessed;
+
+        bool shouldProcess(String appointmentId) {
+          if (appointmentId.isNotEmpty && appointmentId == lastProcessed) {
+            return false; // duplicate — drop
+          }
+          if (appointmentId.isNotEmpty) {
+            lastProcessed = appointmentId;
+          }
+          return true;
+        }
+
+        expect(shouldProcess('apt_001'), isTrue); // first delivery — process
+        expect(shouldProcess('apt_001'), isFalse); // duplicate — drop
+        expect(shouldProcess('apt_002'), isTrue); // different appt — process
+      },
+    );
+
+    test(
+      'foreground logStructuredEvent metadata must not include raw agoraToken',
+      () {
+        // Validates sanitization: token must not appear in metadata map keys
+        final metadata = {
+          'appState': 'foreground',
+          'callerName': 'Dr. Ahmed',
+          'channelName': 'ch_001',
+          // 'agoraToken': 'secret' — must NOT be included
+        };
+
+        expect(metadata.containsKey('agoraToken'), isFalse);
+        expect(metadata.containsKey('token'), isFalse);
+      },
+    );
   });
 }

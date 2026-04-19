@@ -14,31 +14,107 @@ import 'package:elajtech/features/patient/home/presentation/screens/medical_depa
 import 'package:elajtech/features/patient/home/presentation/screens/sub_specialties_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/widgets/doctor_card.dart';
 import 'package:elajtech/features/patient/navigation/presentation/helpers/patient_navigation_helper.dart';
+import 'package:elajtech/features/patient/navigation/presentation/screens/patient_main_screen.dart';
 import 'package:elajtech/features/patient/notifications/presentation/screens/notifications_screen.dart';
 import 'package:elajtech/features/patient/self_assessment/presentation/screens/self_assessment_list_screen.dart';
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/devices_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/medical_screening_screen.dart';
 import 'package:elajtech/shared/providers/registered_doctors_provider.dart';
+import 'package:flutter/services.dart';
 
 /// Patient Home Screen - الصفحة الرئيسية للمريض
-class PatientHomeScreen extends ConsumerWidget {
+class PatientHomeScreen extends ConsumerStatefulWidget {
   const PatientHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PatientHomeScreen> createState() => _PatientHomeScreenState();
+}
+
+class _PatientHomeScreenState extends ConsumerState<PatientHomeScreen> {
+  static const _scrollThreshold = 12.0;
+
+  final ScrollController _scrollController = ScrollController();
+  bool _isScrolled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleScroll() {
+    final isScrolled = _scrollController.offset > _scrollThreshold;
+    if (isScrolled == _isScrolled) return;
+
+    setState(() {
+      _isScrolled = isScrolled;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    const bottomSpacing = 16.0;
+    final appBarBackgroundColor = _isScrolled
+        ? Colors.white
+        : AppColors.backgroundLight;
 
     return Scaffold(
       // شريط التطبيق العلوي
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
-          AppStrings.appName,
-          style: TextStyle(fontWeight: FontWeight.bold),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+        flexibleSpace: AnimatedContainer(
+          key: const Key('patient_home_app_bar_background'),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: appBarBackgroundColor,
+            boxShadow: _isScrolled
+                ? const [
+                    BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ]
+                : const [],
+          ),
+        ),
+        title: Image.asset(
+          'assets/icons/androcare360_logo.webp',
+          height: 44,
+          fit: BoxFit.contain,
+          semanticLabel: AppStrings.appName,
         ),
         actions: [
-          // أيقونة الملف الشخصي
+          // أيقونة مواعيدي — تُبدِّل التبويب بدلاً من push لتحتفظ بـ Bottom Nav
+          IconButton(
+            icon: const Icon(Icons.calendar_month_outlined),
+            onPressed: () {
+              ref.read(patientMainTabProvider.notifier).state = 3;
+            },
+            tooltip: 'مواعيدي',
+          ),
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () async {
@@ -80,8 +156,9 @@ class PatientHomeScreen extends ConsumerWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.only(bottom: 150),
+        padding: const EdgeInsets.only(bottom: bottomSpacing),
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -276,7 +353,7 @@ class PatientHomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 12),
 
-              // Fourth Row of Quick Actions (Medical History + My Packages)
+              // Fourth Row of Quick Actions (Medical History + Self Assessment)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
@@ -286,6 +363,8 @@ class PatientHomeScreen extends ConsumerWidget {
                         icon: Icons.folder_outlined,
                         title: AppStrings.medicalRecords,
                         color: Colors.blueGrey,
+                        semanticsLabel:
+                            'السجل الطبي، يفتح صفحة السجل الطبي للمريض',
                         onTap: () async {
                           await PatientNavigationHelper.openMedicalRecords(
                             context,
@@ -296,11 +375,15 @@ class PatientHomeScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _QuickActionCard(
-                        icon: Icons.card_membership_outlined,
-                        title: 'باقاتي',
-                        color: AppColors.primary,
+                        icon: Icons.fact_check_outlined,
+                        title: AppStrings.testYourSexualHealth,
+                        color: AppColors.sexualHealth,
+                        semanticsLabel:
+                            'اختبر صحتك الجنسية، يفتح صفحة التقييم الذاتي',
                         onTap: () async {
-                          await PatientNavigationHelper.openMyPackages(context);
+                          await PatientNavigationHelper.openSelfAssessment(
+                            context,
+                          );
                         },
                       ),
                     ),
@@ -310,7 +393,7 @@ class PatientHomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 12),
 
-              // Fifth Row of Quick Actions (Medical Screening)
+              // Fifth Row of Quick Actions (Medical Screening + My Packages)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
@@ -332,8 +415,16 @@ class PatientHomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
-                      child: SizedBox.shrink(), // Empty placeholder slot
+                    Expanded(
+                      child: _QuickActionCard(
+                        icon: Icons.card_membership_outlined,
+                        title: 'باقاتي',
+                        color: AppColors.primary,
+                        semanticsLabel: 'باقاتي، يفتح صفحة الباقات الخاصة بك',
+                        onTap: () async {
+                          await PatientNavigationHelper.openMyPackages(context);
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -486,6 +577,137 @@ class PatientHomeScreen extends ConsumerWidget {
 
               // Doctors List
               _buildDoctorsSection(context, ref),
+
+              const SizedBox(height: 32),
+
+              // Educational Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'معلومات تهمك',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Semantics(
+                      button: true,
+                      label:
+                          'أحدث أساليب علاج الضعف الجنسي، يفتح صفحة معلومات تثقيفية عن العلاجات المتاحة',
+                      child: InkWell(
+                        onTap: () async {
+                          await PatientNavigationHelper.openSexualHealthEducation(
+                            context,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.sexualHealth,
+                                AppColors.sexualHealth.withValues(alpha: 0.82),
+                              ],
+                              begin: Alignment.topRight,
+                              end: Alignment.bottomLeft,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.sexualHealth.withValues(
+                                  alpha: 0.24,
+                                ),
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.menu_book_rounded,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'أحدث أساليب علاج الضعف الجنسي',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'تعرّف على الخيارات العلاجية المتاحة ومتى قد يناسبك كل نوع بعد تقييم الطبيب.',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        fontSize: 14,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.14,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.22,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'اطلع على التفاصيل',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 32),
 
@@ -673,37 +895,51 @@ class _QuickActionCard extends StatelessWidget {
     required this.title,
     required this.color,
     required this.onTap,
+    this.semanticsLabel,
   });
   final IconData icon;
   final String title;
   final Color color;
   final VoidCallback onTap;
+  final String? semanticsLabel;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
+  Widget build(BuildContext context) {
+    final card = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
+
+    if (semanticsLabel == null) {
+      return card;
+    }
+
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      child: card,
+    );
+  }
 }

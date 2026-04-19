@@ -16,6 +16,8 @@ analyzer:
     - "**/*.config.dart"
     - "**/*.mocks.dart"
     - "lib/generated_plugin_registrant.dart"
+    - "backups/**"
+    - "plans/**"
 
 linter:
   rules:

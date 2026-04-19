@@ -30,9 +30,10 @@ describe('Test Setup Verification', () => {
       expect(settings.databaseId).toBe('elajtech');
     });
 
-    test('should connect to localhost:8080', () => {
+    test('should connect to the Firestore emulator host', () => {
       const settings = db._settings;
-      expect(settings.host).toBe('localhost:8080');
+      const emulatorHost = settings.host || `${settings.servicePath}:${settings.port}`;
+      expect(['localhost:8080', '127.0.0.1:8080']).toContain(emulatorHost);
       expect(settings.ssl).toBe(false);
     });
   });

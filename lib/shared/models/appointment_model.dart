@@ -70,6 +70,14 @@ class AppointmentModel {
     this.agoraToken,
     this.agoraUid,
     this.meetingProvider = 'agora',
+    this.callSessionId,
+    this.callStartedAt,
+    this.confirmationDeadlineAt,
+    this.callSessionActive = false,
+    this.bookingSource,
+    this.assessmentId,
+    this.assessmentResultBand,
+    this.referralTargetKey,
   });
 
   /// Creates an AppointmentModel from JSON data.
@@ -85,18 +93,7 @@ class AppointmentModel {
   ///
   /// Throws [FormatException] if date strings are malformed.
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
-    // التحقق من حالة الموعد
-    final statusValue = json['status'] as String?;
-    AppointmentStatus status;
-
-    if (statusValue == null) {
-      status = AppointmentStatus.pending;
-    } else {
-      status = AppointmentStatus.values.firstWhere(
-        (e) => e.toString() == 'AppointmentStatus.$statusValue',
-        orElse: () => AppointmentStatus.pending,
-      );
-    }
+    final status = _statusFromString(json['status'] as String?);
 
     return AppointmentModel(
       id: json['id'] as String,
@@ -126,11 +123,40 @@ class AppointmentModel {
         json['appointmentTimestamp'],
       ),
       // 🎥 حقول Agora SDK
-      agoraChannelName: json['agoraChannelName'] as String?,
+      agoraChannelName:
+          (json['channelName'] ?? json['agoraChannelName']) as String?,
       agoraToken: json['agoraToken'] as String?,
-      agoraUid: json['agoraUid'] as int?,
+      agoraUid: _parseAgoraUid(json['agoraUid']),
       meetingProvider: json['meetingProvider'] as String? ?? 'agora',
+      callSessionId: json['callSessionId'] as String?,
+      callStartedAt: JsonHelpers.parseDateTimeOrNull(json['callStartedAt']),
+      confirmationDeadlineAt: JsonHelpers.parseDateTimeOrNull(
+        json['confirmationDeadlineAt'],
+      ),
+      callSessionActive: json['callSessionActive'] as bool? ?? false,
+      bookingSource: json['bookingSource'] as String?,
+      assessmentId: json['assessmentId'] as String?,
+      assessmentResultBand: json['assessmentResultBand'] as String?,
+      referralTargetKey: json['referralTargetKey'] as String?,
     );
+  }
+
+  factory AppointmentModel.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    if (!snapshot.exists) {
+      throw StateError('Appointment document ${snapshot.id} does not exist');
+    }
+
+    final data = snapshot.data();
+    if (data == null) {
+      throw StateError('Appointment document ${snapshot.id} has no data');
+    }
+
+    return AppointmentModel.fromJson({
+      ...data,
+      'id': data['id'] ?? snapshot.id,
+    });
   }
 
   /// Unique identifier for the appointment
@@ -214,6 +240,30 @@ class AppointmentModel {
   /// Meeting provider identifier ('agora' or 'zoom' for backward compatibility)
   final String meetingProvider;
 
+  /// Active call session identifier for the appointment lifecycle.
+  final String? callSessionId;
+
+  /// Timestamp when the live call session started.
+  final DateTime? callStartedAt;
+
+  /// Deadline for the doctor confirmation step after a call ends.
+  final DateTime? confirmationDeadlineAt;
+
+  /// Whether the existing call session is still active for patient rejoin.
+  final bool callSessionActive;
+
+  /// Booking entry point, such as direct booking or assessment referral.
+  final String? bookingSource;
+
+  /// Optional source assessment identifier when booked from a self-assessment.
+  final String? assessmentId;
+
+  /// Optional result band captured from the assessment flow.
+  final String? assessmentResultBand;
+
+  /// Optional referral group key used to pre-filter specialists.
+  final String? referralTargetKey;
+
   /// Converts this AppointmentModel to JSON format for Firestore storage.
   ///
   /// This method serializes all appointment data into a Map suitable for
@@ -233,7 +283,7 @@ class AppointmentModel {
       'appointmentDate': appointmentDate.toIso8601String(),
       'timeSlot': timeSlot,
       'type': type.name,
-      'status': status.name,
+      'status': _statusToString(status),
       'fee': fee,
       'notes': notes,
       'meetingLink': meetingLink,
@@ -248,6 +298,14 @@ class AppointmentModel {
       'agoraToken': agoraToken,
       'agoraUid': agoraUid,
       'meetingProvider': meetingProvider,
+      'callSessionId': callSessionId,
+      'callStartedAt': callStartedAt?.toIso8601String(),
+      'confirmationDeadlineAt': confirmationDeadlineAt?.toIso8601String(),
+      'callSessionActive': callSessionActive,
+      'bookingSource': bookingSource,
+      'assessmentId': assessmentId,
+      'assessmentResultBand': assessmentResultBand,
+      'referralTargetKey': referralTargetKey,
     };
   }
 
@@ -271,6 +329,18 @@ class AppointmentModel {
     // إذا كان String، حاول تحويله
     if (value is String) {
       return DateTime.tryParse(value);
+    }
+
+    return null;
+  }
+
+  static int? _parseAgoraUid(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is String) {
+      return int.tryParse(value);
     }
 
     return null;
@@ -387,6 +457,14 @@ class AppointmentModel {
     String? agoraToken,
     int? agoraUid,
     String? meetingProvider,
+    String? callSessionId,
+    DateTime? callStartedAt,
+    DateTime? confirmationDeadlineAt,
+    bool? callSessionActive,
+    String? bookingSource,
+    String? assessmentId,
+    String? assessmentResultBand,
+    String? referralTargetKey,
   }) {
     return AppointmentModel(
       id: id ?? this.id,
@@ -414,6 +492,15 @@ class AppointmentModel {
       agoraToken: agoraToken ?? this.agoraToken,
       agoraUid: agoraUid ?? this.agoraUid,
       meetingProvider: meetingProvider ?? this.meetingProvider,
+      callSessionId: callSessionId ?? this.callSessionId,
+      callStartedAt: callStartedAt ?? this.callStartedAt,
+      confirmationDeadlineAt:
+          confirmationDeadlineAt ?? this.confirmationDeadlineAt,
+      callSessionActive: callSessionActive ?? this.callSessionActive,
+      bookingSource: bookingSource ?? this.bookingSource,
+      assessmentId: assessmentId ?? this.assessmentId,
+      assessmentResultBand: assessmentResultBand ?? this.assessmentResultBand,
+      referralTargetKey: referralTargetKey ?? this.referralTargetKey,
     );
   }
 }
@@ -446,12 +533,83 @@ enum AppointmentStatus {
   confirmed, // مؤكد
   /// Appointment has been scheduled
   scheduled, // مجدول (تم الجدولة)
+  /// Doctor started the call and the patient is still ringing
+  calling,
+
+  /// The patient joined and the call is live
+  inProgress,
+
+  /// Patient explicitly declined the incoming call
+  declined,
+
+  /// The call ended and awaits doctor confirmation
+  endedPendingConfirmation,
+
   /// Appointment completed successfully
   completed, // مكتمل
+  /// Session ended without successful completion
+  notCompleted,
+
   /// Appointment cancelled
   cancelled, // ملغي
   /// Patient missed the appointment
   missed, // فائت
+}
+
+AppointmentStatus _statusFromString(String? value) {
+  switch (value) {
+    case 'pending':
+      return AppointmentStatus.pending;
+    case 'confirmed':
+      return AppointmentStatus.confirmed;
+    case 'scheduled':
+      return AppointmentStatus.scheduled;
+    case 'calling':
+      return AppointmentStatus.calling;
+    case 'in_progress':
+      return AppointmentStatus.inProgress;
+    case 'declined':
+      return AppointmentStatus.declined;
+    case 'ended_pending_confirmation':
+      return AppointmentStatus.endedPendingConfirmation;
+    case 'completed':
+      return AppointmentStatus.completed;
+    case 'not_completed':
+      return AppointmentStatus.notCompleted;
+    case 'cancelled':
+      return AppointmentStatus.cancelled;
+    case 'missed':
+      return AppointmentStatus.missed;
+    default:
+      return AppointmentStatus.pending;
+  }
+}
+
+String _statusToString(AppointmentStatus status) {
+  switch (status) {
+    case AppointmentStatus.pending:
+      return 'pending';
+    case AppointmentStatus.confirmed:
+      return 'confirmed';
+    case AppointmentStatus.scheduled:
+      return 'scheduled';
+    case AppointmentStatus.calling:
+      return 'calling';
+    case AppointmentStatus.inProgress:
+      return 'in_progress';
+    case AppointmentStatus.declined:
+      return 'declined';
+    case AppointmentStatus.endedPendingConfirmation:
+      return 'ended_pending_confirmation';
+    case AppointmentStatus.completed:
+      return 'completed';
+    case AppointmentStatus.notCompleted:
+      return 'not_completed';
+    case AppointmentStatus.cancelled:
+      return 'cancelled';
+    case AppointmentStatus.missed:
+      return 'missed';
+  }
 }
 
 /// Represents a time slot for appointment booking.
@@ -459,13 +617,16 @@ enum AppointmentStatus {
 /// This model is used in the appointment booking UI to display
 /// available and unavailable time slots to users.
 class TimeSlot {
-  TimeSlot({required this.time, required this.isAvailable});
+  TimeSlot({required this.time, required this.isAvailable, this.slotId});
 
   /// Time string in 12-hour format (e.g., '09:00 ص', '02:00 م')
   final String time;
 
   /// Indicates whether this time slot is available for booking
   final bool isAvailable;
+
+  /// Optional stable slot identifier used by reschedule flows.
+  final String? slotId;
 }
 
 /// Provides mock time slots for testing and development.

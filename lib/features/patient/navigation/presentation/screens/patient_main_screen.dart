@@ -1,10 +1,15 @@
 import 'package:elajtech/features/patient/ai_assistant/presentation/screens/ai_assistant_screen.dart';
+import 'package:elajtech/features/patient/appointments/presentation/screens/patient_appointments_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/doctors_list_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/patient_home_screen.dart';
 import 'package:elajtech/features/patient/medical_records/presentation/screens/medical_records_screen.dart';
-import 'package:elajtech/features/patient_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// مزود التبويب المحدد في شاشة المريض الرئيسية
+/// Shared tab-index provider for PatientMainScreen.
+/// Write to this from any descendant widget to switch tabs programmatically.
+final patientMainTabProvider = StateProvider<int>((ref) => 0);
 
 /// Patient Main Screen - الشاشة الرئيسية للمريض مع شريط التنقل السفلي
 class PatientMainScreen extends ConsumerStatefulWidget {
@@ -16,69 +21,65 @@ class PatientMainScreen extends ConsumerStatefulWidget {
 }
 
 class _PatientMainScreenState extends ConsumerState<PatientMainScreen> {
-  /// الفهرس الحالي للشاشة المعروضة
-  int _selectedIndex = 0;
-
   /// الحصول على قائمة الشاشات المتاحة
   List<Widget> _getScreens() {
-    return [
-      const PatientHomeScreen(), // 0: الرئيسية
-      const DoctorsListScreen(), // 1: الأطباء
-      const AIAssistantScreen(), // 2: مساعد الذكاء الاصطناعي
-      const AppointmentsManagementScreen(), // 3: المواعيد
-      const MedicalRecordsScreen(), // 4: السجل الطبي
+    return const [
+      PatientHomeScreen(), // 0: الرئيسية
+      DoctorsListScreen(), // 1: الأطباء
+      AIAssistantScreen(), // 2: مساعد الذكاء الاصطناعي
+      PatientAppointmentsScreen(), // 3: المواعيد
+      MedicalRecordsScreen(), // 4: السجل الطبي
     ];
-  }
-
-  /// تغيير الشاشة المعروضة
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // قراءة الفهرس من المزود المشترك حتى تستطيع أي شاشة فرعية التبديل برمجياً
+    final selectedIndex = ref.watch(patientMainTabProvider);
+
     return Scaffold(
       // منع تغيير حجم الواجهة عند ظهور لوحة المفاتيح
       resizeToAvoidBottomInset: false,
 
-      // السماح للمحتوى بالامتداد خلف شريط التنقل السفلي
-      extendBody: true,
-
       // الشاشة الحالية
       body: IndexedStack(
-        index: _selectedIndex,
+        index: selectedIndex,
         children: _getScreens(),
       ),
 
-      // شريط التنقل السفلي (شكل قياسي)
+      // شريط التنقل السفلي بشكل أكثر إحكاماً لتقليل الفراغ العلوي
       bottomNavigationBar: Directionality(
         textDirection: TextDirection.rtl, // RTL للغة العربية
-        child: NavigationBar(
-          height: 75,
-          selectedIndex: _selectedIndex,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          onDestinationSelected: _onItemTapped,
-          destinations: const [
-            NavigationDestination(
+        child: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          onTap: (index) =>
+              ref.read(patientMainTabProvider.notifier).state = index,
+          type: BottomNavigationBarType.fixed,
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'الرئيسية',
             ),
-            NavigationDestination(
+            BottomNavigationBarItem(
               icon: Icon(Icons.medical_services_outlined),
+              activeIcon: Icon(Icons.medical_services),
               label: 'الأطباء',
             ),
-            NavigationDestination(
+            BottomNavigationBarItem(
               icon: Icon(Icons.psychology, color: Colors.purple),
+              activeIcon: Icon(Icons.psychology, color: Colors.purple),
               label: 'Ai Assistant',
             ),
-            NavigationDestination(
+            BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today_outlined),
+              activeIcon: Icon(Icons.calendar_today),
               label: 'المواعيد',
             ),
-            NavigationDestination(
+            BottomNavigationBarItem(
               icon: Icon(Icons.folder_outlined),
+              activeIcon: Icon(Icons.folder),
               label: 'السجل الطبي',
             ),
           ],

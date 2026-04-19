@@ -1,5 +1,9 @@
 package com.example.elajtech
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -19,6 +23,7 @@ class MainActivity : FlutterFragmentActivity() {
     
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        registerIncomingCallsChannel()
         
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -35,6 +40,28 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+    }
+
+    private fun registerIncomingCallsChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return
+        }
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (manager.getNotificationChannel("incoming_calls") != null) {
+            return
+        }
+
+        val channel = NotificationChannel(
+            "incoming_calls",
+            "Incoming Calls",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "Incoming video call notifications"
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        }
+
+        manager.createNotificationChannel(channel)
     }
     
     /**

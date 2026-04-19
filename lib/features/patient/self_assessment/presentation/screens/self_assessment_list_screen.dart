@@ -8,8 +8,9 @@ class SelfAssessmentListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // For now, we only have one quiz
     final quizzes = [
+      QuizData.maleFertilityDelayQuiz,
+      QuizData.stiExposureRiskQuiz,
       QuizData.prematureEjaculationQuiz,
       QuizData.ipssQuiz,
       QuizData.iief5Quiz,

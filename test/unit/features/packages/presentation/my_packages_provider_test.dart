@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/core/error/failures.dart';
@@ -13,9 +15,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAuthRepo implements AuthRepository {
+  /// Returns a future that never completes so that AuthNotifier's
+  /// _checkCurrentUser() does not fire a state change that would
+  /// invalidate myPackagesProvider mid-build and cause test timeouts.
   @override
-  Future<Either<Failure, UserModel>> getCurrentUser() async {
-    return const Left(ServerFailure('No current user'));
+  Future<Either<Failure, UserModel>> getCurrentUser() {
+    return Completer<Either<Failure, UserModel>>().future;
   }
 
   @override

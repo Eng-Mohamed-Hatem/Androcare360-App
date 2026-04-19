@@ -18,9 +18,7 @@ class MedicalDevicesShopScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
-            onPressed: () {
-              // TODO(elajtech): Navigate to cart.
-            },
+            onPressed: () {},
           ),
         ],
       ),

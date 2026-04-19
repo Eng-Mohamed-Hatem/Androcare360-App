@@ -22,6 +22,7 @@ class FirestoreCollections {
   String get emrRecords => 'emr_records';
   String get chats => 'chats';
   String get messages => 'messages';
+  String get assessmentReferralEvents => 'assessment_referral_events';
 }
 
 /// Centralized list of allowed medical specializations and clinic names.

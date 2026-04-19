@@ -1,11 +1,11 @@
 /// PackageCategoriesPage — شاشة تصفح فئات الباقات
 ///
 /// تعرض هذه الشاشة قائمة ثابتة بالفئات الخمس للباقات السريرية.
-/// لا تُجري أي استعلامات بيانات — تعتمد على ثوابت [ClinicIds] و[PackageCategory].
+/// لا تُجري أي استعلامات بيانات — تعتمد على ثوابت `ClinicIds` و`PackageCategory`.
 ///
 /// **English**: Static list of 5 clinic category cards. No network calls.
-/// Each card navigates to [CategoryPackagesListPage] with the correct
-/// [clinicId] and [category] arguments.
+/// Each card navigates to `CategoryPackagesListPage` with the correct
+/// `clinicId` and `category` arguments.
 ///
 /// **Spec**: tasks.md T035, spec.md §9.2.
 library;
@@ -17,8 +17,8 @@ import 'package:flutter/material.dart';
 
 /// Page showing all available package categories for the patient to browse.
 ///
-/// **English**: Each [_CategoryCard] contains an icon, Arabic title, subtitle,
-/// and navigates to [CategoryPackagesListPage] on tap.
+/// **English**: Each `_CategoryCard` contains an icon, Arabic title, subtitle,
+/// and navigates to `CategoryPackagesListPage` on tap.
 ///
 /// **Arabic**: تعرض الفئات الخمس للباقات السريرية. كل بطاقة تنتقل إلى
 /// شاشة قائمة الباقات الخاصة بالفئة.
@@ -88,7 +88,7 @@ class PackageCategoriesPage extends StatelessWidget {
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         itemCount: _categories.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final data = _categories[index];
           return _CategoryCard(

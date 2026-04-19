@@ -204,7 +204,8 @@ void main() {
       final captured = verify(mockDocument.set(captureAny)).captured;
       expect(captured.length, 1);
       final data = captured[0] as Map<String, dynamic>;
-      expect(data['metadata']['channelName'], equals(channelName));
+      final metadata = data['metadata'] as Map<String, dynamic>;
+      expect(metadata['channelName'], equals(channelName));
     });
 
     test('should include additional metadata when provided', () async {
@@ -225,8 +226,9 @@ void main() {
       // Assert
       final captured = verify(mockDocument.set(captureAny)).captured;
       final data = captured[0] as Map<String, dynamic>;
-      expect(data['metadata']['uid'], equals(12345));
-      expect(data['metadata']['customData'], equals('test'));
+      final capturedMetadata = data['metadata'] as Map<String, dynamic>;
+      expect(capturedMetadata['uid'], equals(12345));
+      expect(capturedMetadata['customData'], equals('test'));
     });
 
     test('should handle Firestore error gracefully', () async {
@@ -388,7 +390,8 @@ void main() {
       final data = captured[0] as Map<String, dynamic>;
       expect(data['errorCode'], equals('connection_failure'));
       expect(data['errorMessage'], equals(reason));
-      expect(data['metadata']['connectionState'], equals('disconnected'));
+      final capturedMetadata = data['metadata'] as Map<String, dynamic>;
+      expect(capturedMetadata['connectionState'], equals('disconnected'));
     });
 
     test('should handle Firestore error gracefully', () async {
@@ -452,7 +455,8 @@ void main() {
       final captured = verify(mockDocument.set(captureAny)).captured;
       final data = captured[0] as Map<String, dynamic>;
       expect(data['errorCode'], equals('microphone_error'));
-      expect(data['metadata']['deviceType'], equals('microphone'));
+      final capturedMetadata = data['metadata'] as Map<String, dynamic>;
+      expect(capturedMetadata['deviceType'], equals('microphone'));
     });
 
     test('should include device type in metadata', () async {
@@ -467,7 +471,8 @@ void main() {
       // Assert
       final captured = verify(mockDocument.set(captureAny)).captured;
       final data = captured[0] as Map<String, dynamic>;
-      expect(data['metadata']['deviceType'], equals('camera'));
+      final capturedMetadata = data['metadata'] as Map<String, dynamic>;
+      expect(capturedMetadata['deviceType'], equals('camera'));
     });
 
     test('should handle Firestore error gracefully', () async {
@@ -526,7 +531,8 @@ void main() {
       // Assert
       final captured = verify(mockDocument.set(captureAny)).captured;
       final data = captured[0] as Map<String, dynamic>;
-      expect(data['metadata']['durationSeconds'], equals(duration));
+      final metadata = data['metadata'] as Map<String, dynamic>;
+      expect(metadata['durationSeconds'], equals(duration));
     });
 
     test('should handle call ended without duration', () async {
@@ -562,8 +568,9 @@ void main() {
       // Assert
       final captured = verify(mockDocument.set(captureAny)).captured;
       final data = captured[0] as Map<String, dynamic>;
-      expect(data['metadata']['endReason'], equals('user_hangup'));
-      expect(data['metadata']['quality'], equals('good'));
+      final capturedMetadata = data['metadata'] as Map<String, dynamic>;
+      expect(capturedMetadata['endReason'], equals('user_hangup'));
+      expect(capturedMetadata['quality'], equals('good'));
     });
 
     test('should handle Firestore error gracefully', () async {

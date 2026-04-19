@@ -26,13 +26,22 @@ import 'package:flutter/foundation.dart';
 /// Configuration for Firebase Emulators
 class IntegrationTestConfig {
   // Emulator configuration (matches firebase.json)
-  static const String _firestoreHost = 'localhost';
+  static const String _firestoreHost = String.fromEnvironment(
+    'FIREBASE_FIRESTORE_EMULATOR_HOST',
+    defaultValue: 'localhost',
+  );
   static const int _firestorePort = 8080;
 
-  static const String _authHost = 'localhost';
+  static const String _authHost = String.fromEnvironment(
+    'FIREBASE_AUTH_EMULATOR_HOST',
+    defaultValue: 'localhost',
+  );
   static const int _authPort = 9099;
 
-  static const String _functionsHost = 'localhost';
+  static const String _functionsHost = String.fromEnvironment(
+    'FIREBASE_FUNCTIONS_EMULATOR_HOST',
+    defaultValue: 'localhost',
+  );
   static const int _functionsPort = 5001;
 
   static const String _functionsRegion = 'europe-west1';
@@ -48,10 +57,6 @@ class IntegrationTestConfig {
   ///
   /// **CRITICAL**: Must be called before any Firebase operations in tests.
   ///
-  /// **IMPORTANT NOTE**: Firebase Emulators do NOT support custom database IDs.
-  /// The emulator always uses the default database ID `(default)`.
-  /// In production, we use `databaseId: 'elajtech'`, but in tests with emulators,
-  /// we must use the default database.
   static Future<void> connectToEmulators() async {
     if (_isConnected) {
       if (kDebugMode) {
@@ -70,20 +75,18 @@ class IntegrationTestConfig {
         print('🔧 [INIT] Connecting to Firebase Emulators...');
       }
 
-      // Connect Firestore to emulator
-      // CRITICAL: Must use default database with emulators
-      // Emulators do NOT support custom database IDs
-      final firestore = FirebaseFirestore.instance;
-      firestore.useFirestoreEmulator(_firestoreHost, _firestorePort);
+      // Connect Firestore to emulator using the same logical database ID
+      // that Cloud Functions use in this project.
+      FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: _databaseId,
+      ).useFirestoreEmulator(_firestoreHost, _firestorePort);
 
       if (kDebugMode) {
         print(
           '✅ [FIRESTORE] Connected to emulator: $_firestoreHost:$_firestorePort',
         );
-        print('🔧 [INIT] Firestore Database ID: (default)');
-        print(
-          '⚠️  [NOTE] Emulators use (default) database, not $_databaseId',
-        );
+        print('🔧 [INIT] Firestore Database ID: $_databaseId');
       }
 
       // Connect Auth to emulator
@@ -94,8 +97,9 @@ class IntegrationTestConfig {
       }
 
       // Connect Functions to emulator
-      final functions = FirebaseFunctions.instanceFor(region: _functionsRegion);
-      functions.useFunctionsEmulator(_functionsHost, _functionsPort);
+      FirebaseFunctions.instanceFor(
+        region: _functionsRegion,
+      ).useFunctionsEmulator(_functionsHost, _functionsPort);
 
       if (kDebugMode) {
         print(
@@ -133,8 +137,6 @@ class IntegrationTestConfig {
   /// **CRITICAL**: Always use this method to get Firestore instance in tests
   /// to ensure correct emulator configuration.
   ///
-  /// **NOTE**: Emulators use the default database `(default)`, not `elajtech`.
-  /// This is a limitation of Firebase Emulators.
   static FirebaseFirestore getFirestore() {
     if (!_isConnected) {
       throw StateError(
@@ -143,8 +145,10 @@ class IntegrationTestConfig {
       );
     }
 
-    // Return the default Firestore instance (connected to emulator)
-    return FirebaseFirestore.instance;
+    return FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: _databaseId,
+    );
   }
 
   /// Get Functions instance configured for emulator
@@ -206,7 +210,7 @@ class IntegrationTestConfig {
       if (kDebugMode) {
         print('🧹 Firestore data cleared');
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (kDebugMode) {
         print('⚠️ Error clearing Firestore data: $e');
       }
@@ -231,7 +235,7 @@ class IntegrationTestConfig {
           print('🚪 User signed out');
         }
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (kDebugMode) {
         print('⚠️ Error signing out user: $e');
       }
@@ -358,9 +362,10 @@ class IntegrationTestConfig {
   /// Returns true if emulators are accessible, false otherwise.
   static Future<bool> verifyEmulatorsRunning() async {
     try {
-      // Try to connect to Firestore emulator
-      final firestore = FirebaseFirestore.instance;
-      firestore.useFirestoreEmulator(_firestoreHost, _firestorePort);
+      final firestore = FirebaseFirestore.instanceFor(
+        app: Firebase.app(),
+        databaseId: _databaseId,
+      )..useFirestoreEmulator(_firestoreHost, _firestorePort);
 
       // Try a simple operation
       await firestore.collection('_test').limit(1).get();

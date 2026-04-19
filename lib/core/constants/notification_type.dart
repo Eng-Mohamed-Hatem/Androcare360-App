@@ -15,6 +15,21 @@ enum NotificationType {
   /// 30-minute reminder for patient
   appointmentReminderPatient('appointment_reminder_patient'),
 
+  /// Patient missed a call and can reopen appointments
+  missedCall('missed_call'),
+
+  /// Appointment was marked completed
+  appointmentCompleted('appointment_completed'),
+
+  /// Appointment was marked not completed
+  appointmentNotCompleted('appointment_not_completed'),
+
+  /// Doctor confirmation window expired
+  confirmationExpired('confirmation_expired'),
+
+  /// Patient declined incoming call
+  callDeclined('call_declined'),
+
   /// Chat message notification
   chatMessage('chat_message'),
 

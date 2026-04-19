@@ -18,14 +18,47 @@
 /// - Cancel button leaves channel and navigates back
 library;
 
+import 'package:elajtech/core/services/voip_call_service.dart';
+import 'package:elajtech/features/patient/consultation/domain/repositories/consultation_call_repository.dart';
+import 'package:elajtech/features/patient/consultation/presentation/providers/consultation_call_providers.dart';
 import 'package:elajtech/features/patient/consultation/presentation/screens/agora_video_call_screen.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../fixtures/appointment_fixtures.dart';
 import '../../helpers/widget_test_helper.dart';
+
+class _FakeConsultationCallRepository implements ConsultationCallRepository {
+  @override
+  PendingCallData? get pendingCallData => null;
+
+  @override
+  bool get isCleanupBlocked => false;
+
+  @override
+  Future<PendingCallData?> refreshPendingCall() async => null;
+
+  @override
+  Future<String?> cleanupAfterCall() async => null;
+
+  @override
+  void markAnswerAccepted() {}
+
+  @override
+  void markJoinStarted() {}
+
+  @override
+  void markJoinSucceeded() {}
+
+  @override
+  void markJoinFailed() {}
+
+  @override
+  void markCallEnded() {}
+}
 
 void main() {
   // Setup Firebase mocks before all tests
@@ -63,11 +96,18 @@ void main() {
       FirebaseAuth? firebaseAuth,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(useMaterial3: false),
-          home: AgoraVideoCallScreen(
-            appointment: appointment,
-            firebaseAuth: firebaseAuth ?? mockAuth,
+        ProviderScope(
+          overrides: [
+            consultationCallRepositoryProvider.overrideWithValue(
+              _FakeConsultationCallRepository(),
+            ),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(useMaterial3: false),
+            home: AgoraVideoCallScreen(
+              appointment: appointment,
+              firebaseAuth: firebaseAuth ?? mockAuth,
+            ),
           ),
         ),
       );

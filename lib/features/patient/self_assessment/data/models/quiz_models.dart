@@ -42,3 +42,35 @@ class QuizResultModel {
   final String advice;
   final int colorValue;
 }
+
+class AssessmentReferralContext {
+  const AssessmentReferralContext({
+    required this.referralSessionId,
+    required this.assessmentId,
+    required this.assessmentTitle,
+    required this.resultBand,
+    required this.rawScore,
+    required this.referralTargetKey,
+    required this.completedAt,
+    required this.sourceScreen,
+    this.patientId,
+    this.specializationHints = const [],
+  });
+
+  static const String maleFertilityInfertilityProstateTargetKey =
+      'male_fertility_infertility_prostate';
+
+  final String referralSessionId;
+  final String assessmentId;
+  final String assessmentTitle;
+  final String resultBand;
+  final int rawScore;
+  final String referralTargetKey;
+  final DateTime completedAt;
+  final String sourceScreen;
+  final String? patientId;
+  final List<String> specializationHints;
+
+  bool get isHighPriority => resultBand == 'high';
+  bool get isMediumPriority => resultBand == 'medium';
+}

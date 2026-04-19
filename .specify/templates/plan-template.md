@@ -11,28 +11,27 @@
 
 ## Technical Context
 
-**Language/Version**: Dart [version used in project] + Flutter [channel/version]  
-**Primary Dependencies**: Flutter SDK, Riverpod, dio, firebase_core, cloud_firestore, flutter_secure_storage, intl, [any feature-specific packages]  
-**Storage**: Firestore (`databaseId: 'elajtech'` via `FirebaseFirestore.instanceFor`), local secure storage, shared_preferences/Hive if applicable  
-**Testing**: flutter_test, mockito, integration_test, [any other testing utilities]  
-**Target Platform**: Android (min SDK), iOS (min version), possibly Web/Desktop if supported  
-**Project Type**: Flutter mobile app (AndroCare medical app) with Clean Architecture (Presentation/Domain/Data)  
-**Performance Goals**: Smooth 60 fps UI; fast screen transitions; minimal jank; responsive UX on mid-range Android devices  
-**Constraints**: Must respect Auth Safety + Firestore safety rules; low network overhead; avoid blocking UI thread; support RTL where needed  
-**Scale/Scope**: [e.g., number of screens/components affected, estimated number of new providers/use cases/repos, user volume if relevant]
+<!--
+  ACTION REQUIRED: Replace the content in this section with the technical details
+  for the project. The structure here is presented in advisory capacity to guide
+  the iteration process.
+-->
 
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [ ] **Architecture Check**: Follows Clean Architecture (Presentation/Domain/Data) and SOLID as defined in the AndroCare constitution?  
-- [ ] **State Check**: Uses Riverpod (or approved state management) correctly without leaking complex state into Widgets?  
-- [ ] **Security Check**: Complies with Auth Safety rules, Firestore Mapping rules, and uses `databaseId: 'elajtech'` per `important-rules.md`?  
-- [ ] **Data Safety**: No `!` on auth user objects, strict validation of Firestore snapshots, safe list access (no `.first` without checks)?  
-- [ ] **UX/UI Check**: Uses the AndroCare design system, handles error/loading/empty states, and applies LTR/RTL direction rules where necessary?  
-- [ ] **Testing Check**: Includes Unit + Widget tests for new logic, respects Test Persistence rule, and mocks Platform channels when needed?  
-- [ ] **Spec Kit Check**: This feature followed the full Spec Kit lifecycle (specify → clarify → plan → checklist → tasks → analyze → implement)?
+[Gates determined based on constitution file]
 
 ## Project Structure
 
@@ -48,66 +47,52 @@ specs/[###-feature]/
 └── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
 ```
 
-### Source Code (Flutter project root)
+### Source Code (repository root)
+<!--
+  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
+  for this feature. Delete unused options and expand the chosen structure with
+  real paths (e.g., apps/admin, packages/something). The delivered plan must
+  not include Option labels.
+-->
 
 ```text
-lib/
-├── core/
-│   ├── routing/
-│   ├── theming/
-│   ├── widgets/            # Shared reusable UI components
-│   ├── errors/             # Failure models, exceptions
-│   ├── utils/              # Helpers, formatters, etc.
-│   └── services/           # Cross-cutting services (e.g., analytics, logging)
-│
-├── features/
-│   ├── auth/               # Authentication feature (login, OTP, logout, etc.)
-│   │   ├── presentation/
-│   │   │   ├── pages/
-│   │   │   ├── widgets/
-│   │   │   └── controllers/ or viewmodels/providers
-│   │   ├── domain/
-│   │   │   ├── entities/
-│   │   │   ├── usecases/
-│   │   │   └── repositories/ (interfaces)
-│   │   └── data/
-│   │       ├── models/
-│   │       ├── datasources/
-│   │       └── repositories/ (implementations)
-│   │
-│   ├── appointments/       # Appointment booking & management feature
-│   │   ├── presentation/
-│   │   ├── domain/
-│   │   └── data/
-│   │
-│   └── [feature-name]/
-│       ├── presentation/
-│       ├── domain/
-│       └── data/
-│
-└── main.dart               # App entry point
+# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
 
-test/
-├── unit/
-│   ├── features/
-│   │   ├── auth/
-│   │   ├── appointments/
-│   │   └── [feature-name]/
-│   └── core/
-├── widget/
-│   └── features/
-│       ├── auth/
-│       ├── appointments/
-│       └── [feature-name]/
-└── integration/
-    └── [flows or end-to-end scenarios]
+tests/
+├── contract/
+├── integration/
+└── unit/
 
+# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
 
-**Structure Decision**:  
-[Describe where this feature will live, e.g.:  
-- lib/features/[feature-name]/ (presentation/domain/data)  
-- test/unit/features/[feature-name]/ and test/widget/features/[feature-name]/  
-Mention if any new top-level modules or packages are introduced.]
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── tests/
+
+# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure: feature modules, UI flows, platform tests]
+```
+
+**Structure Decision**: [Document the selected structure and reference the real
+directories captured above]
 
 ## Complexity Tracking
 

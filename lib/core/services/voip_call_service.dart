@@ -8,20 +8,27 @@ import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:elajtech/core/errors/exceptions.dart';
 import 'package:elajtech/core/services/call_monitoring_service.dart';
+import 'package:elajtech/core/services/video_consultation_service.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class VoIPCallService {
-  VoIPCallService(this._callMonitoring);
+  VoIPCallService(this._callMonitoring, this._firestore);
+
+  static const Duration _answerFlowGuardDuration = Duration(seconds: 40);
 
   /// Call monitoring service for logging
   final CallMonitoringService _callMonitoring;
+
+  /// Firestore instance for persisting VoIP push token
+  final FirebaseFirestore _firestore;
 
   /// UUID generator for unique call IDs
   final Uuid _uuid = const Uuid();
@@ -33,6 +40,10 @@ class VoIPCallService {
   /// Stream for listening to call events
   Stream<VoIPCallEvent> get callEventStream => _callEventController.stream;
 
+  /// Subscription to CallKit/ConnectionService events.
+  /// Stored to enable idempotent initialize() and proper disposal.
+  StreamSubscription<CallEvent?>? _callKitSubscription;
+
   /// Current active call ID
   String? _currentCallId;
   String? get currentCallId => _currentCallId;
@@ -40,6 +51,158 @@ class VoIPCallService {
   /// Pending call data (for use when answering)
   PendingCallData? _pendingCallData;
   PendingCallData? get pendingCallData => _pendingCallData;
+
+  String? _lastAcceptedCallId;
+
+  bool _isAnswerAccepted = false;
+  bool _isJoinInProgress = false;
+  DateTime? _cleanupBlockedUntil;
+
+  /// True while the native CallKit/ConnectionService ring screen is visible
+  /// and the patient has not yet accepted or declined.
+  /// Used to guard `cleanupAfterCall()` from dismissing a ringing call.
+  bool _isIncomingCallRinging = false;
+
+  /// True once the patient has successfully joined the Agora channel
+  /// and the call is actively in progress.
+  /// Set by [markJoinSucceeded], cleared by [markCallEnded].
+  /// Guards `cleanupAfterCall()` from running while the user is mid-call.
+  bool _isCallActive = false;
+
+  /// True when the Agora channel has been successfully joined
+  /// and the call is actively in progress.
+  @visibleForTesting
+  bool get isCallActive => _isCallActive;
+
+  bool get isCleanupBlocked {
+    if (!_isAnswerAccepted && !_isJoinInProgress) {
+      return false;
+    }
+
+    final blockedUntil = _cleanupBlockedUntil;
+    if (blockedUntil == null) {
+      return _isAnswerAccepted || _isJoinInProgress;
+    }
+
+    return DateTime.now().isBefore(blockedUntil);
+  }
+
+  @visibleForTesting
+  int? parseAgoraUid(dynamic rawValue) {
+    if (rawValue is int) {
+      return rawValue;
+    }
+
+    if (rawValue is String) {
+      return int.tryParse(rawValue);
+    }
+
+    return null;
+  }
+
+  Future<PendingCallData?> refreshPendingCallData() async {
+    await _checkActiveCallsOnStartup();
+    return _pendingCallData;
+  }
+
+  Future<bool> hasActiveCalls() async {
+    try {
+      final activeCalls = await FlutterCallkitIncoming.activeCalls();
+      return activeCalls != null && (activeCalls as List).isNotEmpty;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ [VoIPCallService] hasActiveCalls() failed: $e');
+      }
+      return false;
+    }
+  }
+
+  Future<void> _endNativeCallsSafely({
+    required String debugContext,
+    String? fallbackCallId,
+  }) async {
+    try {
+      await FlutterCallkitIncoming.endAllCalls();
+    } on Object catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+          '⚠️ [VoIPCallService] $debugContext endAllCalls failed: $error',
+        );
+      }
+
+      final callId =
+          fallbackCallId ?? _currentCallId ?? _pendingCallData?.callId;
+      if (callId == null || callId.isEmpty) {
+        return;
+      }
+
+      try {
+        await FlutterCallkitIncoming.endCall(callId);
+      } on Object catch (fallbackError) {
+        if (kDebugMode) {
+          debugPrint(
+            '⚠️ [VoIPCallService] $debugContext endCall fallback also failed: $fallbackError',
+          );
+        }
+      }
+    }
+  }
+
+  void markAnswerAccepted() {
+    _isAnswerAccepted = true;
+    _isJoinInProgress = true;
+    _cleanupBlockedUntil = DateTime.now().add(_answerFlowGuardDuration);
+  }
+
+  void markJoinStarted() {
+    _isAnswerAccepted = true;
+    _isJoinInProgress = true;
+    _cleanupBlockedUntil ??= DateTime.now().add(_answerFlowGuardDuration);
+    _logJoinEvent('join_started', null);
+  }
+
+  void markJoinSucceeded() {
+    _logJoinEvent('join_success', null);
+    _clearAnswerFlowBlock();
+    _isCallActive = true;
+  }
+
+  void markJoinFailed() {
+    _logJoinEvent('join_failure', 'agora_join_failed');
+    _clearAnswerFlowBlock();
+  }
+
+  void _logJoinEvent(String eventType, String? errorCode) {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      final appointmentId = _pendingCallData?.appointmentId;
+      if (userId != null && appointmentId != null && appointmentId.isNotEmpty) {
+        unawaited(
+          _callMonitoring.logStructuredEvent(
+            appointmentId: appointmentId,
+            userId: userId,
+            eventType: eventType,
+            errorCode: errorCode,
+            metadata: {'channelName': _pendingCallData?.agoraChannelName},
+          ),
+        );
+      }
+    } on Exception {
+      // Firebase not initialized in test environment — skip logging
+    }
+  }
+
+  void markCallEnded() {
+    _isCallActive = false;
+    _clearAnswerFlowBlock();
+  }
+
+  void _clearAnswerFlowBlock() {
+    _isAnswerAccepted = false;
+    _isJoinInProgress = false;
+    _cleanupBlockedUntil = null;
+    _lastAcceptedCallId = null;
+  }
 
   /// Initialize VoIP Call Service
   ///
@@ -62,8 +225,10 @@ class VoIPCallService {
         debugPrint('📞 [VoIPCallService] Initializing VoIP Call Service...');
       }
 
-      // Listen to CallKit events
-      FlutterCallkitIncoming.onEvent.listen(_handleCallKitEvent);
+      // Listen to CallKit events — guard against double-initialization
+      _callKitSubscription ??= FlutterCallkitIncoming.onEvent.listen(
+        _handleCallKitEvent,
+      );
 
       // ✅ Cold Start: فحص المكالمات النشطة عند بدء التطبيق
       await _checkActiveCallsOnStartup();
@@ -134,17 +299,24 @@ class VoIPCallService {
       if (lastCall == null) return;
 
       if (kDebugMode) {
-        debugPrint('📞 [VoIPCallService] Last active call: $lastCall');
+        debugPrint(
+          '📞 [VoIPCallService] Last active call id: ${lastCall['id']}',
+        );
       }
 
       final extra = lastCall['extra'] as Map<dynamic, dynamic>?;
-      final agoraToken = extra?['agoraToken'] as String?;
+      // agoraToken is intentionally not stored in extra (security) —
+      // cold-start calls restore call metadata only; token will be null.
       final appointmentId = extra?['appointmentId'] as String? ?? '';
+      final channelName =
+          extra?['channelName'] as String? ??
+          extra?['agoraChannelName'] as String?;
+      final agoraUid = parseAgoraUid(extra?['agoraUid']);
 
-      if (agoraToken != null && agoraToken.isNotEmpty) {
+      if (appointmentId.isNotEmpty) {
         if (kDebugMode) {
           debugPrint(
-            '📞 [VoIPCallService] Found pending call with Agora token',
+            '📞 [VoIPCallService] Found pending call for appointment: $appointmentId',
           );
         }
 
@@ -152,14 +324,14 @@ class VoIPCallService {
           callId: lastCall['id'] as String? ?? _uuid.v4(),
           appointmentId: appointmentId,
           callerName: lastCall['nameCaller'] as String? ?? 'طبيب',
-          agoraToken: extra?['agoraToken'] as String?,
-          agoraChannelName: extra?['agoraChannelName'] as String?,
-          agoraUid: extra?['agoraUid'] as int?,
+          // agoraToken intentionally omitted — not stored in extra for security
+          agoraChannelName: channelName,
+          agoraUid: agoraUid,
         );
 
         if (kDebugMode) {
           debugPrint(
-            '✅ [VoIPCallService] Restored pending call data for cold start',
+            '✅ [VoIPCallService] Restored pending call metadata for cold start',
           );
         }
       }
@@ -221,7 +393,18 @@ class VoIPCallService {
         // بدأت المكالمة
         debugPrint('📞 Call started');
       case Event.actionDidUpdateDevicePushTokenVoip:
+        final body = event.body as Map<dynamic, dynamic>?;
+        final voipToken = body?['deviceTokenVoIP'] as String?;
+        if (voipToken != null && voipToken.isNotEmpty) {
+          unawaited(_saveVoipToken(voipToken));
+        }
       case Event.actionCallIncoming:
+        // Native layer confirmed the ring screen is displayed — no Dart action needed.
+        if (kDebugMode) {
+          debugPrint(
+            '📞 [VoIPCallService] Incoming call UI confirmed by native layer',
+          );
+        }
       case Event.actionCallConnected:
       case Event.actionCallCallback:
       case Event.actionCallToggleHold:
@@ -230,7 +413,7 @@ class VoIPCallService {
       case Event.actionCallToggleGroup:
       case Event.actionCallToggleAudioSession:
       case Event.actionCallCustom:
-        debugPrint('📞 Unhandled event: ${event.event}');
+        if (kDebugMode) debugPrint('📞 Unhandled event: ${event.event}');
     }
   }
 
@@ -281,6 +464,17 @@ class VoIPCallService {
         debugPrint('📞 [VoIPCallService] Appointment ID: $appointmentId');
       }
 
+      // Clear any stale calls from previous sessions before showing new ring UI
+      await _endNativeCallsSafely(
+        debugContext: 'showIncomingCall pre-clear',
+        fallbackCallId: _currentCallId,
+      );
+      if (kDebugMode) {
+        debugPrint(
+          '🧹 [VoIPCallService] Cleared stale calls before new incoming call',
+        );
+      }
+
       // Generate unique call ID
       final callId = _uuid.v4();
       _currentCallId = callId;
@@ -294,6 +488,8 @@ class VoIPCallService {
         agoraChannelName: agoraChannelName,
         agoraUid: agoraUid,
       );
+      _clearAnswerFlowBlock();
+      _isIncomingCallRinging = true;
 
       // Configure call parameters
       final params = CallKitParams(
@@ -314,9 +510,11 @@ class VoIPCallService {
         duration: 60000, // 60 seconds ring timeout
         extra: <String, dynamic>{
           'appointmentId': appointmentId,
-          'agoraToken': agoraToken,
+          'channelName': agoraChannelName,
+          // agoraToken intentionally omitted — stored in _pendingCallData only
           'agoraChannelName': agoraChannelName,
           'agoraUid': agoraUid,
+          'callerName': callerName,
         },
         headers: <String, dynamic>{},
         android: const AndroidParams(
@@ -354,21 +552,18 @@ class VoIPCallService {
       // Show incoming call UI
       await FlutterCallkitIncoming.showCallkitIncoming(params);
 
-      // ✅ NEW: Log call display to Firestore
+      // Log incoming_call_received for background/terminated paths
+      // (foreground path is logged by FCMService before showIncomingCall is called)
       final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId != null) {
-        debugPrint(
-          '📱 Displaying incoming call UI for appointment: $appointmentId',
-        );
-
+      if (userId != null && appointmentId.isNotEmpty) {
         // Intentionally not awaited - logging happens in background
         unawaited(
-          _callMonitoring.logCallSuccess(
+          _callMonitoring.logStructuredEvent(
             appointmentId: appointmentId,
             userId: userId,
-            channelName: 'voip_call_display',
+            eventType: 'incoming_call_received',
             metadata: {
-              'eventType': 'voip_call_displayed',
+              'appState': 'background_or_terminated',
               'callerName': callerName,
               'callId': callId,
             },
@@ -452,6 +647,14 @@ class VoIPCallService {
       return;
     }
 
+    if (_lastAcceptedCallId == callId) {
+      debugPrint(
+        '⚠️ [VoIPCallService] Duplicate actionCallAccept ignored for callId=$callId',
+      );
+      return;
+    }
+    _lastAcceptedCallId = callId;
+
     // ✅ محاولة الحصول على بيانات المكالمة
     var callData = _pendingCallData;
 
@@ -469,14 +672,22 @@ class VoIPCallService {
 
       if (extra != null) {
         final agoraToken = extra['agoraToken'] as String?;
-        final agoraChannelName = extra['agoraChannelName'] as String?;
-        final agoraUid = extra['agoraUid'] as int?;
+        final agoraChannelName =
+            extra['channelName'] as String? ??
+            extra['agoraChannelName'] as String?;
+        final agoraUid = parseAgoraUid(extra['agoraUid']);
         final appointmentId = extra['appointmentId'] as String? ?? '';
-        final callerName = body['nameCaller'] as String? ?? 'طبيب';
+        final callerName =
+            extra['callerName'] as String? ??
+            body['nameCaller'] as String? ??
+            'طبيب';
 
-        debugPrint('🔗 Agora token from extra: $agoraToken');
+        debugPrint('🔗 Agora token from extra: ${agoraToken != null}');
 
-        if (agoraToken != null && agoraChannelName != null) {
+        // Restore callData even when agoraToken is null (security: token is
+        // intentionally excluded from extra). patientJoinCall() will fetch a
+        // fresh token from the server in the join flow.
+        if (agoraChannelName != null) {
           callData = PendingCallData(
             callId: callId,
             appointmentId: appointmentId,
@@ -484,30 +695,89 @@ class VoIPCallService {
             agoraToken: agoraToken,
             agoraChannelName: agoraChannelName,
             agoraUid: agoraUid,
+            acceptedFromCallKit: true,
           );
           _pendingCallData = callData;
         }
       }
     }
 
-    // ✅ NEW: Log call accepted by user
+    _isIncomingCallRinging = false;
+    markAnswerAccepted();
+
+    if (callData != null && !callData.acceptedFromCallKit) {
+      callData = PendingCallData(
+        callId: callData.callId,
+        appointmentId: callData.appointmentId,
+        callerName: callData.callerName,
+        agoraToken: callData.agoraToken,
+        agoraChannelName: callData.agoraChannelName,
+        agoraUid: callData.agoraUid,
+        acceptedFromCallKit: true,
+      );
+      _pendingCallData = callData;
+    }
+
+    debugPrint(
+      '📞 [VoIPCallService] answer accepted'
+      ' | callId=$callId'
+      ' | appointmentId=${callData?.appointmentId}'
+      ' | channelName=${callData?.agoraChannelName}'
+      ' | hasToken=${callData?.agoraToken != null}'
+      ' | hasUid=${callData?.agoraUid != null}',
+    );
+
     final userId = FirebaseAuth.instance.currentUser?.uid;
     final appointmentId = callData?.appointmentId;
     if (userId != null && appointmentId != null && appointmentId.isNotEmpty) {
-      debugPrint('✅ Call accepted by user');
-
-      // Intentionally not awaited - logging happens in background
+      // Notify server immediately so the join grace period clock starts.
+      // This prevents the doctor from ending the call before the patient joins.
       unawaited(
-        _callMonitoring.logCallSuccess(
+        VideoConsultationService()
+            .notifyPatientAnswered(appointmentId: appointmentId)
+            .catchError((Object error, StackTrace stackTrace) {
+              debugPrint(
+                '❌ [VoIPCallService] notifyPatientAnswered from accept handler failed'
+                ' | appointmentId=$appointmentId | error=$error',
+              );
+            }),
+      );
+      debugPrint(
+        '📞 [VoIPCallService] notifyPatientAnswered dispatched from accept handler'
+        ' | appointmentId=$appointmentId'
+        ' | userId=$userId',
+      );
+
+      // Log answer_accepted — canonical event
+      unawaited(
+        _callMonitoring.logStructuredEvent(
           appointmentId: appointmentId,
           userId: userId,
-          channelName: 'voip_call_accepted',
+          eventType: 'answer_accepted',
           metadata: {
-            'eventType': 'voip_call_accepted',
             'callId': callId,
+            'restoredFromColdStart': _pendingCallData == null
+                ? 'true'
+                : 'false',
           },
         ),
       );
+
+      // Log active_call_restored if credentials came from cold-start extra
+      if (_pendingCallData?.callId == callId &&
+          callData?.agoraChannelName != null) {
+        unawaited(
+          _callMonitoring.logStructuredEvent(
+            appointmentId: appointmentId,
+            userId: userId,
+            eventType: 'active_call_restored',
+            metadata: {
+              'callId': callId,
+              'channelName': callData!.agoraChannelName,
+            },
+          ),
+        );
+      }
     }
 
     // Emit event
@@ -530,6 +800,8 @@ class VoIPCallService {
   ///
   /// Emits [VoIPCallEventType.declined] event.
   void _onCallDeclined(CallEvent event) {
+    _isIncomingCallRinging = false;
+    _isCallActive = false;
     debugPrint('❌ Call declined');
 
     final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
@@ -563,6 +835,7 @@ class VoIPCallService {
     }
 
     // Clear pending data
+    _clearAnswerFlowBlock();
     _pendingCallData = null;
     _currentCallId = null;
 
@@ -580,14 +853,32 @@ class VoIPCallService {
   /// Called when an active call ends.
   /// Cleans up call state and emits [VoIPCallEventType.ended] event.
   void _onCallEnded(CallEvent event) {
+    _isIncomingCallRinging = false;
+    _isCallActive = false;
     debugPrint('📴 Call ended');
 
     final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
     final callId = body['id'] as String?;
 
-    // ملاحظة: الخروج من الاجتماع يتم عبر تطبيق Zoom نفسه
+    // Log callended — canonical event
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final appointmentId = _pendingCallData?.appointmentId;
+    if (userId != null && appointmentId != null && appointmentId.isNotEmpty) {
+      unawaited(
+        _callMonitoring.logStructuredEvent(
+          appointmentId: appointmentId,
+          userId: userId,
+          eventType: 'callended',
+          metadata: {
+            'callId': callId ?? '',
+            'endedBy': 'local_callkit_event',
+          },
+        ),
+      );
+    }
 
     // Clear pending data
+    _clearAnswerFlowBlock();
     _pendingCallData = null;
     _currentCallId = null;
 
@@ -607,6 +898,8 @@ class VoIPCallService {
   ///
   /// Emits [VoIPCallEventType.missed] event.
   void _onCallTimeout(CallEvent event) {
+    _isIncomingCallRinging = false;
+    _isCallActive = false;
     debugPrint('⏰ Call timeout - missed call');
 
     final body = Map<String, dynamic>.from(event.body as Map<dynamic, dynamic>);
@@ -620,6 +913,7 @@ class VoIPCallService {
     }
 
     // Clear pending data
+    _clearAnswerFlowBlock();
     _pendingCallData = null;
     _currentCallId = null;
 
@@ -692,6 +986,17 @@ class VoIPCallService {
   ///
   /// Errors are logged but not thrown as this is a background notification.
   Future<void> _notifyServerCallDeclined(String appointmentId) async {
+    // Guard: Cloud Function requires authentication. On cold start the patient's
+    // app may fire the decline event before Firebase Auth restores the session.
+    if (FirebaseAuth.instance.currentUser == null) {
+      if (kDebugMode) {
+        debugPrint(
+          '⚠️ [VoIPCallService] _notifyServerCallDeclined skipped: not authenticated'
+          ' | appointmentId=$appointmentId',
+        );
+      }
+      return;
+    }
     try {
       if (kDebugMode) {
         debugPrint(
@@ -746,6 +1051,10 @@ class VoIPCallService {
   /// This method should be called when returning to the app after a call
   /// to ensure CallKit notifications are properly dismissed.
   ///
+  /// After calling this, callers should also invoke
+  /// `FCMService.resetCallDeduplication()` so that a doctor retry call to the
+  /// same appointment is not silently dropped by the duplicate-push guard.
+  ///
   /// Returns: Appointment ID of the active call, or null if none
   ///
   /// Example:
@@ -757,6 +1066,55 @@ class VoIPCallService {
   /// ```
   Future<String?> cleanupAfterCall() async {
     try {
+      if (_isIncomingCallRinging) {
+        if (kDebugMode) {
+          debugPrint(
+            '⏳ [VoIPCallService] Skipping cleanup: incoming call is still ringing.',
+          );
+        }
+        return null;
+      }
+
+      if (_isCallActive) {
+        if (kDebugMode) {
+          debugPrint(
+            '⏳ [VoIPCallService] Skipping cleanup: Agora call is currently active.',
+          );
+        }
+        return null;
+      }
+
+      if (isCleanupBlocked) {
+        if (kDebugMode) {
+          debugPrint(
+            '⏳ [VoIPCallService] Skipping cleanup because answer/join flow is still active.',
+          );
+        }
+        return null;
+      }
+
+      // NEW: Check native layer — background isolate may have shown a ring via
+      // bgVoipService without the main singleton knowing (_isIncomingCallRinging
+      // was set on bgVoipService's instance, not ours).
+      try {
+        final nativeCalls = await FlutterCallkitIncoming.activeCalls();
+        if (nativeCalls != null && (nativeCalls as List).isNotEmpty) {
+          if (kDebugMode) {
+            debugPrint(
+              '⏳ [VoIPCallService] Skipping cleanup: native layer has active call(s).',
+            );
+          }
+          // Sync _pendingCallData if main singleton missed showIncomingCall()
+          if (_pendingCallData == null) await _checkActiveCallsOnStartup();
+          _isIncomingCallRinging = true; // keep guards consistent
+          return null;
+        }
+      } on Exception catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ [VoIPCallService] activeCalls() check failed: $e');
+        }
+      }
+
       if (kDebugMode) {
         debugPrint(
           '🧹 [VoIPCallService] Cleaning up VoIP calls and notifications...',
@@ -766,10 +1124,27 @@ class VoIPCallService {
       // الحصول على معرف الموعد قبل مسح البيانات
       final appointmentId = _pendingCallData?.appointmentId;
 
+      // Log cleanup_triggered — canonical event
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null && appointmentId != null && appointmentId.isNotEmpty) {
+        unawaited(
+          _callMonitoring.logStructuredEvent(
+            appointmentId: appointmentId,
+            userId: userId,
+            eventType: 'cleanup_triggered',
+            metadata: {'reason': 'lifecycle_resumed'},
+          ),
+        );
+      }
+
       // إنهاء جميع المكالمات في CallKit لإزالة الإشعار
-      await FlutterCallkitIncoming.endAllCalls();
+      await _endNativeCallsSafely(
+        debugContext: 'cleanupAfterCall',
+        fallbackCallId: _currentCallId,
+      );
 
       // مسح البيانات المحلية
+      _clearAnswerFlowBlock();
       _pendingCallData = null;
       _currentCallId = null;
 
@@ -815,13 +1190,15 @@ class VoIPCallService {
   /// ```
   Future<void> endCall() async {
     try {
-      if (_currentCallId != null) {
-        await FlutterCallkitIncoming.endCall(_currentCallId!);
-      }
+      await _endNativeCallsSafely(
+        debugContext: 'endCall',
+        fallbackCallId: _currentCallId,
+      );
 
       // ملاحظة: الخروج من الاجتماع يتم عبر تطبيق Zoom نفسه
 
       // Clear state
+      _clearAnswerFlowBlock();
       _pendingCallData = null;
       _currentCallId = null;
 
@@ -864,9 +1241,13 @@ class VoIPCallService {
   /// ```
   Future<void> endAllCalls() async {
     try {
-      await FlutterCallkitIncoming.endAllCalls();
+      await _endNativeCallsSafely(
+        debugContext: 'endAllCalls',
+        fallbackCallId: _currentCallId,
+      );
       // ملاحظة: الخروج من الاجتماع يتم عبر تطبيق Zoom نفسه
 
+      _clearAnswerFlowBlock();
       _pendingCallData = null;
       _currentCallId = null;
 
@@ -900,11 +1281,34 @@ class VoIPCallService {
 
   /// Dispose of service resources
   ///
-  /// Closes the call event stream controller.
+  /// Closes the call event stream controller and cancels CallKit subscription.
   /// Should be called when the service is no longer needed.
   void dispose() {
+    unawaited(_callKitSubscription?.cancel());
+    _callKitSubscription = null;
     // Intentionally not awaited - cleanup happens in background
     unawaited(_callEventController.close());
+  }
+
+  /// Persists the iOS VoIP push token to Firestore so Cloud Functions can
+  /// deliver direct APNs VoIP pushes to the patient's device.
+  Future<void> _saveVoipToken(String token) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
+      await _firestore.collection('users').doc(userId).set(
+        {
+          'voipToken': token,
+          'voipTokenUpdatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      if (kDebugMode) {
+        debugPrint('[VoIPCallService] VoIP token saved for $userId');
+      }
+    } on Exception catch (e) {
+      debugPrint('[VoIPCallService] Failed to save VoIP token: $e');
+    }
   }
 }
 
@@ -931,6 +1335,7 @@ class PendingCallData {
     this.agoraToken,
     this.agoraChannelName,
     this.agoraUid,
+    this.acceptedFromCallKit = false,
   });
 
   /// Unique call identifier
@@ -950,6 +1355,9 @@ class PendingCallData {
 
   /// Agora user ID
   final int? agoraUid;
+
+  /// Indicates the patient accepted from native CallKit/ConnectionService.
+  final bool acceptedFromCallKit;
 }
 
 /// VoIP call event types

@@ -4,84 +4,36 @@ import 'package:elajtech/core/constants/app_strings.dart';
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/core/services/background_service.dart';
 import 'package:elajtech/core/services/cloud_functions_version_service.dart';
+import 'package:elajtech/core/services/call_monitoring_service.dart';
 import 'package:elajtech/core/services/fcm_service.dart';
 import 'package:elajtech/core/services/notification_service.dart';
 import 'package:elajtech/core/services/encryption_service.dart';
 import 'package:elajtech/core/services/connection_service.dart';
+import 'package:elajtech/core/services/appointment_completion_service.dart';
+import 'package:elajtech/core/services/video_consultation_service.dart';
 import 'package:elajtech/core/services/voip_call_service.dart';
 import 'package:elajtech/core/services/permission_service.dart';
 import 'package:elajtech/core/theme/light_theme.dart';
 import 'package:elajtech/features/auth/presentation/screens/login_screen.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
-import 'package:elajtech/shared/providers/appointments_provider.dart';
 import 'package:elajtech/features/doctor/dashboard/presentation/screens/doctor_dashboard_screen.dart';
 import 'package:elajtech/features/patient/navigation/presentation/screens/patient_main_screen.dart';
+import 'package:elajtech/features/patient/consultation/presentation/screens/agora_video_call_screen.dart';
+import 'package:elajtech/features/patient/consultation/presentation/screens/incoming_call_screen.dart';
+import 'package:elajtech/features/patient/consultation/presentation/providers/consultation_call_providers.dart';
+import 'package:elajtech/features/patient/navigation/presentation/helpers/patient_navigation_helper.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'package:elajtech/firebase_options.dart';
+import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:elajtech/shared/models/user_model.dart';
-// import 'package:firebase_app_check/firebase_app_check.dart'; // Temporarily disabled
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-
-// ============================================
-// 🔑 مؤقت: استخراج SHA-256 Fingerprint لـ Zoom
-// احذف هذا الكود بعد الحصول على المفتاح
-// ============================================
-Future<void> _printSHA256Fingerprint() async {
-  if (!kDebugMode) return;
-  if (defaultTargetPlatform != TargetPlatform.android) {
-    debugPrint('⚠️ SHA-256 extraction only works on Android');
-    return;
-  }
-
-  try {
-    debugPrint(r'\n🔑 ===== SHA-256 FINGERPRINT EXTRACTION =====\n');
-
-    // استخدام MethodChannel للحصول على الـ signature من Android
-    const platform = MethodChannel('com.elajtech.androcare/signature');
-
-    try {
-      final sha256 =
-          await platform.invokeMethod<String>('getSHA256') ??
-          'ERROR: null response';
-      debugPrint(
-        '╔══════════════════════════════════════════════════════════════════╗',
-      );
-      debugPrint(
-        '║                    SHA-256 FINGERPRINT                           ║',
-      );
-      debugPrint(
-        '╠══════════════════════════════════════════════════════════════════╣',
-      );
-      debugPrint('║ $sha256');
-      debugPrint(
-        '╚══════════════════════════════════════════════════════════════════╝',
-      );
-      debugPrint(
-        r'\n📋 Copy the above SHA-256 and paste it in Zoom Marketplace\n',
-      );
-    } on PlatformException catch (e) {
-      debugPrint('❌ PlatformException: ${e.message}');
-      debugPrint('💡 Fallback: Getting package signature info...');
-
-      // Fallback: طباعة معلومات مساعدة
-      debugPrint(r'\n📱 To get SHA-256 manually, run in PowerShell:');
-      debugPrint(
-        r'   keytool -list -v -keystore "$env:USERPROFILE\.android\debug.keystore" -alias androiddebugkey -storepass android',
-      );
-    }
-
-    debugPrint(r'\n🔑 ===== END SHA-256 EXTRACTION =====\n');
-  } on Exception catch (e) {
-    debugPrint('❌ Error extracting SHA-256: $e');
-  }
-}
 
 /// Check if running on a platform that supports Firebase
 bool _isFirebaseSupported() {
@@ -110,20 +62,10 @@ Future<void> _testFirestoreConnection() async {
     debugPrint('\n🔍 بدء اختبار اتصال Firestore...');
     final firestore = getIt<FirebaseFirestore>();
 
-    // اختبار قراءة بسيط
-    final testQuery = await firestore
-        .collection('test')
-        .limit(1)
-        .get(const GetOptions(source: Source.server))
-        .timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => throw Exception('انتهت مهلة الاتصال'),
-        );
-
     debugPrint('✅ Firestore connection test PASSED');
     debugPrint('   📊 Database ID: elajtech');
-    debugPrint('   📄 Query successful: ${testQuery.docs.length} document(s)');
-    debugPrint('   🌐 Source: Server (live connection)');
+    debugPrint('   🧩 Instance hash: ${firestore.hashCode}');
+    debugPrint('   🌐 Injected instance resolved successfully');
   } on Exception catch (e) {
     debugPrint('⚠️ Firestore connection test WARNING: $e');
     // لا نوقف التطبيق، فقط تحذير
@@ -133,11 +75,21 @@ Future<void> _testFirestoreConnection() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  debugPrint('\n🚀 ===== Elajtech App Initialization Started =====\n');
+  await SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
 
-  // 🔑 مؤقت: طباعة SHA-256 للـ Zoom Marketplace
-  // احذف هذا السطر بعد الحصول على المفتاح
-  await _printSHA256Fingerprint();
+  debugPrint('\n🚀 ===== Elajtech App Initialization Started =====\n');
 
   // Initialize Firebase only on supported platforms (Android, iOS, Web)
   if (_isFirebaseSupported()) {
@@ -154,84 +106,6 @@ void main() async {
       debugPrint('   🆔 Project ID: ${app.options.projectId}');
       debugPrint('   🌍 Platform: $defaultTargetPlatform');
 
-      // ✅ تفعيل Firebase App Check للحماية من الطلبات غير المصرح بها
-      // في وضع Debug: نستخدم Debug Provider للسماح بالاختبار
-      // في وضع Release: نستخدم Play Integrity للحماية الكاملة
-
-      // ⚠️ TEMPORARILY DISABLED - App Check تم تعطيله مؤقتاً
-      /*
-      try {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          await FirebaseAppCheck.instance.activate(
-            androidProvider: kDebugMode
-                ? AndroidProvider.debug
-                : AndroidProvider.playIntegrity,
-          );
-
-          if (kDebugMode) {
-            debugPrint(
-              '✅ Firebase App Check activated (DEBUG MODE - Android)',
-            );
-
-            // 🔑 طباعة الـ Debug Token بشكل صريح لتسجيله في Firebase Console
-            try {
-              final appCheckToken = await FirebaseAppCheck.instance.getToken(
-                true,
-              );
-              print('');
-              print(
-                '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-              );
-              print(
-                '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-              );
-              print('YOUR FIREBASE DEBUG TOKEN IS:');
-              print('$appCheckToken');
-              print(
-                '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-              );
-              print(
-                '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-              );
-              print('');
-              print('📌 خطوات التسجيل:');
-              print('   1. افتح Firebase Console -> App Check');
-              print('   2. اختر التطبيق -> Manage debug tokens');
-              print('   3. الصق التوكن أعلاه');
-              print('');
-            } on Exception catch (tokenError) {
-              debugPrint('⚠️ Could not get App Check token: $tokenError');
-            }
-
-            // 🔑 نسخة احتياطية: طباعة التوكن بعد 3 ثوانٍ
-            Future<void>.delayed(const Duration(seconds: 3), () async {
-              try {
-                final delayedToken = await FirebaseAppCheck.instance.getToken(
-                  true,
-                );
-                print('');
-                print('💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎');
-                print('💎 SUCCESS! YOUR DEBUG TOKEN:');
-                print('💎 $delayedToken');
-                print('💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎💎');
-                print('');
-              } on Exception catch (e) {
-                print('⚠️ Delayed Token Fetch Failed: $e');
-              }
-            });
-          } else {
-            debugPrint(
-              '✅ Firebase App Check activated (Play Integrity - Android)',
-            );
-          }
-        } else {
-          debugPrint('ℹ️ App Check skipped - not on Android');
-        }
-      } on Exception catch (appCheckError) {
-        debugPrint('⚠️ App Check activation warning: $appCheckError');
-        // Continue even if App Check fails (for development)
-      }
-      */
       debugPrint('ℹ️ App Check is DISABLED (temporarily)');
     } on Exception catch (e, stackTrace) {
       debugPrint('❌ Firebase initialization error: $e');
@@ -311,37 +185,6 @@ void main() async {
     final fcmService = getIt<FCMService>();
     await fcmService.initialize();
     debugPrint('✅ FCM Service initialized');
-
-    // 📞 إضافة FCM Handler للمكالمات الواردة
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('📨 FCM Message received: ${message.data}');
-
-      // التحقق من نوع الرسالة
-      if (message.data['type'] == 'incoming_call') {
-        debugPrint('📞 Incoming VoIP call detected');
-
-        // استخراج البيانات مع type casting صحيح
-        final doctorName = message.data['doctorName']?.toString() ?? 'طبيب';
-        final appointmentId = message.data['appointmentId']?.toString() ?? '';
-        final agoraToken = message.data['agoraToken']?.toString();
-        final agoraChannelName = message.data['agoraChannelName']?.toString();
-        final agoraUidStr = message.data['agoraUid']?.toString() ?? '0';
-        final agoraUid = int.tryParse(agoraUidStr) ?? 0;
-
-        // عرض شاشة المكالمة الواردة
-        // Intentionally not awaited - FCM message handler runs in background
-        unawaited(
-          getIt<VoIPCallService>().showIncomingCall(
-            callerName: doctorName,
-            callerAvatar: '', // لا يوجد صورة في FCM data
-            appointmentId: appointmentId,
-            agoraToken: agoraToken,
-            agoraChannelName: agoraChannelName,
-            agoraUid: agoraUid,
-          ),
-        );
-      }
-    });
   } on Exception catch (e) {
     debugPrint('❌ Failed to initialize FCM Service: $e');
   }
@@ -470,7 +313,13 @@ class MyApp extends ConsumerWidget {
 /// يتحقق من حالة المستخدم قبل عرض الواجهة
 /// ويتعامل مع المكالمات المعلقة عند فتح التطبيق من الإشعار
 class AuthWrapper extends ConsumerStatefulWidget {
-  const AuthWrapper({super.key});
+  const AuthWrapper({super.key, this.completeAppointment});
+
+  final Future<CompletionResult> Function({
+    required String appointmentId,
+    required String doctorId,
+  })?
+  completeAppointment;
 
   @override
   ConsumerState<AuthWrapper> createState() => _AuthWrapperState();
@@ -480,6 +329,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
     with WidgetsBindingObserver {
   bool _isCheckingPendingCall = true;
   bool _hasPendingCall = false;
+  StreamSubscription<VoIPCallEvent>? _callEventSubscription;
 
   @override
   void initState() {
@@ -487,14 +337,44 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
     WidgetsBinding.instance.addObserver(this);
     unawaited(_checkPendingCall());
 
+    // Subscribe to warm-start call acceptance events.
+    // When the user accepts from the native CallKit/ConnectionService screen
+    // while the app is backgrounded, _joinPendingCall() handles navigation.
+    _callEventSubscription = getIt<VoIPCallService>().callEventStream.listen(
+      _onVoIPCallEvent,
+    );
+
     // 🛡️ التحقق من أذونات المكالمات عند تشغيل التطبيق
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(PermissionsService.checkAndRequestPermissions(context));
     });
   }
 
+  void _onVoIPCallEvent(VoIPCallEvent event) {
+    if (event.type == VoIPCallEventType.accepted &&
+        mounted &&
+        !_hasPendingCall) {
+      unawaited(_handleCallAccepted());
+    }
+  }
+
+  /// Syncs the Riverpod provider state before navigating.
+  ///
+  /// `showIncomingCall()` only updates `VoIPCallService._pendingCallData` directly.
+  /// The `consultationCallControllerProvider` is NOT notified, so its state is
+  /// stale (null) on warm-start paths. Refreshing here ensures `_joinPendingCall`
+  /// sees the correct data when the user accepts from the native ring screen.
+  Future<void> _handleCallAccepted() async {
+    await ref
+        .read(consultationCallControllerProvider.notifier)
+        .refreshPendingCall();
+    if (mounted) unawaited(_joinPendingCall());
+  }
+
   @override
   void dispose() {
+    unawaited(_callEventSubscription?.cancel());
+    _callEventSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -509,7 +389,12 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
   /// فحص وتنظيف المكالمات عند العودة للتطبيق
   Future<void> _checkAndCleanupCalls() async {
     // 1. تنظيف المكالمات والإشعارات
-    final appointmentId = await getIt<VoIPCallService>().cleanupAfterCall();
+    final appointmentId = await ref
+        .read(consultationCallControllerProvider.notifier)
+        .cleanupOnResume();
+
+    // Reset deduplication so a doctor retry to the same appointment is not dropped
+    getIt<FCMService>().resetCallDeduplication();
 
     if (appointmentId != null && appointmentId.isNotEmpty && mounted) {
       final user = ref.read(authProvider).user;
@@ -519,16 +404,13 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
         // 🛑 للطبيب: طلب تأكيد إنهاء الجلسة
         await _showDoctorSessionEndDialog(appointmentId);
       } else {
-        // ✅ للمريض: إنهاء الموعد تلقائياً
-        await ref
-            .read(appointmentsProvider.notifier)
-            .completeAppointment(appointmentId);
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('تم إنهاء المكالمة وتسجيل الموعد كمكتمل'),
-              backgroundColor: AppColors.success,
+              content: Text(
+                'تم إنهاء المكالمة. يبقى الموعد بانتظار تحديث الطبيب.',
+              ),
+              backgroundColor: AppColors.primary,
             ),
           );
         }
@@ -538,6 +420,8 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
 
   /// نافذة تأكيد انتهاء الجلسة للطبيب
   Future<void> _showDoctorSessionEndDialog(String appointmentId) async {
+    final messenger = ScaffoldMessenger.of(context);
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -561,20 +445,30 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
               // إغلاق النافذة أولاً
               Navigator.of(context).pop();
 
-              // حفظ messenger قبل async gap
-              final messenger = ScaffoldMessenger.of(context);
+              final user = ref.read(authProvider).user;
+              if (user == null) {
+                return;
+              }
 
-              // تحديث الحالة إلى مكتمل
-              await ref
-                  .read(appointmentsProvider.notifier)
-                  .completeAppointment(appointmentId);
+              final completionAction =
+                  widget.completeAppointment ??
+                  AppointmentCompletionService().completeAppointment;
+              final result = await completionAction(
+                appointmentId: appointmentId,
+                doctorId: user.id,
+              );
 
-              // حفظ messenger قبل async gap
               if (mounted) {
                 messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('تم تسجيل الجلسة كمكتملة'),
-                    backgroundColor: AppColors.success,
+                  SnackBar(
+                    content: Text(
+                      result.success
+                          ? (result.message ?? 'تم تسجيل الجلسة كمكتملة')
+                          : (result.error ?? 'تعذر إكمال الموعد'),
+                    ),
+                    backgroundColor: result.success
+                        ? AppColors.success
+                        : AppColors.error,
                   ),
                 );
               }
@@ -591,11 +485,20 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
   Future<void> _checkPendingCall() async {
     try {
       // فحص إذا كان التطبيق فُتح من الرد على مكالمة
-      final pendingCallData = getIt<VoIPCallService>().pendingCallData;
+      await ref
+          .read(consultationCallControllerProvider.notifier)
+          .refreshPendingCall();
+      final pendingCallData = ref
+          .read(consultationCallControllerProvider)
+          .pendingCallData;
 
       if (pendingCallData != null && pendingCallData.agoraChannelName != null) {
         debugPrint(
-          '📞 Found pending call, will navigate to Agora screen after auth check',
+          '📞 [AuthWrapper] pending call restored'
+          ' | appointmentId=${pendingCallData.appointmentId}'
+          ' | channelName=${pendingCallData.agoraChannelName}'
+          ' | hasToken=${pendingCallData.agoraToken != null}'
+          ' | hasUid=${pendingCallData.agoraUid != null}',
         );
         _hasPendingCall = true;
       }
@@ -610,19 +513,209 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
 
   /// الانضمام للمكالمة المعلقة (Agora)
   Future<void> _joinPendingCall() async {
-    final pendingCallData = getIt<VoIPCallService>().pendingCallData;
-    if (pendingCallData?.agoraChannelName == null) return;
+    final pendingCallData = ref
+        .read(consultationCallControllerProvider)
+        .pendingCallData;
+    if (pendingCallData == null) {
+      debugPrint(
+        '⚠️ [AuthWrapper] _joinPendingCall aborted: no pendingCallData',
+      );
+      return;
+    }
+
+    debugPrint(
+      '📞 [AuthWrapper] _joinPendingCall:start'
+      ' | appointmentId=${pendingCallData.appointmentId}'
+      ' | channelName=${pendingCallData.agoraChannelName}'
+      ' | hasToken=${pendingCallData.agoraToken != null}'
+      ' | hasUid=${pendingCallData.agoraUid != null}',
+    );
+
+    // agoraToken is intentionally not checked here: on cold start the token is
+    // null (removed from CallKit extra for security). The patientJoinCall()
+    // fallback below fetches a fresh token from the server.
+    if (pendingCallData.agoraChannelName == null ||
+        pendingCallData.agoraUid == null ||
+        pendingCallData.appointmentId.isEmpty) {
+      debugPrint(
+        '⚠️ [AuthWrapper] _joinPendingCall aborted: pending call data incomplete'
+        ' | appointmentId=${pendingCallData.appointmentId}'
+        ' | channelName=${pendingCallData.agoraChannelName}'
+        ' | token=${pendingCallData.agoraToken != null}'
+        ' | uid=${pendingCallData.agoraUid != null}',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تعذر استعادة المكالمة الواردة. حاول انتظار إعادة الاتصال.',
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     try {
+      ref.read(consultationCallControllerProvider.notifier).markJoinStarted();
       debugPrint('🎥 Navigating to Agora call screen');
-      debugPrint('   Channel: ${pendingCallData!.agoraChannelName}');
+      debugPrint('   Channel: ${pendingCallData.agoraChannelName}');
       debugPrint('   Appointment: ${pendingCallData.appointmentId}');
 
-      // TODO: Navigate to AgoraVideoCallScreen when it's created
-      // For now, just log that we would navigate
-      debugPrint('⚠️ Navigation to Agora screen not yet implemented');
+      var restoredToken = pendingCallData.agoraToken;
+      var restoredChannelName = pendingCallData.agoraChannelName;
+      var restoredUid = pendingCallData.agoraUid;
+      var hasFreshJoinAuthorization = false;
+      final hasActiveNativeCall = await getIt<VoIPCallService>()
+          .hasActiveCalls();
+      final hasAcceptedFromCallKit = pendingCallData.acceptedFromCallKit;
+
+      final currentUser = ref.read(authProvider).user;
+      debugPrint(
+        '📞 [AuthWrapper] _joinPendingCall user snapshot'
+        ' | userId=${currentUser?.id}'
+        ' | userType=${currentUser?.userType.name}',
+      );
+
+      if (currentUser?.userType == UserType.patient) {
+        try {
+          debugPrint(
+            '📞 [AuthWrapper] _joinPendingCall -> notifyPatientAnswered:start'
+            ' | appointmentId=${pendingCallData.appointmentId}',
+          );
+          await VideoConsultationService().notifyPatientAnswered(
+            appointmentId: pendingCallData.appointmentId,
+          );
+          debugPrint(
+            '✅ [AuthWrapper] _joinPendingCall -> notifyPatientAnswered:success'
+            ' | appointmentId=${pendingCallData.appointmentId}',
+          );
+
+          debugPrint(
+            '📞 [AuthWrapper] _joinPendingCall -> patientJoinCall:start'
+            ' | appointmentId=${pendingCallData.appointmentId}'
+            ' | patientId=${currentUser?.id}',
+          );
+          final patientId = currentUser?.id;
+          if (patientId != null && patientId.isNotEmpty) {
+            final refreshedJoinData = await VideoConsultationService()
+                .patientJoinCall(
+                  appointmentId: pendingCallData.appointmentId,
+                  patientId: patientId,
+                );
+            restoredToken = refreshedJoinData.agoraToken;
+            restoredChannelName = refreshedJoinData.channelName;
+            restoredUid = refreshedJoinData.uid;
+            hasFreshJoinAuthorization = true;
+            debugPrint(
+              '✅ [AuthWrapper] _joinPendingCall -> patientJoinCall:success'
+              ' | appointmentId=${pendingCallData.appointmentId}'
+              ' | channelName=$restoredChannelName'
+              ' | uid=$restoredUid',
+            );
+          }
+        } on Exception catch (e) {
+          debugPrint(
+            '⚠️ [AuthWrapper] _joinPendingCall -> patientJoinCall failed, using pending payload'
+            ' | appointmentId=${pendingCallData.appointmentId}'
+            ' | error=$e',
+          );
+        }
+      }
+
+      final appointmentSnapshot = await getIt<FirebaseFirestore>()
+          .collection('appointments')
+          .doc(pendingCallData.appointmentId)
+          .get();
+
+      if (!appointmentSnapshot.exists || appointmentSnapshot.data() == null) {
+        throw StateError('Appointment not found for pending call');
+      }
+
+      final appointmentData = <String, dynamic>{
+        ...appointmentSnapshot.data()!,
+        'id': appointmentSnapshot.id,
+      };
+
+      final appointment = AppointmentModel.fromJson(appointmentData).copyWith(
+        status: hasFreshJoinAuthorization ? AppointmentStatus.inProgress : null,
+        agoraToken: restoredToken,
+        agoraChannelName: restoredChannelName,
+        agoraUid: restoredUid,
+      );
+
+      debugPrint(
+        '📞 [AuthWrapper] _joinPendingCall appointment snapshot'
+        ' | appointmentStatus=${appointment.status.name}'
+        ' | hasFreshJoinAuthorization=$hasFreshJoinAuthorization'
+        ' | hasAcceptedFromCallKit=$hasAcceptedFromCallKit'
+        ' | hasActiveNativeCall=$hasActiveNativeCall'
+        ' | channelName=${appointment.agoraChannelName}'
+        ' | uid=${appointment.agoraUid}',
+      );
+
+      if (currentUser?.userType == UserType.patient &&
+          !shouldRestoreIncomingCall(
+            appointment.status,
+            hasFreshJoinAuthorization: hasFreshJoinAuthorization,
+            hasAcceptedFromCallKit: hasAcceptedFromCallKit,
+            hasActiveNativeCall: hasActiveNativeCall,
+          )) {
+        debugPrint(
+          '⚠️ [AuthWrapper] _joinPendingCall navigation blocked by shouldRestoreIncomingCall'
+          ' | appointmentStatus=${appointment.status.name}'
+          ' | hasFreshJoinAuthorization=$hasFreshJoinAuthorization',
+        );
+        if (!mounted) {
+          return;
+        }
+
+        await PatientNavigationHelper.openAppointments(context);
+        return;
+      }
+
+      await getIt<CallMonitoringService>().logStructuredEvent(
+        appointmentId: pendingCallData.appointmentId,
+        userId: currentUser?.id ?? 'system',
+        eventType: 'active_call_restored',
+        metadata: {
+          'restoreSource': 'pending_call_payload',
+          'channelName': restoredChannelName,
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      debugPrint(
+        '🚀 [AuthWrapper] _joinPendingCall -> AgoraVideoCallScreen'
+        ' | appointmentId=${appointment.id}'
+        ' | channelName=${appointment.agoraChannelName}'
+        ' | uid=${appointment.agoraUid}',
+      );
+
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => AgoraVideoCallScreen(
+            appointment: appointment,
+            firebaseAuth: getIt<FirebaseAuth>(),
+          ),
+        ),
+      );
     } on Exception catch (e) {
-      debugPrint('❌ Error navigating to Agora call: $e');
+      debugPrint('❌ [AuthWrapper] _joinPendingCall failed: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The call has ended.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -630,6 +723,15 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
   Widget build(BuildContext context) {
     // مراقبة حالة المصادقة
     final authState = ref.watch(authProvider);
+
+    debugPrint(
+      '🧭 [AuthWrapper] auth snapshot'
+      ' | isLoading=${authState.isLoading}'
+      ' | isAuthenticated=${authState.isAuthenticated}'
+      ' | hasUser=${authState.user != null}'
+      ' | userType=${authState.user?.userType.name}'
+      ' | isActive=${authState.user?.isActive}',
+    );
 
     // 1. انتظار فحص المكالمة المعلقة
     if (_isCheckingPendingCall) {
@@ -643,11 +745,15 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
 
     // 3. المستخدم غير مسجل → شاشة تسجيل الدخول
     if (!authState.isAuthenticated) {
+      debugPrint('🧭 [AuthWrapper] navigation decision -> LoginScreen');
       return const LoginScreen();
     }
 
     // 4. حالة سباق: مسجل ولكن بيانات المستخدم لم تحمل بعد → شاشة التحميل
     if (authState.user == null) {
+      debugPrint(
+        '🚫 [AuthWrapper] patient redirect blocked reason=authenticated-without-user',
+      );
       return const _SplashScreen();
     }
 
@@ -661,7 +767,13 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper>
     }
 
     // 5. توجيه المستخدم بناءً على نوع حسابه
-    final userType = authState.user!.userType;
+    final user = authState.user;
+    if (user == null) {
+      return const _SplashScreen();
+    }
+
+    final userType = user.userType;
+    debugPrint('🧭 [AuthWrapper] navigation decision -> ${userType.name}');
     return switch (userType) {
       UserType.admin => ref.watch(adminDashboardProvider),
       UserType.doctor => ref.watch(doctorDashboardProvider),
@@ -685,31 +797,56 @@ final patientDashboardProvider = Provider<Widget>(
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
 
+  static const _splashImage =
+      'assets/images/Medical Online Doctor Consultation Instagram Story.jpg';
+
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.medical_services,
-            size: 80,
-            color: AppColors.primary,
-          ),
-          SizedBox(height: 24),
-          CircularProgressIndicator(
-            color: AppColors.primary,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'جاري التحميل...',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondaryLight,
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.white,
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(_splashImage, fit: BoxFit.cover),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.06),
+                Colors.white.withValues(alpha: 0.14),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+        SafeArea(
+          child: Column(
+            children: [
+              const Spacer(),
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'جاري التحميل...',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 }

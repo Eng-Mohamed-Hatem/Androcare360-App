@@ -13,10 +13,10 @@ void main() {
       final result = baseColor.withAlphaValue(alphaValue);
 
       // Assert
-      expect(result.alpha, closeTo(0.7 * 255, 1.0));
-      expect(result.red, baseColor.red);
-      expect(result.green, baseColor.green);
-      expect(result.blue, baseColor.blue);
+      expect(result.a * 255, closeTo(0.7 * 255, 1.0));
+      expect(result.r, baseColor.r);
+      expect(result.g, baseColor.g);
+      expect(result.b, baseColor.b);
     });
 
     test('withAlphaValue should handle edge cases', () {
@@ -24,11 +24,11 @@ void main() {
 
       // Test fully transparent
       final transparent = baseColor.withAlphaValue(0);
-      expect(transparent.alpha, 0);
+      expect((transparent.a * 255).round(), 0);
 
       // Test fully opaque
       final opaque = baseColor.withAlphaValue(1);
-      expect(opaque.alpha, 255);
+      expect((opaque.a * 255).round(), 255);
     });
 
     test('withAlphaValue should assert on invalid alpha values', () {

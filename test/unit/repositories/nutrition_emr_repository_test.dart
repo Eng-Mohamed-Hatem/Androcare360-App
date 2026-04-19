@@ -15,6 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/errors/failures.dart';
 import 'package:elajtech/features/nutrition/data/models/nutrition_emr_model.dart';
 import 'package:elajtech/features/nutrition/data/repositories/nutrition_emr_repository_impl.dart';
+import 'package:elajtech/features/nutrition/domain/entities/nutrition_emr_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
@@ -483,8 +484,10 @@ void main() {
           await expectLater(
             stream,
             emits(
-              predicate<dynamic>((entity) {
-                return entity.id == emr.id && entity.patientId == emr.patientId;
+              predicate<NutritionEMREntity?>((entity) {
+                return entity != null &&
+                    entity.id == emr.id &&
+                    entity.patientId == emr.patientId;
               }),
             ),
           );
@@ -527,8 +530,12 @@ void main() {
           await expectLater(
             stream,
             emitsInOrder([
-              predicate<dynamic>((entity) => entity.weightValue == 75),
-              predicate<dynamic>((entity) => entity.weightValue == 80),
+              predicate<NutritionEMREntity?>(
+                (entity) => entity != null && entity.weightValue == 75,
+              ),
+              predicate<NutritionEMREntity?>(
+                (entity) => entity != null && entity.weightValue == 80,
+              ),
             ]),
           );
         },
@@ -653,8 +660,9 @@ void main() {
           await expectLater(
             stream,
             emits(
-              predicate<dynamic>((entity) {
-                return entity.id == emr.id &&
+              predicate<NutritionEMREntity?>((entity) {
+                return entity != null &&
+                    entity.id == emr.id &&
                     entity.patientId == emr.patientId &&
                     entity.nutritionistId == emr.nutritionistId &&
                     entity.appointmentId == emr.appointmentId &&

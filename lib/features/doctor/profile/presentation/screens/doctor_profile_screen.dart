@@ -9,6 +9,7 @@ import 'package:elajtech/features/common/privacy_policy_screen.dart';
 import 'package:elajtech/shared/widgets/biometric_switch.dart';
 import 'package:elajtech/shared/widgets/custom_text_field.dart';
 import 'package:elajtech/features/auth/presentation/screens/link_phone_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -74,14 +75,35 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             child: const Text(AppStrings.cancel),
           ),
           TextButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                // TODO(elajtech): Implement password change.
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null || user.email == null) return;
+              try {
+                final credential = EmailAuthProvider.credential(
+                  email: user.email!,
+                  password: currentPasswordController.text,
+                );
+                await user.reauthenticateWithCredential(credential);
+                await user.updatePassword(newPasswordController.text);
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('تم تغيير كلمة المرور بنجاح'),
                     backgroundColor: AppColors.success,
+                  ),
+                );
+              } on FirebaseAuthException catch (e) {
+                if (!context.mounted) return;
+                final msg =
+                    e.code == 'wrong-password' || e.code == 'invalid-credential'
+                        ? 'كلمة المرور الحالية غير صحيحة'
+                        : e.message ?? 'حدث خطأ، يرجى المحاولة لاحقاً';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(msg),
+                    backgroundColor: AppColors.error,
                   ),
                 );
               }

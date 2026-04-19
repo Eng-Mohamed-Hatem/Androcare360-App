@@ -302,6 +302,76 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>>
+  getDoctorAppointmentsViaCloudFunction({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    try {
+      final riyadhTimezone = tz.getLocation('Asia/Riyadh');
+      final startOfDay = tz.TZDateTime(
+        riyadhTimezone,
+        date.year,
+        date.month,
+        date.day,
+      );
+      final endOfDay = startOfDay
+          .add(const Duration(days: 1))
+          .subtract(const Duration(milliseconds: 1));
+
+      if (kDebugMode) {
+        debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        debugPrint(
+          '📊 [Doctor Slots CF] Loading doctor appointments via Cloud Function',
+        );
+        debugPrint('   • Doctor ID: $doctorId');
+        debugPrint('   • Date: $date');
+        debugPrint('   • Time Range: $startOfDay → $endOfDay');
+        debugPrint('   • Region: europe-west1 (via injected _functions)');
+        debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      }
+
+      final callable = _functions.httpsCallable(
+        'checkDoctorAppointments',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 15)),
+      );
+
+      final result = await callable.call<Map<String, dynamic>>(
+        <String, dynamic>{
+          'doctorId': doctorId,
+          'startTimeMs': startOfDay.millisecondsSinceEpoch,
+          'endTimeMs': endOfDay.millisecondsSinceEpoch,
+        },
+      );
+
+      final appointmentsData =
+          (result.data['appointments'] as List<dynamic>? ?? const <dynamic>[])
+              .map((item) => Map<String, dynamic>.from(item as Map))
+              .toList();
+
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [Doctor Slots CF] Loaded ${appointmentsData.length} appointments',
+        );
+      }
+
+      return Right(appointmentsData);
+    } on FirebaseFunctionsException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [Doctor Slots CF] FirebaseFunctionsException: ${e.code} - ${e.message}',
+        );
+      }
+      return Left(ServerFailure(e.message ?? e.toString()));
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [Doctor Slots CF] Unexpected error: $e');
+      }
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   /// Executes a Firestore query with intelligent retry logic for index propagation.
   ///
   /// This helper method handles the 'failed-precondition' error that occurs when
@@ -913,5 +983,29 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
       }
       return Left(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
+  }
+
+  /// مراقبة مواعيد المريض في الوقت الفعلي
+  /// Real-time stream of all appointments for the patient.
+  ///
+  /// Uses Firestore [snapshots()] so the stream emits a new list whenever
+  /// any appointment document changes — enabling the patient's UI to
+  /// react immediately when the doctor starts a call.
+  @override
+  Stream<List<AppointmentModel>> watchAppointmentsForPatient(String patientId) {
+    return _firestore
+        .collection(AppConstants.collections.appointments)
+        .where('patientId', isEqualTo: patientId)
+        .orderBy('appointmentDate', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              return AppointmentModel.fromJson({
+                ...data,
+                'id': (data['id'] as String?)?.isNotEmpty ?? false
+                    ? data['id']
+                    : doc.id,
+              });
+            }).toList());
   }
 }

@@ -1,0 +1,193 @@
+ 🔍 Adversarial Code Review Report
+
+  Project: AndroCare360 / Elajtech
+
+  Reviewed By: Codex AI Adversarial Review System
+
+  ---
+  📊 Executive Summary
+
+  - Risk Level: Critical
+  - Critical Issues: 4
+  - High Issues: 5
+  - Medium Issues: 5
+  - Low Issues: 3
+  - Files Reviewed: 8
+   ،بولطملا نم ريثكب عسوأ تاباتكب حمست firestore.rules :ةقثلا دودح يف دوجوم ربكألا رطخلا .انه ءزج أوسأ تسيل اهسفن لاصتالا ةقبط :ةماعلا ةلاحلا -
+  .ةساسحلا تاراسملا ىلع App Check قبطت ال Cloud Functions ةقبطو ،Tokensو تاملاكم تانايب فشكت ةساسح payloads نالجّسي مداخلا/ليمعلاو
+
+  ---
+  🚨 Critical Issues
+
+  #: 1
+  firestore.rules :فلملا
+  78–72 :رطسلا
+   .'request.auth.uid == 'R4UWWD59hmYxOiaEuVlapUSZZSA2 يرادإ ءانثتساك ابًلص UID يوتحتو )(allow create: if isAuthenticated ـب حمست users دعاوق :فصولا
+  .rules لخاد حيرص backdoor اذه
+  .همادختسا ديعأُ وأ برّسُ اذإ تايحالص ديعصت راسم قلخي تباث UID دوجوو ،نيمدختسم تادنتسم ميمست/ءاشنإ هنكمي قثّوم مدختسم يأ :ريثأتلا
+   Cloud ربع ةيرادإلا لوقحلا لعجو ،لوقحلل ةمراص allowlist عم isOwner(userId) ىلإ users/{userId} ىلع create/update دييقت .ارًوف بلصلا UID فذح :حالصإل
+    Functions/Admin SDK طقف.
+  ────────────────────────────────────────
+  #: 2
+  firestore.rules :فلملا
+  177–175 ,162–160 ,100–97 :رطسلا
+   قثّوم مدختسم يأ نم ءاشنإلل ةلباق call_logsو ،قثّوم مدختسم يأ نم ةباتكلل ةلباق notificationsو ،قثّوم مدختسم يأ نم ءاشنإلل ةلباق appointments :فصول
+  .schema validation وأ كلاملاب طبر نودب
+  .ةللضم وأ ةفيزم تانايبب ماظنلا قارغإو ،state machine ـلا داسفإ ،تاملاكم تالجس/تاراعشإ/ديعاوم ريوزت ليمعلل نكمي :ريثأتلا
+  .طقف مداخلا نم بتكتُ نأ بجي اصًوصخ call_logs .ةحومسملا ميقلاو لوقحلا نم مراص ققحت عم owner ىلع وأ طقف Functions ىلع ثيدحتلا/ءاشنإلا رصق :حالصإلا
+  ────────────────────────────────────────
+  #: 3
+  firestore.rules :فلملا
+  155–137 :رطسلا
+   ،ضيرملا/دعوملاب طبر نودب ةددعتم ةيبط تاعومجمل create/update ةباتكو ،ةعساو ةءارق Doctor يأ حنمت match /{collection}/{docId} ةماعلا ةدعاقلا :فصولا
+  مث
+    match /{subcollection=**} يطعي allow read, write: if isDoctor();.
+  .ةساسح ةيبط تانايب ىلع رشابم تايحالص قارتخا اذه .هصخت ال ىضرم تالجس ليدعت/ةءارق هنكمي راسملا فرعي بيبط يأ :ريثأتلا
+  .doctorId == request.auth.uid :ةحيرص ownership checks عم ةددحم تاعومجمب اهرصح وأ ةماعلا ةدعاقلا ةلازإ :حالصإلا
+  ────────────────────────────────────────
+  #: 4
+  fcm_service.dart, voip_call_service.dart :فلملا
+  ةددعتم :رطسلا
+  .ةحارص Agora token لجسيو لب ،extraو ،event.bodyو ،activeCallsو ،الًماك message.data لجسي قيبطتلا :فصولا
+   ـلل رشابم بيرست اذه .اهليغشت ةداعإ وأ ةملاكملا ىلإ مامضنالل ةحلاص لاصتا رارسأ لمحيس ينف معد وأ ،Debug، crash log، remote logging زاهج يأ :ريثأتلا
+    tokens وmetadata ةيبطلا.
+  .مراص masking عم دحّوم redaction helper مدختسا .channel identifiers وأ token وأ ماخ payload يأ ليجست عنم :حالصإلا
+
+
+
+  ---
+  ⚠️ High Issues
+
+  #: 1
+  functions/index.js, main.dart :فلملا
+  )main( 119 :رطسلا
+   main.dartو ،App Check قبطت ال )startAgoraCall, notifyPatientAnswered, endAgoraCall, markCallInProgress, patientJoinCall( ةساسحلا Functions :فصولا
+  .لطّعم App Check نأ ةحارص عبطي
+  .ةرشابم call flows ءاعدتسا هنكمي حلاص Firebase Auth كلمي لدعم ليمع يأ :ريثأتلا
+  .ةساسحلا Functions ىلع هضرفو ليمعلا ىلع App Check ليعفت :حالصإلا
+  ────────────────────────────────────────
+  #: 2
+  functions/index.js :فلملا
+  2229–2227 :رطسلا
+  .تاباسحلا لعفي/لطعي يرادإ endpoint اذه .runWith({ enforceAppCheck: false }). ـب ةنلعم setAccountStatus :فصولا
+  .App Check الب ةساسح ةيرادإ ةطقن :ريثأتلا
+  .auditو rate limits عم ،الًوأ انه App Check ضرف :حالصإلا
+  ────────────────────────────────────────
+  #: 3
+  functions/index.js :فلملا
+  2662 ,1305 ,332 :رطسلا
+  .مزاللا نم رثكأ ليوط — ةيناث 3600 ىلع ةطوبضم Agora token ةيحالص :فصولا
+  .ئيسلا logging عم اصًوصخ ،بولطملا نم ربكأ replay وأ مادختسالا ةداعإ ةذفان :ريثأتلا
+  .طقف ةجاحلا دنع ددّجو ،ةيناث 300–120 ىلإ TTL ضفّخ :حالصإلا
+  ────────────────────────────────────────
+  #: 4
+  functions/index.js :فلملا
+  ةددعتم :رطسلا
+  .appointment IDs, doctorId, patientId, FCM payload نمضتي افًيثك tracing عبطت Cloud Functions :فصولا
+  .Cloud Logging ىلإ ةيبط تانايب بيرست :ريثأتلا
+  .production يف structured logs minimal + redaction + sampling :حالصإلا
+  ────────────────────────────────────────
+  #: 5
+  voip_call_service.dart, fcm_service.dart :فلملا
+  271 ,252 ,249 ,181 :رطسلا
+  .ةرركم listeners = ةئيهتلا ةداعإ .idempotency guard وأ subscription handles الب )(initialize لخاد لجستُ listeners :فصولا
+  .رقتسم ريغ stateو ةرركم Cloud Function calls عم ،ةرم نم رثكأ جلاعيُ دق ءاهنإ/ضفر/لوبق :ريثأتلا
+  .يقيقح )(dispose فضأ ،ةيناثلا initialize عنما ،StreamSubscriptions نزّخ :حالصإلا
+
+  ---
+  🔶 Medium Issues
+
+  #: 1
+  fcm_service.dart, main.dart :فلملا
+  551 ,442 ,395–387 :رطسلا
+  .dedup stale ببسب ضفرتُ دق ةقحال ةحيحص ةملاكم .ةدودحم تالاح يف طقف رفّصيُ lastProcessedCallKey_ :فصولا
+  .incoming calls legitimate نادقف :ريثأتلا
+  .tap وأ resume دنع طقف سيل ،decline/end/missed/timeout دنع حاتفملا رفّص :حالصإلا
+  ────────────────────────────────────────
+  #: 2
+  agora_video_call_screen.dart :فلملا
+  495–491 ,110 :رطسلا
+  .ةحارص ىغليُ الو ظوفحم ريغ eventStream.listen يف كارتشالا :فصولا
+  .ةرخأتم callbacks وأ listener leak لامتحا :ريثأتلا
+  .)(dispose يف اهغلأو >StreamSubscription<AgoraEvent نزّخ :حالصإلا
+  ────────────────────────────────────────
+  #: 3
+  agora_service.dart :فلملا
+  203–201 :رطسلا
+  .لماكلاب ةجيتنلا لهاجتي مث كياملا/اريماكلا بلطي )(requestPermissions_ :فصولا
+  .حضاو أطخ لدب Agora لخاد ضماغ قحال لشف :ريثأتلا
+  .engine ءاشنإ لبق ةحضاو failure exception مِراو isGranted نم ققحت :حالصإلا
+  ────────────────────────────────────────
+  #: 4
+  video_consultation_service.dart :فلملا
+  330–319 :رطسلا
+  .String/int ـل ةرشابم casts لمعيو ةتباث schema ضرتفي )(patientJoinCall :فصولا
+  .payload يف drift يأ دنع crash/runtime cast :ريثأتلا
+  .>Either<Failure, AgoraCallData عجراو ،validation عم parsing defensive :حالصإلا
+  ────────────────────────────────────────
+  #: 5
+  functions/index.js :فلملا
+  143–133 ,92–90 :رطسلا
+  .database configuration نم ققحتلل db._settings private internals ىلع دامتعالا :فصولا
+  .SDK ةيقرت دعب تماص راسكنا :ريثأتلا
+  .ايًمسر ةموعدم initialization/config contracts مدختسا :حالصإلا
+
+  ---
+  💡 Low Issues
+
+  ┌─────┬─────────────────────────────────────────┬───────────┬──────────────────────────────┬───────────────────────┬────────────────────────┐
+  │         حالصإلا        │        ريثأتلا        │             فصولا            │   رطسلا   │                  فلملا                  │  #  │
+  ├─────┼─────────────────────────────────────────┼───────────┼──────────────────────────────┼───────────────────────┼────────────────────────┤
+  │ 1   │ video_consultation_service.dart         │ 69–73     │ service ـك ةينبم singleton   │ ىلإ اهلقن │   ةبوعص ،يرامعم ضقانت injectable.  │
+  │                        │               .رابتخا │  .DI/@lazySingleton لدب يودي │           │                                         │     │
+  ├─────┼─────────────────────────────────────────┼───────────┼──────────────────────────────┼───────────────────────┼────────────────────────┤
+  │ 2   │ video_consultation_service.dart,        │ 252–255,  │ ضرعت أطخلا لئاسر ضعب $e      │ لئاسر │    ةيذيفنت ليصافت فشك domain-safe،     │
+  │     │ agora_video_call_screen.dart            │ 247       │ يف ماخلا UI/logs.            │ طقف ايًلخاد ليصافتلا │             .مدختسملل.  │
+  ├─────┼─────────────────────────────────────────┼───────────┼──────────────────────────────┼───────────────────────┼────────────────────────┤
+  │        ,...(set مدختسا │ ريغ update()   │ token persistence ربع voipToken ظفح │           │                                         │     │
+  │ 3   │ voip_call_service.dart                  │ 1214–1219 │ تاراسم ضعب يف ةقوثوم  │       دجوي مل اذإ لشفي — طقف │ SetOptions(merge:      │
+  │                .))onboarding.          │ true  │                 .دعب دنتسملا │           │                                         │     │
+  └─────┴─────────────────────────────────────────┴───────────┴──────────────────────────────┴───────────────────────┴────────────────────────┘
+
+  ---
+  🗺️ ةحرتقملا لمعلا ةطخ
+
+  Sprint 1 — Critical Fixes (2–1 موي)
+
+  - firestore.rules — تاوجف قالغإ users, appointments, notifications, call_logs, ةماعلا ةيبطلا تاعومجملاو
+  - firestore.rules — فذح UID بلصلا (R4UWWD59hmYxOiaEuVlapUSZZSA2) ارًوف
+  - fcm_service.dart, voip_call_service.dart — لك فذح logs يوتحت payloads وأ ةماخ tokens وأ channel names
+
+  Sprint 2 — High Priority (5–3 موي)
+
+  - functions/index.js + Flutter — ليعفت App Check ىلع هضرفو Functions ةساسحلا
+  - functions/index.js — ليلقت Agora token TTL ةيناث 300–120 ىلإ 3600 نم
+  - fcm_service.dart, voip_call_service.dart — لعج initialize() idempotent عم StreamSubscription management
+  - functions/index.js — ليلقت Cloud Logging ىلإ structured/redacted logs
+
+  Sprint 3 — Quality Improvements (10–6 موي)
+
+  FCM (_lastProcessedCallKey) ـل dedup lifecycle حالصإ -
+  - video_consultation_service.dart — parsing defensive + Either<Failure, T>
+  DI (@lazySingleton) تحت تامدخلا ديحوت -
+  integration: cold start, duplicate push, token expiry, decline/missed/retry تارابتخا -
+
+  ---
+  ✅ Positive Findings
+
+  ديج 'databaseId = 'elajtech ـب مازتلالا — ةعجَارملا تافلملا يف FirebaseFirestore.instance ـل رشابم مادختسا دجويُ مل -
+  - Functions ىلع ةطوبضم ةعجَارملا europe-west1 حيحص لكشب
+  )startAgoraCall, notifyPatientAnswered, patientJoinCall( ةساسحلا Functions لخاد ديج Auth ققحت دجوي -
+  duplicate push handlingو ,cold start, stale calls, token expiry لكاشمب حضاو يعو دجوي -
+
+  ---
+  📋 Post-Fix Checklist
+
+  - flutter analyze → 0 errors/warnings/infos
+  - flutter test → 700+ tests passing
+  - firebase deploy --only functions → success
+  - Manual VoIP call test → حيحص ءاهنإ + لوبق + نينر
+  message.data, event.body, extra, tokens, channel names عبطي log لك ةلازإ -
+  ايًئاهن rules نم بلصلا UID فذح -
+  ةساسحلا Functions ىلع هضرفو Flutter ىلع App Check ليعفت -
+  accept/decline/missed/retry/cold start تاراسمل regression تارابتخا -

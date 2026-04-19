@@ -286,7 +286,7 @@ void main() {
       ).thenAnswer((_) async => Right(emr));
       when(
         mockRepository.saveEMR(any),
-      ).thenAnswer((_) async => const Right(unit));
+      ).thenAnswer((_) async => const Right(null));
 
       await container
           .read(nutritionEMRNotifierProvider.notifier)
@@ -381,7 +381,7 @@ void main() {
       ).thenAnswer((_) async => Right(emr));
       when(
         mockRepository.lockEMR(any),
-      ).thenAnswer((_) async => const Right(unit));
+      ).thenAnswer((_) async => const Right(null));
 
       await container
           .read(nutritionEMRNotifierProvider.notifier)

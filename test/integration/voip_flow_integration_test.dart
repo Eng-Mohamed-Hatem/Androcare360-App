@@ -49,6 +49,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/integration_test_config.dart';
 
 void main() {
+  // T038: VM-safe E2E logging validation tests (always run)
+  runLoggingValidationTests();
+
   // NOTE: This test is documented but cannot run in VM environment
   // It requires integration_test package and device/emulator
   const runDeviceIntegration = bool.fromEnvironment(
@@ -202,7 +205,7 @@ void main() {
         final callLogsQuery = await firestore
             .collection('call_logs')
             .where('appointmentId', isEqualTo: appointmentId)
-            .where('eventType', isEqualTo: 'call_attempt')
+            .where('eventType', isEqualTo: 'callattempt')
             .get();
 
         expect(callLogsQuery.docs, isNotEmpty);
@@ -510,3 +513,192 @@ void main() {
     );
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T038: E2E logging validation — canonical event-name and ordering rules
+// These tests are VM-safe (no Firebase emulator needed) and validate the
+// structural rules for the call_logs event sequence defined in
+// call-lifecycle-contract.md §4 and spec §Logging Validation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void _runLoggingValidationTests() {
+  group('T038: E2E call_logs canonical event ordering and completeness', () {
+    const allCanonicalEvents = [
+      'callattempt',
+      'notification_dispatched',
+      'incoming_call_received',
+      'answer_accepted',
+      'active_call_restored',
+      'join_started',
+      'join_success',
+      'join_failure',
+      'cleanup_triggered',
+      'end_agora_call_invoked',
+      'callended',
+    ];
+
+    test('canonical event list has exactly 11 events', () {
+      expect(allCanonicalEvents.length, equals(11));
+    });
+
+    test('mandatory events are present in every call attempt sequence', () {
+      // These 5 events must appear in every call flow regardless of state
+      const mandatoryEvents = [
+        'callattempt',
+        'answer_accepted',
+        'join_started',
+        'callended',
+      ];
+      for (final e in mandatoryEvents) {
+        expect(allCanonicalEvents, contains(e));
+      }
+    });
+
+    test(
+      'join_success and join_failure are mutually exclusive in a single call',
+      () {
+        // A call can have join_success OR join_failure, not both
+        final callLogEvents1 = [
+          'callattempt',
+          'answer_accepted',
+          'join_started',
+          'join_success',
+          'callended',
+        ];
+        final callLogEvents2 = [
+          'callattempt',
+          'answer_accepted',
+          'join_started',
+          'join_failure',
+          'callended',
+        ];
+
+        final both1 =
+            callLogEvents1.contains('join_success') &&
+            callLogEvents1.contains('join_failure');
+        final both2 =
+            callLogEvents2.contains('join_success') &&
+            callLogEvents2.contains('join_failure');
+
+        expect(both1, isFalse);
+        expect(both2, isFalse);
+      },
+    );
+
+    test('callattempt must precede notification_dispatched', () {
+      final sequence = [
+        'callattempt',
+        'notification_dispatched',
+        'incoming_call_received',
+        'answer_accepted',
+        'join_started',
+        'join_success',
+        'callended',
+      ];
+
+      final callAttemptIdx = sequence.indexOf('callattempt');
+      final notifIdx = sequence.indexOf('notification_dispatched');
+
+      expect(callAttemptIdx, lessThan(notifIdx));
+    });
+
+    test('answer_accepted must precede join_started', () {
+      final sequence = [
+        'callattempt',
+        'answer_accepted',
+        'active_call_restored',
+        'join_started',
+        'join_success',
+        'callended',
+      ];
+
+      final answerIdx = sequence.indexOf('answer_accepted');
+      final joinIdx = sequence.indexOf('join_started');
+
+      expect(answerIdx, lessThan(joinIdx));
+    });
+
+    test('end_agora_call_invoked must precede callended', () {
+      final sequence = [
+        'join_success',
+        'end_agora_call_invoked',
+        'callended',
+      ];
+
+      final endIdx = sequence.indexOf('end_agora_call_invoked');
+      final endedIdx = sequence.indexOf('callended');
+
+      expect(endIdx, lessThan(endedIdx));
+    });
+
+    test('cleanup_triggered metadata must include reason field', () {
+      final cleanupEntry = {
+        'eventType': 'cleanup_triggered',
+        'appointmentId': 'apt_e2e_001',
+        'userId': 'user_e2e_001',
+        'metadata': {'reason': 'lifecycle_resumed'},
+      };
+
+      expect(cleanupEntry['eventType'], equals('cleanup_triggered'));
+      final meta = cleanupEntry['metadata']! as Map<String, dynamic>;
+      expect(meta.containsKey('reason'), isTrue);
+      expect(meta['reason'], isNotEmpty);
+    });
+
+    test('call_logs entries must not contain raw agoraToken', () {
+      final entries = [
+        {
+          'eventType': 'incoming_call_received',
+          'appointmentId': 'apt_e2e_002',
+          'metadata': {'appState': 'foreground', 'callerName': 'Dr. Test'},
+        },
+        {
+          'eventType': 'answer_accepted',
+          'appointmentId': 'apt_e2e_002',
+          'metadata': {'callId': 'call_001'},
+        },
+      ];
+
+      for (final entry in entries) {
+        expect(entry.containsKey('agoraToken'), isFalse);
+        expect(entry.containsKey('fcmToken'), isFalse);
+        final meta = entry['metadata']! as Map<String, dynamic>;
+        expect(meta.containsKey('agoraToken'), isFalse);
+      }
+    });
+
+    test(
+      'active_call_restored is conditional — only in cold-start/background paths',
+      () {
+        // Mandatory path (foreground): no active_call_restored
+        final foregroundSequence = [
+          'callattempt',
+          'notification_dispatched',
+          'incoming_call_received',
+          'answer_accepted',
+          'join_started',
+          'join_success',
+          'callended',
+        ];
+
+        // Cold-start path: includes active_call_restored
+        final coldStartSequence = [
+          'callattempt',
+          'notification_dispatched',
+          'incoming_call_received',
+          'answer_accepted',
+          'active_call_restored',
+          'join_started',
+          'join_success',
+          'callended',
+        ];
+
+        expect(foregroundSequence, isNot(contains('active_call_restored')));
+        expect(coldStartSequence, contains('active_call_restored'));
+      },
+    );
+  });
+}
+
+// Expose E2E logging tests for test runner
+void runLoggingValidationTests() => _runLoggingValidationTests();

@@ -2,11 +2,18 @@ import 'dart:async';
 
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/core/config/agora_config.dart';
+import 'package:elajtech/features/patient/consultation/presentation/providers/consultation_call_providers.dart';
+import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/core/services/agora_service.dart';
+import 'package:elajtech/core/services/call_monitoring_service.dart';
+import 'package:elajtech/core/services/video_consultation_service.dart';
+import 'package:elajtech/core/services/voip_call_service.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// شاشة مكالمة الفيديو باستخدام Agora
 ///
@@ -14,7 +21,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 /// - عرض فيديو المستخدم المحلي والبعيد
 /// - التحكم في الصوت والفيديو (كتم، تبديل الكاميرا)
 /// - إنهاء المكالمة
-class AgoraVideoCallScreen extends StatefulWidget {
+class AgoraVideoCallScreen extends ConsumerStatefulWidget {
   AgoraVideoCallScreen({
     required this.appointment,
     this.firebaseAuth, // ✅ Optional for testing
@@ -30,10 +37,13 @@ class AgoraVideoCallScreen extends StatefulWidget {
   final FirebaseAuth? firebaseAuth; // ✅ Inject for testing
 
   @override
-  State<AgoraVideoCallScreen> createState() => _AgoraVideoCallScreenState();
+  ConsumerState<AgoraVideoCallScreen> createState() =>
+      _AgoraVideoCallScreenState();
 }
 
-class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
+class _AgoraVideoCallScreenState extends ConsumerState<AgoraVideoCallScreen> {
+  static const Duration _doctorAnswerTimeout = Duration(seconds: 60);
+
   late final AgoraService _agoraService;
 
   bool _isJoined = false;
@@ -41,16 +51,32 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
   bool _isVideoOff = false;
   int? _remoteUid;
   String _connectionStatus = 'جاري الاتصال...';
+  bool _didReachInProgress = false;
+  bool _isEndingCall = false;
 
   // ✅ NEW: Role detection fields
   late final bool _isDoctor;
   late final String _otherPartyName;
 
+  StreamSubscription<AgoraEvent>? _agoraEventSub;
+
   // ✅ NEW: Timeout handling fields
   Timer? _timeoutTimer;
   int _retryCount = 0;
   static const int _maxRetries = 3;
-  static const Duration _timeoutDuration = Duration(seconds: 60);
+
+  void _showCallMessage(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -82,8 +108,8 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       // Initialize Agora
       await _agoraService.initialize(AgoraConfig.appId);
 
-      // Listen to events
-      _agoraService.eventStream.listen(_handleAgoraEvent);
+      // Listen to events — subscription stored for cancellation in dispose()
+      _agoraEventSub = _agoraService.eventStream.listen(_handleAgoraEvent);
 
       // Get Agora data with null safety
       final token = widget.appointment.agoraToken;
@@ -105,14 +131,9 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       );
     } on Exception catch (e) {
       debugPrint('❌ Error initializing Agora: $e');
+      ref.read(consultationCallControllerProvider.notifier).markJoinFailed();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('فشل الاتصال: $e'),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        _showCallMessage('Unable to connect to the call. Please try again.');
         Navigator.pop(context);
       }
     }
@@ -124,6 +145,9 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
 
     switch (event.type) {
       case AgoraEventType.joinedChannel:
+        ref
+            .read(consultationCallControllerProvider.notifier)
+            .markJoinSucceeded();
         setState(() {
           _isJoined = true;
           _connectionStatus = 'متصل';
@@ -138,6 +162,10 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         debugPrint('👤 Remote user joined: ${event.uid}');
         // ✅ NEW: Cancel timeout timer when remote user joins
         _cancelTimeoutTimer();
+        if (!_didReachInProgress) {
+          _didReachInProgress = true;
+          unawaited(_markCallInProgress());
+        }
 
       case AgoraEventType.userLeft:
         if (_remoteUid == event.uid) {
@@ -145,6 +173,10 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
             _remoteUid = null;
             _connectionStatus = 'المستخدم البعيد غادر';
           });
+          if (!_isDoctor && mounted) {
+            _showCallMessage('The call has ended.');
+            Navigator.pop(context);
+          }
         }
         debugPrint('👤 Remote user left: ${event.uid}');
 
@@ -161,15 +193,26 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         debugPrint('🔌 Connection state: ${event.connectionState}');
         if (event.connectionState ==
             ConnectionStateType.connectionStateFailed) {
+          ref
+              .read(consultationCallControllerProvider.notifier)
+              .markJoinFailed();
           setState(() => _connectionStatus = 'فشل الاتصال');
+          _showCallMessage('Unable to connect to the call. Please try again.');
         }
 
       case AgoraEventType.error:
         debugPrint('❌ Agora error: ${event.error}');
+        ref.read(consultationCallControllerProvider.notifier).markJoinFailed();
         setState(() => _connectionStatus = 'خطأ في الاتصال');
+        _showCallMessage('Unable to connect to the call. Please try again.');
 
       case AgoraEventType.cameraSwitched:
         debugPrint('📷 Camera switched');
+
+      case AgoraEventType.tokenExpired:
+        // التوكن انتهت صلاحيته أثناء المكالمة — أظهر رسالة للمستخدم
+        debugPrint('⚠️ Agora token expired mid-call');
+        _showCallMessage('انتهت صلاحية الجلسة. سيتم إعادة الاتصال...');
     }
   }
 
@@ -190,15 +233,74 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
 
   /// إنهاء المكالمة
   Future<void> _endCall() async {
-    await _agoraService.leaveChannel();
-    if (mounted) {
-      Navigator.pop(context);
+    if (_isEndingCall) return;
+    _isEndingCall = true;
+    var shouldShowError = false;
+    String? errorMessage;
+
+    try {
+      ref.read(consultationCallControllerProvider.notifier).markCallEnded();
+      await VideoConsultationService().endVideoCall(
+        appointmentId: widget.appointment.id,
+      );
+    } on Exception catch (e) {
+      debugPrint('❌ Error ending call: $e');
+      shouldShowError = true;
+      errorMessage = 'تعذر إنهاء المكالمة: $e';
+    } finally {
+      try {
+        await _agoraService.leaveChannel();
+      } on Exception catch (e) {
+        debugPrint('❌ Error leaving Agora channel: $e');
+      }
+
+      // Dismiss CallKit/ConnectionService notification from notification bar
+      if (getIt.isRegistered<VoIPCallService>()) {
+        try {
+          await getIt<VoIPCallService>().endAllCalls();
+        } on Exception catch (e) {
+          if (kDebugMode) {
+            debugPrint(
+              '⚠️ [AgoraVideoCallScreen] Error dismissing CallKit notification: $e',
+            );
+          }
+        }
+      }
+
+      if (mounted && shouldShowError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage ?? 'تعذر إنهاء المكالمة'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+
+      if (mounted) {
+        Navigator.pop<Map<String, dynamic>>(context, {
+          'showCompletionDialog': _isDoctor && _didReachInProgress,
+          'appointmentId': widget.appointment.id,
+          'doctorId': widget.appointment.doctorId,
+        });
+      }
+
+      _isEndingCall = false;
     }
   }
 
-  /// ✅ NEW: Start timeout timer (60 seconds)
+  Future<void> _markCallInProgress() async {
+    try {
+      await VideoConsultationService().markCallInProgress(
+        appointmentId: widget.appointment.id,
+      );
+    } on Exception catch (e) {
+      debugPrint('❌ Error marking call in progress: $e');
+    }
+  }
+
+  /// Start doctor-side unanswered timeout timer.
   void _startTimeoutTimer() {
-    _timeoutTimer = Timer(_timeoutDuration, () {
+    _timeoutTimer = Timer(_doctorAnswerTimeout, () {
       if (_remoteUid == null && mounted) {
         unawaited(_onTimeout());
       }
@@ -213,7 +315,10 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
 
   /// ✅ NEW: Handle timeout event
   Future<void> _onTimeout() async {
-    debugPrint('⏱️ Timeout: Patient did not answer after 60 seconds');
+    debugPrint(
+      '⏱️ Timeout: Patient did not answer after ${_doctorAnswerTimeout.inSeconds} seconds',
+    );
+    ref.read(consultationCallControllerProvider.notifier).markJoinFailed();
 
     // Log timeout event to call_logs
     unawaited(_logTimeoutEvent());
@@ -224,17 +329,35 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     }
   }
 
-  /// ✅ NEW: Log timeout event to Firestore
+  /// Log call timeout to Firestore via CallMonitoringService.
+  ///
+  /// Uses [CallMonitoringService.logStructuredEvent] with eventType
+  /// `'call_timeout'` so timeout incidents are queryable in `call_logs`.
   Future<void> _logTimeoutEvent() async {
     try {
-      // Import required for logging
-      // This will be handled by CallMonitoringService in production
-      debugPrint(
-        '📝 Logging timeout event for appointment: ${widget.appointment.id}',
+      if (!getIt.isRegistered<CallMonitoringService>()) return;
+      final auth = widget.firebaseAuth ?? FirebaseAuth.instance;
+      final userId = auth.currentUser?.uid;
+      if (userId == null) return;
+
+      await getIt<CallMonitoringService>().logStructuredEvent(
+        appointmentId: widget.appointment.id,
+        userId: userId,
+        eventType: 'call_timeout',
+        metadata: {
+          'timeoutSeconds': _doctorAnswerTimeout.inSeconds,
+          'retryCount': _retryCount,
+          'channelName': widget.appointment.agoraChannelName,
+        },
       );
-      // Integrate with CallMonitoringService.logCallTimeout()
+
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [AgoraVideoCallScreen] call_timeout logged for appointment=${widget.appointment.id}',
+        );
+      }
     } on Exception catch (e) {
-      debugPrint('❌ Error logging timeout event: $e');
+      debugPrint('❌ [AgoraVideoCallScreen] Error logging timeout event: $e');
     }
   }
 
@@ -255,7 +378,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         content: Text(
           _retryCount >= _maxRetries
               ? 'تم الوصول للحد الأقصى من المحاولات ($_maxRetries)'
-              : 'لم يتم الرد على المكالمة خلال 60 ثانية',
+              : 'لم يتم الرد على المكالمة خلال ${_doctorAnswerTimeout.inSeconds} ثانية',
           textAlign: TextAlign.center,
         ),
         actions: [
@@ -290,91 +413,141 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     );
   }
 
-  /// ✅ NEW: Retry call with exponential backoff
+  /// ✅ Retry call with exponential backoff and fresh token from Cloud Functions.
+  ///
+  /// On each retry:
+  /// 1. Applies exponential backoff delay (2s → 4s → 8s).
+  /// 2. Leaves the current Agora channel cleanly.
+  /// 3. Calls [VideoConsultationService.startVideoCall] to get a fresh channel
+  ///    name and token from the server — avoids reusing a stale/expired token.
+  /// 4. Rejoins the new channel and restarts the answer-timeout timer.
   Future<void> _retryCall() async {
     _retryCount++;
     debugPrint('🔄 Retry attempt $_retryCount of $_maxRetries');
 
-    // Calculate exponential backoff delay: 2s, 4s, 8s
+    // ── Exponential backoff: 2 s, 4 s, 8 s ───────────────────────────────
     final delaySeconds = 2 << (_retryCount - 1); // 2^retryCount
     final delay = Duration(seconds: delaySeconds);
-
     debugPrint('⏳ Waiting ${delay.inSeconds} seconds before retry...');
 
-    // Show loading indicator during delay
     if (mounted) {
       setState(() {
         _connectionStatus = 'إعادة المحاولة خلال ${delay.inSeconds} ثانية...';
       });
     }
-
-    // Wait for exponential backoff delay
     await Future<void>.delayed(delay);
 
-    // Leave current channel
+    // ── Leave the current (stale) channel ────────────────────────────────
     await _agoraService.leaveChannel();
 
-    // Re-request Agora tokens from Cloud Functions
-    // This will be handled by calling startAgoraCall again
-    debugPrint('📞 Re-requesting Agora tokens from Cloud Functions...');
+    // ── Request fresh token + channel from Cloud Function ─────────────────
+    debugPrint(
+      '📞 [_retryCall] Requesting fresh Agora credentials from Cloud Functions...',
+    );
 
-    // Integrate with Cloud Functions to call startAgoraCall again
-    // For now, just re-initialize with existing tokens
-    await _initializeAgora();
+    if (mounted) {
+      setState(() => _connectionStatus = 'جاري إعادة الاتصال...');
+    }
 
-    // Start new timeout timer
-    _startTimeoutTimer();
+    try {
+      final result = await VideoConsultationService().startVideoCall(
+        appointmentId: widget.appointment.id,
+        doctorId: widget.appointment.doctorId,
+      );
+
+      if (!result.success ||
+          result.agoraToken == null ||
+          result.agoraChannelName == null ||
+          result.agoraUid == null) {
+        throw Exception(
+          'startVideoCall retry failed: ${result.error ?? "empty credentials"}',
+        );
+      }
+
+      debugPrint(
+        '✅ [_retryCall] Fresh credentials received'
+        ' | channel=${result.agoraChannelName}'
+        ' | uid=${result.agoraUid}',
+      );
+
+      // ── Join new channel with fresh credentials ────────────────────────
+      await _agoraService.joinChannel(
+        token: result.agoraToken!,
+        channelName: result.agoraChannelName!,
+        uid: result.agoraUid!,
+        appointmentId: widget.appointment.id,
+        userId: widget.appointment.doctorId,
+      );
+
+      // ── Restart answer-timeout timer ───────────────────────────────────
+      _startTimeoutTimer();
+    } on Exception catch (e) {
+      debugPrint('❌ [_retryCall] Failed to get fresh credentials: $e');
+      ref.read(consultationCallControllerProvider.notifier).markJoinFailed();
+      if (mounted) {
+        _showCallMessage('تعذرت إعادة الاتصال. يرجى المحاولة لاحقاً.');
+        Navigator.pop(context);
+      }
+    }
   }
 
   @override
   void dispose() {
+    unawaited(_agoraEventSub?.cancel() ?? Future<void>.value());
     // ✅ NEW: Cancel timeout timer
     _cancelTimeoutTimer();
     // Intentionally not awaited - cleanup happens in background
     unawaited(_agoraService.dispose());
+    // Dismiss native VoIP notification even if _endCall() was not reached
+    // (e.g. OS back gesture, exception path, or screen pop without end button)
+    if (getIt.isRegistered<VoIPCallService>()) {
+      unawaited(getIt<VoIPCallService>().endAllCalls());
+    }
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
-    body: Stack(
-      children: [
-        // Remote video (full screen)
-        _remoteVideo(),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Remote video (full screen)
+          _remoteVideo(),
 
-        // Local video (small preview)
-        Positioned(
-          top: 40,
-          right: 16,
-          child: _localVideoPreview(),
-        ),
+          // Local video (small preview)
+          Positioned(
+            top: 40,
+            right: 16,
+            child: _localVideoPreview(),
+          ),
 
-        // Connection status
-        Positioned(
-          top: 40,
-          left: 16,
-          child: _connectionStatusWidget(),
-        ),
+          // Connection status
+          Positioned(
+            top: 40,
+            left: 16,
+            child: _connectionStatusWidget(),
+          ),
 
-        // Controls at bottom
-        Positioned(
-          bottom: 40,
-          left: 0,
-          right: 0,
-          child: _controlButtons(),
-        ),
+          // Controls at bottom
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: _controlButtons(),
+          ),
 
-        // Appointment info
-        Positioned(
-          top: 100,
-          left: 16,
-          right: 100,
-          child: _appointmentInfo(),
-        ),
-      ],
-    ),
-  );
+          // Appointment info
+          Positioned(
+            top: 100,
+            left: 16,
+            right: 100,
+            child: _appointmentInfo(),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// فيديو المستخدم البعيد (ملء الشاشة)
   Widget _remoteVideo() {
@@ -552,11 +725,13 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     ),
   );
 
-  /// معلومات الموعد
+  /// معلومات الموعد — يعرض الطرف الآخر في المكالمة بحسب دور المستخدم.
+  ///
+  /// الطبيب يرى: "المريض: [اسم المريض]"
+  /// المريض يرى: "الطبيب: [اسم الطبيب]"
   Widget _appointmentInfo() => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      // Migrated from withOpacity() to withValues(alpha:) - Flutter 3.27+ API
       color: Colors.black.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(8),
     ),
@@ -565,7 +740,15 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          widget.appointment.patientName,
+          _isDoctor ? 'المريض' : 'الطبيب',
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          _otherPartyName,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -574,10 +757,10 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          widget.appointment.doctorName,
+          widget.appointment.specialization,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 14,
+            fontSize: 13,
           ),
         ),
       ],

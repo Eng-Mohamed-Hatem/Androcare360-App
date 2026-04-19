@@ -1,6 +1,6 @@
 import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
-import 'package:elajtech/features/patient/home/presentation/screens/patient_home_screen.dart';
+import 'package:elajtech/features/patient/navigation/presentation/screens/patient_main_screen.dart';
 import 'package:elajtech/features/register/presentation/screens/patient_register_screen.dart'
     show PatientRegisterScreen;
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// تُعرَض هذه الشاشة بعد [PatientRegisterScreen] فور إرسال رمز OTP.
 /// عند نجاح التحقق، يتم ربط الهاتف بالحساب وإنشاء وثيقة Firestore،
-/// ثم الانتقال إلى [PatientHomeScreen].
+/// ثم الانتقال إلى [PatientMainScreen].
 class SignUpOtpScreen extends ConsumerStatefulWidget {
   const SignUpOtpScreen({super.key});
 
@@ -46,7 +46,7 @@ class _SignUpOtpScreenState extends ConsumerState<SignUpOtpScreen> {
       await Navigator.pushAndRemoveUntil<void>(
         context,
         MaterialPageRoute<void>(
-          builder: (_) => const PatientHomeScreen(),
+          builder: (_) => const PatientMainScreen(),
         ),
         (_) => false,
       );

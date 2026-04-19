@@ -307,6 +307,20 @@ class MockPackageDocumentRepository extends _i1.Mock
           >);
 
   @override
+  _i4.Stream<List<_i10.PackageDocumentEntity>> streamDocumentsByPatientPackage({
+    required String? patientId,
+    required String? patientPackageId,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#streamDocumentsByPatientPackage, [], {
+              #patientId: patientId,
+              #patientPackageId: patientPackageId,
+            }),
+            returnValue: _i4.Stream<List<_i10.PackageDocumentEntity>>.empty(),
+          )
+          as _i4.Stream<List<_i10.PackageDocumentEntity>>);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, _i10.PackageDocumentEntity>>
   uploadDocument({
     required String? localFilePath,

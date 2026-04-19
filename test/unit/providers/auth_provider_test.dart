@@ -17,12 +17,15 @@
 
 library;
 
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/features/auth/domain/repositories/auth_repository.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/features/auth/domain/models/phone_verification_data.dart';
 import 'package:elajtech/shared/models/user_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -58,7 +61,7 @@ void main() {
   });
 
   group('AuthProvider - State Initialization', () {
-    test('should initialize with unauthenticated state', () {
+    test('should initialize with unauthenticated state', () async {
       // Arrange
       when(
         mockAuthRepository.getCurrentUser(),
@@ -68,6 +71,10 @@ void main() {
       addTearDown(container.dispose);
 
       // Act
+      expect(container.read(authProvider).isLoading, true);
+
+      await Future<void>.delayed(Duration.zero);
+
       final state = container.read(authProvider);
 
       // Assert
@@ -75,6 +82,34 @@ void main() {
       expect(state.user, isNull);
       expect(state.isLoading, false);
     });
+
+    test(
+      'should stay loading while restoring a saved mobile session',
+      () async {
+        final user = UserFixtures.createPatient(id: 'restored_user');
+        final completer = Completer<Either<Failure, UserModel>>();
+
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+        when(mockAuthRepository.getCurrentUser()).thenAnswer(
+          (_) => completer.future,
+        );
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        expect(container.read(authProvider).isLoading, true);
+
+        completer.complete(Right(user));
+        await Future<void>.delayed(Duration.zero);
+
+        final state = container.read(authProvider);
+        expect(state.isLoading, false);
+        expect(state.isAuthenticated, true);
+        expect(state.user, equals(user));
+      },
+    );
   });
 
   group('AuthProvider - Login Flow', () {
@@ -230,6 +265,11 @@ void main() {
 
       final container = ProviderContainer();
       addTearDown(container.dispose);
+
+      while (container.read(authProvider).isLoading) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(container.read(authProvider).isLoading, false);
 
       // Act
       final loginFuture = container
@@ -1023,5 +1063,38 @@ void main() {
         expect(state.user?.isActive, true); // Default value should be true
       },
     );
+
+    test('should handle isActive null by treating patient as active', () async {
+      const email = 'null-active@test.com';
+      const password = 'password123';
+      final nullActiveUser = UserModel.fromJson({
+        'id': 'null_active_001',
+        'email': email,
+        'fullName': 'Null Active User',
+        'userType': 'patient',
+        'isActive': null,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+
+      when(
+        mockAuthRepository.getCurrentUser(),
+      ).thenAnswer((_) async => const Left(ServerFailure('No user')));
+      when(
+        mockAuthRepository.signIn(email: email, password: password),
+      ).thenAnswer((_) async => Right(nullActiveUser));
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(authProvider.notifier)
+          .loginWithEmail(email, password);
+
+      final state = container.read(authProvider);
+      expect(state.isAuthenticated, true);
+      expect(state.user?.userType, UserType.patient);
+      expect(state.user?.isActive, true);
+      expect(state.error, isNull);
+    });
   });
 }

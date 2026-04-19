@@ -32,12 +32,12 @@ void main() {
   late MockDoctorRepository mockRepository;
   final getIt = GetIt.instance;
 
-  setUp(() {
+  setUp(() async {
     mockRepository = MockDoctorRepository();
 
     // Register mock in GetIt
     if (getIt.isRegistered<DoctorRepository>()) {
-      getIt.unregister<DoctorRepository>();
+      await getIt.unregister<DoctorRepository>();
     }
     getIt.registerSingleton<DoctorRepository>(mockRepository);
   });

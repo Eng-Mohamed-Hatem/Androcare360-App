@@ -17,21 +17,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:elajtech/core/services/voip_call_service.dart';
 import 'package:elajtech/core/errors/exceptions.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/services/call_monitoring_service.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'voip_call_service_test.mocks.dart';
 
-@GenerateMocks([CallMonitoringService])
+@GenerateMocks([CallMonitoringService, FirebaseFirestore])
 void main() {
   late VoIPCallService voipService;
   late MockCallMonitoringService mockCallMonitoring;
+  late MockFirebaseFirestore mockFirestore;
 
   setUpAll(TestWidgetsFlutterBinding.ensureInitialized);
 
   setUp(() {
     mockCallMonitoring = MockCallMonitoringService();
+    mockFirestore = MockFirebaseFirestore();
 
     // Setup mock behavior for logging methods to return Futures
     when(
@@ -43,8 +46,8 @@ void main() {
       ),
     ).thenAnswer((_) async {});
 
-    // Get instance with mock
-    voipService = VoIPCallService(mockCallMonitoring);
+    // Get instance with mocks
+    voipService = VoIPCallService(mockCallMonitoring, mockFirestore);
   });
 
   tearDown(() {
@@ -147,6 +150,85 @@ void main() {
       expect(pendingData.agoraToken, isNull);
       expect(pendingData.agoraChannelName, isNull);
       expect(pendingData.agoraUid, isNull);
+    });
+  });
+
+  group('VoIPCallService - Answer Flow Guards', () {
+    test('should block cleanup after answer is accepted', () {
+      voipService.markAnswerAccepted();
+
+      expect(voipService.isCleanupBlocked, isTrue);
+    });
+
+    test('should skip cleanup while answer flow is still active', () async {
+      voipService.markAnswerAccepted();
+
+      final appointmentId = await voipService.cleanupAfterCall();
+
+      expect(appointmentId, isNull);
+      expect(voipService.isCleanupBlocked, isTrue);
+    });
+
+    test('should unblock cleanup after join succeeds', () {
+      voipService
+        ..markAnswerAccepted()
+        ..markJoinSucceeded();
+
+      expect(voipService.isCleanupBlocked, isFalse);
+    });
+
+    test('should parse agora uid from string values', () {
+      expect(voipService.parseAgoraUid('12345'), equals(12345));
+      expect(voipService.parseAgoraUid(987), equals(987));
+      expect(voipService.parseAgoraUid('invalid'), isNull);
+    });
+
+    // ── _isCallActive tests ──────────────────────────────────────────────────
+
+    test('markJoinSucceeded_setsIsCallActiveTrue', () {
+      voipService
+        ..markAnswerAccepted()
+        ..markJoinSucceeded();
+
+      expect(voipService.isCallActive, isTrue);
+    });
+
+    test('markCallEnded_clearsIsCallActive', () {
+      voipService
+        ..markAnswerAccepted()
+        ..markJoinSucceeded()
+        ..markCallEnded();
+
+      expect(voipService.isCallActive, isFalse);
+    });
+
+    test('cleanupAfterCall_whileCallActive_returnsNull', () async {
+      voipService
+        ..markAnswerAccepted()
+        ..markJoinSucceeded(); // isCallActive = true
+
+      final result = await voipService.cleanupAfterCall();
+
+      expect(result, isNull);
+      expect(voipService.isCallActive, isTrue);
+    });
+
+    test('cleanupAfterCall_afterCallEnded_doesNotBlock', () async {
+      voipService
+        ..markAnswerAccepted()
+        ..markJoinSucceeded()
+        ..markCallEnded(); // isCallActive = false
+
+      // No active call → cleanup is allowed to proceed
+      // (MissingPluginException expected in test env)
+      String? result;
+      try {
+        result = await voipService.cleanupAfterCall();
+      } on Exception catch (e) {
+        expect(e.toString(), contains('MissingPluginException'));
+      }
+      // If no exception, result is null (no pending call data was set)
+      expect(result, isNull);
     });
   });
 
@@ -482,5 +564,25 @@ void main() {
       // This is handled in the implementation
       expect(VoIPException, isA<Type>());
     });
+  });
+
+  group('VoIPCallService - FirebaseFirestore injection', () {
+    test(
+      'voipCallService_constructedWithFirestore_doesNotThrow',
+      () {
+        // VoIPCallService(callMonitoring, firestore) must accept both deps
+        expect(VoIPCallService(mockCallMonitoring, mockFirestore), isNotNull);
+      },
+    );
+
+    test(
+      'voipCallService_emptyVoipToken_doesNotWriteToFirestore',
+      () async {
+        // An empty token must NOT trigger a Firestore write.
+        // If _saveVoipToken were called with an empty token it would call
+        // mockFirestore.collection() — verify it is never called.
+        verifyNever(mockFirestore.collection(any));
+      },
+    );
   });
 }

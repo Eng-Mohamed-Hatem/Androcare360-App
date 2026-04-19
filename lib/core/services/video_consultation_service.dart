@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:elajtech/core/errors/exceptions.dart';
@@ -83,6 +85,17 @@ class VideoConsultationService {
       region: 'europe-west1',
     );
     return _functionsInstance!;
+  }
+
+  Future<User?> _ensureAuthenticatedUser() async {
+    var user = FirebaseAuth.instance.currentUser;
+    user ??= await FirebaseAuth.instance
+        .authStateChanges()
+        .firstWhere((candidate) => candidate != null)
+        .timeout(const Duration(seconds: 10));
+
+    await user?.getIdToken(true);
+    return user;
   }
 
   /// Starts a video call consultation session.
@@ -255,6 +268,155 @@ class VideoConsultationService {
       );
     }
   }
+
+  /// Marks a live appointment as in progress once the patient joins.
+  Future<void> markCallInProgress({required String appointmentId}) async {
+    final callable = _functions.httpsCallable('markCallInProgress');
+    await callable.call<void>({'appointmentId': appointmentId});
+  }
+
+  /// Ends the active Agora call for the appointment.
+  Future<void> endVideoCall({required String appointmentId}) async {
+    final callable = _functions.httpsCallable('endAgoraCall');
+    await callable.call<void>({'appointmentId': appointmentId});
+  }
+
+  /// Notifies backend that the patient explicitly accepted the incoming call.
+  Future<void> notifyPatientAnswered({required String appointmentId}) async {
+    if (kDebugMode) {
+      debugPrint(
+        '📞 [VideoConsultationService] notifyPatientAnswered:start appointmentId=$appointmentId',
+      );
+    }
+
+    await _ensureAuthenticatedUser();
+
+    final callable = _functions.httpsCallable('notifyPatientAnswered');
+    await callable.call<void>({'appointmentId': appointmentId});
+
+    if (kDebugMode) {
+      debugPrint(
+        '✅ [VideoConsultationService] notifyPatientAnswered:success appointmentId=$appointmentId',
+      );
+    }
+  }
+
+  /// Cancels an outgoing ringing call and resets the appointment to scheduled.
+  Future<void> cancelCall({
+    required String appointmentId,
+    required String doctorId,
+  }) async {
+    final callable = _functions.httpsCallable('cancelCall');
+    await callable.call<void>({
+      'appointmentId': appointmentId,
+      'doctorId': doctorId,
+    });
+  }
+
+  /// Allows the patient to rejoin an active or missed call session.
+  Future<AgoraCallData> patientJoinCall({
+    required String appointmentId,
+    required String patientId,
+  }) async {
+    try {
+      if (kDebugMode) {
+        debugPrint(
+          '📞 [VideoConsultationService] patientJoinCall:start appointmentId=$appointmentId patientId=$patientId',
+        );
+      }
+
+      await _ensureAuthenticatedUser();
+
+      final callable = _functions.httpsCallable('patientJoinCall');
+      final result = await callable.call<Map<String, dynamic>>({
+        'appointmentId': appointmentId,
+        'patientId': patientId,
+      });
+
+      // Defensive parsing — use dynamic access + toString() to handle any server type drift
+      final data = result.data;
+      final agoraToken = data['agoraToken']?.toString();
+      final channelName = (data['channelName'] ?? data['agoraChannelName'])
+          ?.toString();
+      final rawUid = data['uid'];
+      final uid = rawUid is int
+          ? rawUid
+          : int.tryParse(rawUid?.toString() ?? '');
+
+      if (agoraToken == null || channelName == null || uid == null) {
+        throw const AgoraException(
+          'بيانات المكالمة غير مكتملة من الخادم',
+          code: 'INVALID_CALL_DATA',
+        );
+      }
+
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [VideoConsultationService] patientJoinCall:success appointmentId=$appointmentId channelName=$channelName uid=$uid',
+        );
+      }
+
+      return AgoraCallData(
+        agoraToken: agoraToken,
+        channelName: channelName,
+        uid: uid,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [VideoConsultationService] patientJoinCall:error code=${e.code} message=${e.message} appointmentId=$appointmentId patientId=$patientId',
+        );
+      }
+
+      switch (e.code) {
+        case 'deadline-exceeded':
+          throw const AgoraException(
+            'انتهت صلاحية جلسة الاجتماع',
+            code: 'DEADLINE_EXCEEDED',
+          );
+        case 'permission-denied':
+          throw const AgoraException(
+            'أنت غير مصرح لك بالانضمام إلى هذا الاجتماع',
+            code: 'PERMISSION_DENIED',
+          );
+        case 'failed-precondition':
+          throw const AgoraException(
+            'هذا الاجتماع لم يعد متاحاً',
+            code: 'FAILED_PRECONDITION',
+          );
+        case 'not-found':
+          throw const AgoraException(
+            'لا توجد جلسة نشطة لهذا الموعد',
+            code: 'NOT_FOUND',
+          );
+        default:
+          throw AgoraException(
+            e.message ?? 'تعذر الانضمام إلى الاجتماع حالياً',
+            code: e.code,
+            originalError: e,
+          );
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [VideoConsultationService] patientJoinCall:unexpected error=$e appointmentId=$appointmentId patientId=$patientId',
+        );
+      }
+      rethrow;
+    }
+  }
+}
+
+class AgoraCallData {
+  AgoraCallData({
+    required this.agoraToken,
+    required this.channelName,
+    required this.uid,
+  });
+
+  final String agoraToken;
+  final String channelName;
+  final int uid;
 }
 
 /// Result object returned from video call initiation.

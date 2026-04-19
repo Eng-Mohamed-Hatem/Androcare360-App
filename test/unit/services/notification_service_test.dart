@@ -234,10 +234,10 @@ void main() {
       };
 
       // Assert - all channel names should be non-empty
-      channels.forEach((id, name) {
-        expect(id, isNotEmpty);
-        expect(name, isNotEmpty);
-      });
+      for (final entry in channels.entries) {
+        expect(entry.key, isNotEmpty);
+        expect(entry.value, isNotEmpty);
+      }
     });
   });
 

@@ -1,3 +1,4 @@
+import 'package:elajtech/core/constants/app_colors.dart';
 import 'package:elajtech/core/constants/app_strings.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/features/packages/presentation/pages/my_packages_page.dart';
@@ -5,6 +6,7 @@ import 'package:elajtech/features/patient/home/presentation/screens/lab_tests_in
 import 'package:elajtech/features/patient/home/presentation/screens/medical_screening_screen.dart';
 import 'package:elajtech/features/patient/home/presentation/screens/patient_home_screen.dart';
 import 'package:elajtech/features/patient/medical_records/presentation/screens/medical_records_screen.dart';
+import 'package:elajtech/features/patient/self_assessment/presentation/screens/self_assessment_list_screen.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,6 +62,69 @@ void main() {
         ),
       );
     }
+
+    testWidgets(
+      'Operations shortcuts expose explicit semantics labels',
+      (
+        WidgetTester tester,
+      ) async {
+        final semanticsHandle = tester.ensureSemantics();
+        try {
+          await tester.pumpWidget(createTestWidget());
+          await tester.pumpAndSettle();
+
+          final medicalRecordsNode = tester.getSemantics(
+            find.text(AppStrings.medicalRecords).first,
+          );
+          expect(
+            medicalRecordsNode.label,
+            contains('السجل الطبي، يفتح صفحة السجل الطبي للمريض'),
+          );
+
+          final selfAssessmentNode = tester.getSemantics(
+            find.text(AppStrings.testYourSexualHealth).first,
+          );
+          expect(
+            selfAssessmentNode.label,
+            contains('اختبر صحتك الجنسية، يفتح صفحة التقييم الذاتي'),
+          );
+
+          final myPackagesCard = find.text('باقاتي');
+          await tester.ensureVisible(myPackagesCard);
+          await tester.pumpAndSettle();
+
+          final myPackagesNode = tester.getSemantics(myPackagesCard);
+          expect(
+            myPackagesNode.label,
+            contains('باقاتي، يفتح صفحة الباقات الخاصة بك'),
+          );
+        } finally {
+          semanticsHandle.dispose();
+        }
+      },
+    );
+
+    testWidgets(
+      'Tapping Test Your Sexual Health navigates to SelfAssessmentListScreen',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        final selfAssessmentCard = find
+            .text(AppStrings.testYourSexualHealth)
+            .first;
+        expect(find.text(AppStrings.testYourSexualHealth), findsNWidgets(2));
+
+        await tester.ensureVisible(selfAssessmentCard);
+        await tester.pumpAndSettle();
+
+        await tester.tap(selfAssessmentCard);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SelfAssessmentListScreen), findsOneWidget);
+        expect(find.text('قيم نفسك'), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'Tapping My Packages navigates to MyPackagesPage',
@@ -168,6 +233,39 @@ void main() {
 
         // Verify navigation to MedicalScreeningScreen
         expect(find.byType(MedicalScreeningScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'App bar background turns white after scrolling and resets at top',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
+
+        BoxDecoration getAppBarDecoration() {
+          final animatedContainer = tester.widget<AnimatedContainer>(
+            find.byKey(const Key('patient_home_app_bar_background')),
+          );
+          return animatedContainer.decoration! as BoxDecoration;
+        }
+
+        expect(getAppBarDecoration().color, equals(AppColors.backgroundLight));
+
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -240),
+        );
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(getAppBarDecoration().color, equals(Colors.white));
+
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, 240),
+        );
+        await tester.pump(const Duration(milliseconds: 250));
+
+        expect(getAppBarDecoration().color, equals(AppColors.backgroundLight));
       },
     );
   });

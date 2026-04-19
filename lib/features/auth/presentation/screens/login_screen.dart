@@ -24,7 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
+  bool _handledAuthSuccess = false;
 
   @override
   void dispose() {
@@ -37,41 +37,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// watches `authProvider` and switches between admin / doctor / patient
   /// screens automatically when `isAuthenticated` becomes true.
   Future<void> _handleLogin() async {
-    if (_isLoading) return;
+    if (ref.read(authProvider).isLoading) return;
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
       await ref
           .read(authProvider.notifier)
           .loginWithEmail(
             _emailController.text.trim(),
             _passwordController.text,
           );
-
-      if (mounted) {
-        final authState = ref.read(authProvider);
-
-        if (authState.isAuthenticated) {
-          // AuthWrapper handles routing — no explicit Navigator call needed.
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم تسجيل الدخول بنجاح!'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        } else if (authState.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authState.error!),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-
-        setState(() => _isLoading = false);
-      }
     }
   }
 
@@ -115,12 +90,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// Handles doctor login — routing is managed by [AuthWrapper].
   Future<void> _handleDoctorLogin() async {
-    if (_isLoading) return;
+    if (ref.read(authProvider).isLoading) return;
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
       await ref
           .read(authProvider.notifier)
           .loginWithEmail(
@@ -128,204 +101,235 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text,
             userType: UserType.doctor,
           );
-
-      if (mounted) {
-        final authState = ref.read(authProvider);
-
-        if (authState.isAuthenticated) {
-          // AuthWrapper handles routing — no explicit Navigator call needed.
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم تسجيل الدخول بنجاح!'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        } else if (authState.error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authState.error!),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-
-        setState(() => _isLoading = false);
-      }
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 40),
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
 
-              // Logo
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.medical_services,
-                  size: 50,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
+    ref.listen<AuthState>(authProvider, (previous, next) async {
+      if (!mounted) {
+        return;
+      }
 
-              // Title
-              Text(
-                AppStrings.login,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
+      final user = next.user;
+      final hasNewError = next.error != null && next.error != previous?.error;
+      final hasNewSuccess =
+          next.isAuthenticated && user != null && !_handledAuthSuccess;
 
-              Text(
-                'مرحباً بك في ${AppStrings.appName}',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
+      if (hasNewError) {
+        debugPrint(
+          '🚫 [LoginScreen] patient redirect blocked reason=${next.error}',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
 
-              // Email Field
-              CustomTextField(
-                label: AppStrings.email,
-                hint: 'example@email.com',
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: Icons.email_outlined,
-                validator: Validators.email,
-                textDirection: TextDirection.ltr,
-              ),
-              const SizedBox(height: 16),
+      if (!hasNewSuccess) {
+        return;
+      }
 
-              // Password Field
-              CustomTextField(
-                label: AppStrings.password,
-                controller: _passwordController,
-                obscureText: true,
-                prefixIcon: Icons.lock_outline,
-                validator: Validators.password,
-              ),
-              const SizedBox(height: 12),
+      _handledAuthSuccess = true;
+      debugPrint(
+        '✅ [LoginScreen] signIn success received'
+        ' | userType=${user.userType.name}'
+        ' | isActive=${user.isActive}',
+      );
+      debugPrint(
+        '🧭 [LoginScreen] navigation decision -> AuthWrapper'
+        ' | userType=${user.userType.name}',
+      );
 
-              // Forgot Password
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () async {
-                    await Navigator.push<void>(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (context) => const ForgotPasswordScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text(AppStrings.forgotPassword),
-                ),
-              ),
-              const SizedBox(height: 24),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم تسجيل الدخول بنجاح!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
 
-              // Login Button
-              CustomButton(
-                text: AppStrings.login,
-                onPressed: _isLoading ? null : _handleLogin,
-                isLoading: _isLoading,
-                height: 52,
-              ),
-              const SizedBox(height: 16),
+      await Navigator.of(context).pushAndRemoveUntil<void>(
+        MaterialPageRoute<void>(builder: (_) => const AuthWrapper()),
+        (_) => false,
+      );
+    });
 
-              // Biometric Login Button
-              CustomButton(
-                text: AppStrings.loginWithBiometric,
-                onPressed: _handleBiometricLogin,
-                isOutlined: true,
-                icon: Icons.fingerprint,
-                height: 52,
-              ),
-              const SizedBox(height: 16),
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
 
-              // Phone Login Button
-              CustomButton(
-                text: 'تسجيل الدخول برقم الهاتف',
-                onPressed: _handlePhoneLogin,
-                isOutlined: true,
-                icon: Icons.phone_android,
-                height: 52,
-              ),
-              const SizedBox(height: 16),
-
-              // Doctor Login Button
-              CustomButton(
-                text: AppStrings.loginAsDoctor,
-                onPressed: _isLoading ? null : _handleDoctorLogin,
-                isOutlined: true,
-                isLoading: _isLoading,
-                icon: Icons.medical_services,
-                height: 52,
-              ),
-              const SizedBox(height: 32),
-
-              // Divider
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'أو',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
-                    ),
+                // Logo
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Register Link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    AppStrings.dontHaveAccount,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  child: const Icon(
+                    Icons.medical_services,
+                    size: 50,
+                    color: AppColors.primary,
                   ),
-                  TextButton(
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  AppStrings.login,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+
+                Text(
+                  'مرحباً بك في ${AppStrings.appName}',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+
+                // Email Field
+                CustomTextField(
+                  label: AppStrings.email,
+                  hint: 'example@email.com',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.email_outlined,
+                  validator: Validators.email,
+                  textDirection: TextDirection.ltr,
+                ),
+                const SizedBox(height: 16),
+
+                // Password Field
+                CustomTextField(
+                  label: AppStrings.password,
+                  controller: _passwordController,
+                  obscureText: true,
+                  prefixIcon: Icons.lock_outline,
+                  validator: Validators.password,
+                ),
+                const SizedBox(height: 12),
+
+                // Forgot Password
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
                     onPressed: () async {
                       await Navigator.push<void>(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (context) => const PatientRegisterScreen(),
+                          builder: (context) => const ForgotPasswordScreen(),
                         ),
                       );
                     },
-                    child: const Text(
-                      AppStrings.register,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    child: const Text(AppStrings.forgotPassword),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 24),
+
+                // Login Button
+                CustomButton(
+                  text: AppStrings.login,
+                  onPressed: authState.isLoading ? null : _handleLogin,
+                  isLoading: authState.isLoading,
+                  height: 52,
+                ),
+                const SizedBox(height: 16),
+
+                // Biometric Login Button
+                CustomButton(
+                  text: AppStrings.loginWithBiometric,
+                  onPressed: _handleBiometricLogin,
+                  isOutlined: true,
+                  icon: Icons.fingerprint,
+                  height: 52,
+                ),
+                const SizedBox(height: 16),
+
+                // Phone Login Button
+                CustomButton(
+                  text: 'تسجيل الدخول برقم الهاتف',
+                  onPressed: _handlePhoneLogin,
+                  isOutlined: true,
+                  icon: Icons.phone_android,
+                  height: 52,
+                ),
+                const SizedBox(height: 16),
+
+                // Doctor Login Button
+                CustomButton(
+                  text: AppStrings.loginAsDoctor,
+                  onPressed: authState.isLoading ? null : _handleDoctorLogin,
+                  isOutlined: true,
+                  isLoading: authState.isLoading,
+                  icon: Icons.medical_services,
+                  height: 52,
+                ),
+                const SizedBox(height: 32),
+
+                // Divider
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'أو',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Register Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      AppStrings.dontHaveAccount,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        await Navigator.push<void>(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const PatientRegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        AppStrings.register,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

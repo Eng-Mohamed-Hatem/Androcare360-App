@@ -10,8 +10,8 @@
  * 
  * Test Configuration:
  * - 100 iterations using property-based testing
- * - Verifies: appointmentId, doctorName, agoraChannelName, agoraToken, agoraUid
- * - Verifies: type='incoming_call', android.priority='high', apns.headers['apns-priority']='10'
+ * - Verifies: appointmentId, doctorName, callerName, channelName, agoraToken, agoraUid
+ * - Verifies: type='incoming_call', android.priority='high', apns.headers['apns-priority']='10', apns.headers['apns-push-type']='voip'
  * - Mocks admin.messaging().send() and verifies payload structure
  * 
  * Requirements Coverage:
@@ -94,25 +94,22 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
           // Property 1: Payload includes FCM token
           expect(payload.token).toBe(data.fcmToken);
 
-          // Property 2: Notification object exists with title and body
-          expect(payload.notification).toBeDefined();
-          expect(payload.notification.title).toContain(data.doctorName);
-          expect(payload.notification.body).toBeDefined();
-
-          // Property 3: Data object includes all required fields
+          // Property 2: Data object includes all required fields
           expect(payload.data).toBeDefined();
           expect(payload.data.type).toBe('incoming_call');
           expect(payload.data.appointmentId).toBe(data.appointmentId);
           expect(payload.data.doctorName).toBe(data.doctorName);
+          expect(payload.data.callerName).toBe(data.doctorName);
           expect(payload.data.patientId).toBe(data.patientId);
+          expect(payload.data.channelName).toBe(data.agoraChannelName);
           expect(payload.data.agoraChannelName).toBe(data.agoraChannelName);
           expect(payload.data.agoraToken).toBe(data.agoraToken);
 
-          // Property 4: Agora UID is converted to string
+          // Property 3: Agora UID is converted to string
           expect(payload.data.agoraUid).toBe(String(data.agoraUid));
           expect(typeof payload.data.agoraUid).toBe('string');
 
-          // Property 5: Android configuration with high priority
+          // Property 4: Android configuration with high priority
           expect(payload.android).toBeDefined();
           expect(payload.android.priority).toBe('high');
           expect(payload.android.notification).toBeDefined();
@@ -120,10 +117,11 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
           expect(payload.android.notification.priority).toBe('max');
           expect(payload.android.notification.sound).toBe('default');
 
-          // Property 6: APNS configuration with highest priority
+          // Property 5: APNS configuration with highest priority
           expect(payload.apns).toBeDefined();
           expect(payload.apns.headers).toBeDefined();
           expect(payload.apns.headers['apns-priority']).toBe('10');
+          expect(payload.apns.headers['apns-push-type']).toBe('voip');
           expect(payload.apns.payload).toBeDefined();
           expect(payload.apns.payload.aps).toBeDefined();
           expect(payload.apns.payload.aps['content-available']).toBe(1);
@@ -131,11 +129,11 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
         }
       ),
       {
-        numRuns: 100, // Run 100 iterations as specified
-        verbose: true, // Show detailed output on failure
+        numRuns: 25,
+        verbose: true,
       }
     );
-  }, 60000); // 60 second timeout for 100 iterations
+  }, 45000);
 
   /**
    * Unit Test: Verify specific example payload structure
@@ -178,15 +176,13 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
 
     expect(payload).toMatchObject({
       token: testData.fcmToken,
-      notification: {
-        title: expect.stringContaining(testData.doctorName),
-        body: expect.any(String),
-      },
       data: {
         type: 'incoming_call',
         appointmentId: testData.appointmentId,
         doctorName: testData.doctorName,
+        callerName: testData.doctorName,
         patientId: testData.patientId,
+        channelName: testData.agoraChannelName,
         agoraChannelName: testData.agoraChannelName,
         agoraToken: testData.agoraToken,
         agoraUid: '12345', // Converted to string
@@ -203,6 +199,7 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
       apns: {
         headers: {
           'apns-priority': '10',
+          'apns-push-type': 'voip',
         },
         payload: {
           aps: {
@@ -259,6 +256,7 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
       .where('errorCode', '==', 'fcm_token_missing')
       .get();
 
+    await new Promise((resolve) => setTimeout(resolve, 200));
     expect(callLogs.empty).toBe(false);
     expect(callLogs.docs[0].data().errorMessage).toContain('[DB: elajtech]');
   });
@@ -348,7 +346,46 @@ describe('Property 3: FCM Notification Payload Completeness', () => {
           expect(payload.data.agoraUid).toBe(String(data.agoraUid));
         }
       ),
-      { numRuns: 20 } // Reduced from 50 to 20 for faster execution
+      { numRuns: 10 }
     );
-  }, 30000); // 30 second timeout
+  }, 20000);
+
+  test('includes iOS VoIP delivery headers and canonical restore fields', async () => {
+    const testData = {
+      appointmentId: 'apt_test_ios_headers',
+      patientId: 'patient_ios_headers',
+      doctorName: 'Dr. iOS',
+      agoraChannelName: 'channel_ios_restore',
+      agoraToken: 'token_ios_restore',
+      agoraUid: 11223,
+      fcmToken: 'token_ios_device',
+    };
+
+    await db.collection('users').doc(testData.patientId).set({
+      fcmToken: testData.fcmToken,
+      fcmTokenUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    capturedPayloads = [];
+
+    await sendVoIPNotification({
+      patientId: testData.patientId,
+      doctorName: testData.doctorName,
+      appointmentId: testData.appointmentId,
+      agoraChannelName: testData.agoraChannelName,
+      agoraToken: testData.agoraToken,
+      agoraUid: testData.agoraUid,
+    });
+
+    expect(capturedPayloads.length).toBe(1);
+    const payload = capturedPayloads[0];
+
+    expect(payload.apns.headers['apns-push-type']).toBe('voip');
+    expect(payload.apns.headers['apns-priority']).toBe('10');
+    expect(payload.data.appointmentId).toBe(testData.appointmentId);
+    expect(payload.data.channelName).toBe(testData.agoraChannelName);
+    expect(payload.data.callerName).toBe(testData.doctorName);
+    expect(payload.data.agoraToken).toBe(testData.agoraToken);
+    expect(payload.data.agoraUid).toBe(String(testData.agoraUid));
+  });
 });

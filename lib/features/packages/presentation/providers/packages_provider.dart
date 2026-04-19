@@ -269,8 +269,7 @@ class PurchasePackageNotifier extends StateNotifier<PurchaseNotifierState> {
       PurchasePackageParams(
         patientId: user.id,
         package: package,
-        // TODO(Elajtech): Remove when real payment gateway integrated
-        isTestPurchase: true, // Trigger simulation for Phase 3 (R6 bypass)
+        isTestPurchase: true, // Simulation bypass — replace with false when payment gateway (R6) is integrated
       ),
     );
 

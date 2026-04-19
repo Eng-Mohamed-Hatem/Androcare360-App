@@ -13,9 +13,11 @@
 /// **Spec**: tasks.md T079, spec.md §9.11.
 library;
 
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:elajtech/core/constants/app_colors.dart';
+import 'package:elajtech/features/admin/presentation/widgets/admin_document_upload_bottom_sheet.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/package_document_entity.dart';
 import 'package:elajtech/features/packages/presentation/providers/admin_patient_packages_provider.dart';
@@ -54,6 +56,19 @@ class AdminPatientPackageContextView extends ConsumerWidget {
   /// The patient package entity.
   final PatientPackageEntity package;
 
+  void _showUploadSheet(BuildContext context) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => AdminDocumentUploadBottomSheet(patientPackage: package),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final documentsAsync = ref.watch(
@@ -74,27 +89,11 @@ class AdminPatientPackageContextView extends ConsumerWidget {
         data: (documents) => _ServiceUsageList(
           package: package,
           documents: documents,
-          onUploadPressed: () {
-            // TODO(Elajtech): Show document upload bottom sheet
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('فتح نافذة رفع المستندات'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
+          onUploadPressed: () => _showUploadSheet(context),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO(Elajtech): Show document upload bottom sheet
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('فتح نافذة رفع المستندات'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        },
+        onPressed: () => _showUploadSheet(context),
         icon: const Icon(Icons.upload_file),
         label: const Text('رفع مستند'),
       ),
@@ -192,13 +191,17 @@ class _ServiceUsageList extends StatelessWidget {
   }
 
   String _getServiceName(String serviceId) {
-    // TODO(Elajtech): Map serviceId to actual service name
-    return 'خدمة #$serviceId';
+    final serviceItem = package.packageServices
+        .where((s) => s.serviceId == serviceId)
+        .firstOrNull;
+    return serviceItem?.displayName ?? 'خدمة #$serviceId';
   }
 
   int _getServiceQuantity(String serviceId) {
-    // TODO(Elajtech): Get quantity from package definition
-    return 1;
+    final serviceItem = package.packageServices
+        .where((s) => s.serviceId == serviceId)
+        .firstOrNull;
+    return serviceItem?.quantity ?? 1;
   }
 }
 

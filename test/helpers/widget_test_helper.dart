@@ -100,19 +100,23 @@ void setupFirebaseCoreMocks() {
             };
           }
           if (methodCall.method == 'Auth#signInWithEmailAndPassword') {
+            final arguments =
+                methodCall.arguments as Map<Object?, Object?>? ?? const {};
             return <String, dynamic>{
               'user': <String, dynamic>{
                 'uid': 'test_user_123',
-                'email': methodCall.arguments['email'],
+                'email': arguments['email'] as String?,
                 'displayName': 'Test User',
               },
             };
           }
           if (methodCall.method == 'Auth#createUserWithEmailAndPassword') {
+            final arguments =
+                methodCall.arguments as Map<Object?, Object?>? ?? const {};
             return <String, dynamic>{
               'user': <String, dynamic>{
                 'uid': 'test_user_new_123',
-                'email': methodCall.arguments['email'],
+                'email': arguments['email'] as String?,
                 'displayName': null,
               },
             };

@@ -146,8 +146,18 @@ class AppointmentHistoryCard extends StatelessWidget {
         return 'مؤكد';
       case AppointmentStatus.scheduled:
         return 'مجدول';
+      case AppointmentStatus.calling:
+        return 'جارٍ الاتصال';
+      case AppointmentStatus.inProgress:
+        return 'قيد الجلسة';
+      case AppointmentStatus.declined:
+        return 'مرفوض';
+      case AppointmentStatus.endedPendingConfirmation:
+        return 'بانتظار التأكيد';
       case AppointmentStatus.completed:
         return 'مكتمل';
+      case AppointmentStatus.notCompleted:
+        return 'غير مكتمل';
       case AppointmentStatus.cancelled:
         return 'ملغي';
       case AppointmentStatus.missed:
@@ -163,8 +173,18 @@ class AppointmentHistoryCard extends StatelessWidget {
         return Colors.blue;
       case AppointmentStatus.scheduled:
         return Colors.purple;
+      case AppointmentStatus.calling:
+        return AppColors.primary;
+      case AppointmentStatus.inProgress:
+        return Colors.teal;
+      case AppointmentStatus.declined:
+        return Colors.deepOrange;
+      case AppointmentStatus.endedPendingConfirmation:
+        return Colors.amber.shade700;
       case AppointmentStatus.completed:
         return Colors.green;
+      case AppointmentStatus.notCompleted:
+        return Colors.brown;
       case AppointmentStatus.cancelled:
         return Colors.red;
       case AppointmentStatus.missed:

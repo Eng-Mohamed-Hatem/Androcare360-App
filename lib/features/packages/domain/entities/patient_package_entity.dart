@@ -104,8 +104,8 @@ enum PatientPackageStatus {
 class PatientPackageEntity {
   /// Creates a [PatientPackageEntity].
   ///
-  /// For patient-facing screens, always use [PatientPackageEntity.forPatient]
-  /// to ensure [notes] is stripped.
+  /// For patient-facing screens, always use `PatientPackageEntity.forPatient`
+  /// to ensure `notes` is stripped.
   const PatientPackageEntity({
     required this.id,
     required this.patientId,

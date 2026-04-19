@@ -33,7 +33,10 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/test/setup.js'],
 
   // Test timeout (increased for emulator operations)
-  testTimeout: 10000,
+  testTimeout: 30000,
+
+  // Emulator-backed tests are more stable serially in this repo
+  maxWorkers: 1,
 
   // Verbose output
   verbose: true,

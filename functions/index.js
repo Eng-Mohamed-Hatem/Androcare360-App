@@ -329,7 +329,7 @@ function verifyDatabaseConfig(operationName) {
  * @returns {string} - Agora Token
  * @throws {functions.https.HttpsError} - If environment variables are not configured
  */
-function generateAgoraToken(channelName, uid, role = 'publisher', expirationTime = 3600) {
+function generateAgoraToken(channelName, uid, role = 'publisher', expirationTime = 300) {
   // ✅ MODERN CONFIGURATION: Read from environment variables
   // قراءة بيانات الاعتماد من متغيرات البيئة
   const appId = process.env.AGORA_APP_ID;
@@ -383,6 +383,546 @@ function generateAgoraToken(channelName, uid, role = 'publisher', expirationTime
   );
 
   return token;
+}
+
+const ACTIVE_CALL_STATUSES = new Set([
+  'calling',
+  'in_progress',
+]);
+
+const TERMINAL_APPOINTMENT_STATUSES = new Set([
+  'completed',
+  'not_completed',
+  'cancelled',
+]);
+
+function shouldSkipPushNotifications() {
+  return process.env.FUNCTIONS_EMULATOR === 'true' || process.env.NODE_ENV === 'test';
+}
+
+/**
+ * Production-safe logging helper.
+ * In emulator/test: logs label + data (full PII visible for debugging).
+ * In production: logs label only — no patient/doctor IDs, tokens, or channel names.
+ *
+ * @param {string} label - Log label (always printed)
+ * @param {*} [data] - Optional data payload (suppressed in production)
+ */
+function safeLog(label, data) {
+  const isDev = process.env.FUNCTIONS_EMULATOR === 'true' || process.env.NODE_ENV === 'test';
+  if (isDev && data !== undefined) {
+    console.log(label, data);
+  } else {
+    console.log(label);
+  }
+}
+
+async function sendAppointmentOutcomeNotification({ appointmentId, appointment, completed }) {
+  try {
+    if (shouldSkipPushNotifications()) {
+      console.log('ℹ️ Skipping appointment outcome push in emulator/test environment');
+      return;
+    }
+
+    verifyDatabaseConfig('sendAppointmentOutcomeNotification - patient query');
+
+    const patientDoc = await db.collection('users').doc(appointment.patientId).get();
+    if (!patientDoc.exists || !patientDoc.data()?.fcmToken) {
+      return;
+    }
+
+    const message = {
+      token: patientDoc.data().fcmToken,
+      notification: {
+        title: completed ? 'تم تأكيد الجلسة' : 'تم تحديث حالة الجلسة',
+        body: completed
+          ? `أكد د. ${appointment.doctorName} اكتمال الجلسة الطبية`
+          : `قام د. ${appointment.doctorName} بتسجيل الجلسة كغير مكتملة`,
+      },
+      data: {
+        type: completed ? 'appointment_completed' : 'appointment_not_completed',
+        appointmentId,
+      },
+      android: {
+        priority: 'high',
+        notification: {
+          channelId: 'main_channel',
+          priority: 'max',
+        },
+      },
+    };
+
+    await admin.messaging().send(message);
+  } catch (error) {
+    console.error('❌ Error sending appointment outcome notification:', error);
+  }
+}
+
+async function sendMissedCallNotification({ appointmentId, appointment }) {
+  try {
+    if (shouldSkipPushNotifications()) {
+      console.log('ℹ️ Skipping missed call push in emulator/test environment');
+      return;
+    }
+
+    verifyDatabaseConfig('sendMissedCallNotification - patient query');
+
+    const patientDoc = await db.collection('users').doc(appointment.patientId).get();
+    if (!patientDoc.exists || !patientDoc.data()?.fcmToken) {
+      return;
+    }
+
+    await admin.messaging().send({
+      token: patientDoc.data().fcmToken,
+      notification: {
+        title: `مكالمة فائتة من ${appointment.doctorName}`,
+        body: 'يمكنك فتح المواعيد والانضمام إلى الاجتماع إذا كانت الجلسة لا تزال نشطة',
+      },
+      data: {
+        type: 'missed_call',
+        appointmentId,
+        doctorName: appointment.doctorName || '',
+      },
+      android: {
+        priority: 'high',
+        notification: {
+          channelId: 'main_channel',
+          priority: 'max',
+        },
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error sending missed call notification:', error);
+  }
+}
+
+async function sendCallDeclinedNotification({ appointmentId, appointment }) {
+  try {
+    if (shouldSkipPushNotifications()) {
+      console.log('ℹ️ Skipping declined call push in emulator/test environment');
+      return;
+    }
+
+    verifyDatabaseConfig('sendCallDeclinedNotification - doctor query');
+
+    const doctorDoc = await db.collection('users').doc(appointment.doctorId).get();
+    if (!doctorDoc.exists || !doctorDoc.data()?.fcmToken) {
+      return;
+    }
+
+    await admin.messaging().send({
+      token: doctorDoc.data().fcmToken,
+      notification: {
+        title: 'تم رفض المكالمة',
+        body: `رفض ${appointment.patientName || 'المريض'} المكالمة الواردة`,
+      },
+      data: {
+        type: 'call_declined',
+        appointmentId,
+        doctorName: appointment.doctorName || '',
+      },
+    });
+  } catch (error) {
+    console.error('❌ Error sending call declined notification:', error);
+  }
+}
+
+async function sendConfirmationExpiredNotifications({ appointmentId, appointment }) {
+  try {
+    if (shouldSkipPushNotifications()) {
+      console.log('ℹ️ Skipping confirmation expired pushes in emulator/test environment');
+      return;
+    }
+
+    verifyDatabaseConfig('sendConfirmationExpiredNotifications - user query');
+
+    const [patientDoc, doctorDoc] = await Promise.all([
+      db.collection('users').doc(appointment.patientId).get(),
+      db.collection('users').doc(appointment.doctorId).get(),
+    ]);
+
+    const tasks = [];
+
+    if (patientDoc.exists && patientDoc.data()?.fcmToken) {
+      tasks.push(
+        admin.messaging().send({
+          token: patientDoc.data().fcmToken,
+          notification: {
+            title: 'تم تسجيل الجلسة كغير مكتملة',
+            body: 'تم تسجيل جلستك الطبية كغير مكتملة بعد انتهاء مهلة التأكيد',
+          },
+          data: {
+            type: 'appointment_not_completed',
+            appointmentId,
+            doctorName: appointment.doctorName || '',
+          },
+        })
+      );
+    }
+
+    if (doctorDoc.exists && doctorDoc.data()?.fcmToken) {
+      tasks.push(
+        admin.messaging().send({
+          token: doctorDoc.data().fcmToken,
+          notification: {
+            title: 'انتهت مهلة التأكيد',
+            body: 'انتهت نافذة تأكيد الموعد وتم تسجيل الجلسة كغير مكتملة',
+          },
+          data: {
+            type: 'confirmation_expired',
+            appointmentId,
+            doctorName: appointment.doctorName || '',
+          },
+        })
+      );
+    }
+
+    await Promise.allSettled(tasks);
+  } catch (error) {
+    console.error('❌ Error sending confirmation expired notifications:', error);
+  }
+}
+
+async function autoCompleteExpiredConfirmationsInternal(now = new Date()) {
+  verifyDatabaseConfig('autoCompleteExpiredConfirmations');
+
+  const expiredSnapshot = await db.collection('appointments')
+    .where('status', '==', 'ended_pending_confirmation')
+    .where('confirmationDeadlineAt', '<=', admin.firestore.Timestamp.fromDate(now))
+    .get();
+
+  let processed = 0;
+
+  for (const doc of expiredSnapshot.docs) {
+    const appointmentRef = doc.ref;
+    let appointment = null;
+    let updated = false;
+
+    await db.runTransaction(async (transaction) => {
+      const latestDoc = await transaction.get(appointmentRef);
+      if (!latestDoc.exists) {
+        return;
+      }
+
+      appointment = latestDoc.data();
+      if (appointment.status !== 'ended_pending_confirmation') {
+        return;
+      }
+
+      transaction.update(appointmentRef, {
+        status: 'not_completed',
+        notCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
+        callSessionActive: false,
+      });
+
+      updated = true;
+    });
+
+    if (!updated || !appointment) {
+      continue;
+    }
+
+    processed += 1;
+
+    await sendConfirmationExpiredNotifications({
+      appointmentId: doc.id,
+      appointment,
+    });
+
+    await logCallEvent({
+      eventType: 'appointment_auto_not_completed',
+      appointmentId: doc.id,
+      userId: appointment.doctorId,
+      metadata: {
+        actorRole: 'system',
+        transition: 'not_completed',
+        reason: 'confirmation_expired',
+      },
+    });
+  }
+
+  return {
+    processed,
+  };
+}
+
+function assertEmulatorOnlyTestHook() {
+  if (process.env.FUNCTIONS_EMULATOR !== 'true' && process.env.NODE_ENV !== 'test') {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'This function is only available in emulator/test environments'
+    );
+  }
+}
+
+async function handleCallDeclinedInternal(data, context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'يجب تسجيل الدخول');
+  }
+
+  const { appointmentId } = data;
+  if (!appointmentId) {
+    throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+  }
+
+  verifyDatabaseConfig('handleCallDeclined - appointment update');
+
+  const appointmentRef = db.collection('appointments').doc(appointmentId);
+  const appointmentDoc = await appointmentRef.get();
+
+  if (!appointmentDoc.exists) {
+    throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+  }
+
+  const appointment = appointmentDoc.data();
+  const callerId = context.auth.uid;
+
+  const currentCallStatus = appointment.callStatus;
+  const currentAppointmentStatus = appointment.status;
+  const isAlreadyTerminal =
+    currentAppointmentStatus === 'completed' ||
+    currentAppointmentStatus === 'not_completed' ||
+    currentAppointmentStatus === 'cancelled' ||
+    currentCallStatus === 'ended' ||
+    currentCallStatus === 'declined' ||
+    currentCallStatus === 'missed';
+
+  if (appointment.patientId !== callerId && appointment.doctorId !== callerId) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'غير مصرح لك بتحديث هذه المكالمة'
+    );
+  }
+
+  if (currentAppointmentStatus === 'declined') {
+    return {
+      success: true,
+      message: 'تم تسجيل رفض المكالمة مسبقاً',
+    };
+  }
+
+  if (isAlreadyTerminal) {
+    await logCallEvent({
+      eventType: 'call_declined_ignored',
+      appointmentId,
+      userId: callerId,
+      metadata: {
+        actorRole: appointment.patientId === callerId ? 'patient' : 'doctor',
+        transition: 'ignored',
+        reason: 'state_already_terminal',
+        currentCallStatus: currentCallStatus || null,
+        currentAppointmentStatus: currentAppointmentStatus || null,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'تم تجاهل رفض المكالمة لأن الحالة النهائية مسجلة بالفعل',
+    };
+  }
+
+  await appointmentRef.update({
+    status: 'declined',
+    callStatus: 'declined',
+    callSessionActive: false,
+    declinedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  await sendCallDeclinedNotification({ appointmentId, appointment });
+
+  await logCallEvent({
+    eventType: 'call_declined',
+    appointmentId,
+    userId: callerId,
+    metadata: {
+      actorRole: appointment.patientId === callerId ? 'patient' : 'doctor',
+      transition: 'declined',
+      reason: 'user_declined',
+    },
+  });
+
+  return {
+    success: true,
+    message: 'تم تسجيل رفض المكالمة',
+  };
+}
+
+async function cancelCallInternal(data, context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'يجب تسجيل الدخول');
+  }
+
+  const { appointmentId, doctorId } = data || {};
+  if (!appointmentId || !doctorId) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'appointmentId and doctorId are required'
+    );
+  }
+
+  if (context.auth.uid !== doctorId) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'معرف الطبيب لا يطابق المستخدم المصادق عليه'
+    );
+  }
+
+  verifyDatabaseConfig('cancelCall - appointment update');
+
+  const appointmentRef = db.collection('appointments').doc(appointmentId);
+
+  await db.runTransaction(async (transaction) => {
+    const appointmentDoc = await transaction.get(appointmentRef);
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    const appointment = appointmentDoc.data();
+
+    if (appointment.doctorId !== doctorId) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'غير مصرح لك بإلغاء هذه المكالمة'
+      );
+    }
+
+    if (appointment.status !== 'calling') {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'لا يمكن إلغاء المكالمة إلا أثناء حالة الاتصال'
+      );
+    }
+
+    transaction.update(appointmentRef, {
+      status: 'scheduled',
+      callSessionId: admin.firestore.FieldValue.delete(),
+      callStartedAt: admin.firestore.FieldValue.delete(),
+      callStatus: admin.firestore.FieldValue.delete(),
+      callSessionActive: false,
+      agoraChannelName: admin.firestore.FieldValue.delete(),
+      agoraToken: admin.firestore.FieldValue.delete(),
+      agoraUid: admin.firestore.FieldValue.delete(),
+      doctorAgoraToken: admin.firestore.FieldValue.delete(),
+      doctorAgoraUid: admin.firestore.FieldValue.delete(),
+    });
+  });
+
+  await logCallEvent({
+    eventType: 'call_cancelled',
+    appointmentId,
+    userId: doctorId,
+    metadata: {
+      actorRole: 'doctor',
+      transition: 'scheduled',
+      reason: 'doctor_cancelled_call',
+    },
+  });
+
+  return {
+    success: true,
+    status: 'scheduled',
+    message: 'تم إلغاء المكالمة وإعادة الموعد إلى الحالة المجدولة',
+  };
+}
+
+async function confirmAppointmentCompletionInternal(data, context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'يجب تسجيل الدخول لتأكيد حالة الموعد'
+    );
+  }
+
+  const { appointmentId, doctorId, completed = true } = data;
+
+  if (!appointmentId || !doctorId || typeof completed !== 'boolean') {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'appointmentId و doctorId و completed مطلوبة'
+    );
+  }
+
+  if (context.auth.uid !== doctorId) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'معرف الطبيب لا يطابق المستخدم المصادق عليه'
+    );
+  }
+
+  verifyDatabaseConfig('confirmAppointmentCompletion - appointment query');
+
+  const appointmentRef = db.collection('appointments').doc(appointmentId);
+  const nextStatus = completed ? 'completed' : 'not_completed';
+  const timestampField = completed ? 'completedAt' : 'notCompletedAt';
+  let appointment;
+  let terminalResponse = null;
+
+  await db.runTransaction(async (transaction) => {
+    const appointmentDoc = await transaction.get(appointmentRef);
+
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    appointment = appointmentDoc.data();
+
+    if (appointment.doctorId !== doctorId) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'غير مصرح لك بتأكيد هذا الموعد'
+      );
+    }
+
+    if (appointment.status === 'completed' || appointment.status === 'not_completed') {
+      terminalResponse = {
+        success: true,
+        status: appointment.status,
+        message: appointment.status === 'completed'
+          ? 'تم تأكيد اكتمال الجلسة مسبقاً'
+          : 'تم تسجيل الجلسة كغير مكتملة مسبقاً',
+      };
+      return;
+    }
+
+    if (appointment.status !== 'ended_pending_confirmation') {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'لا يمكن تأكيد الموعد إلا بعد انتهاء المكالمة وبانتظار التأكيد'
+      );
+    }
+
+    transaction.update(appointmentRef, {
+      status: nextStatus,
+      [timestampField]: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  if (terminalResponse) {
+    return terminalResponse;
+  }
+
+  await sendAppointmentOutcomeNotification({
+    appointmentId,
+    appointment,
+    completed,
+  });
+
+  await logCallEvent({
+    eventType: 'appointment_completion_confirmed',
+    appointmentId,
+    userId: doctorId,
+    metadata: {
+      actorRole: 'doctor',
+      transition: nextStatus,
+      completed,
+    },
+  });
+
+  return {
+    success: true,
+    status: nextStatus,
+    message: completed ? 'تم إكمال الموعد بنجاح' : 'تم تسجيل الموعد كغير مكتمل',
+  };
 }
 
 /**
@@ -514,6 +1054,7 @@ exports.getFunctionsVersion = functions
  */
 exports.startAgoraCall = functions
   .region('europe-west1')
+  // TODO(security): Add .runWith({ enforceAppCheck: true }) after App Check console setup.
   .https.onCall(async (data, context) => {
     try {
       // التحقق من المصادقة
@@ -539,13 +1080,13 @@ exports.startAgoraCall = functions
       console.log('🔍 [ID TRACE] ============================================');
       console.log('🔍 [ID TRACE] AppointmentId Tracing Started');
       console.log('🔍 [ID TRACE] Instance ID:', DB_INSTANCE_ID);
-      console.log('🔍 [ID TRACE] Received appointmentId:', appointmentId);
-      console.log('🔍 [ID TRACE] appointmentId type:', typeof appointmentId);
-      console.log('🔍 [ID TRACE] appointmentId length:', appointmentId ? appointmentId.length : 'NULL');
+      safeLog('🔍 [ID TRACE] Received appointmentId', appointmentId);
+      safeLog('🔍 [ID TRACE] appointmentId type', typeof appointmentId);
+      safeLog('🔍 [ID TRACE] appointmentId length', appointmentId ? appointmentId.length : 'NULL');
       console.log('🔍 [ID TRACE] appointmentId is null:', appointmentId === null);
       console.log('🔍 [ID TRACE] appointmentId is undefined:', appointmentId === undefined);
       console.log('🔍 [ID TRACE] appointmentId is empty string:', appointmentId === '');
-      console.log('🔍 [ID TRACE] Received doctorId:', doctorId);
+      safeLog('🔍 [ID TRACE] Received doctorId', doctorId);
       console.log('🔍 [ID TRACE] Current database ID:', db._settings?.databaseId || 'NOT_SET');
       console.log('🔍 [ID TRACE] ============================================');
 
@@ -561,11 +1102,19 @@ exports.startAgoraCall = functions
         );
       }
 
-      // تسجيل محاولة بدء المكالمة
+      if (context.auth.uid !== doctorId) {
+        throw new functions.https.HttpsError(
+          'permission-denied',
+          'معرف الطبيب لا يطابق المستخدم المصادق عليه'
+        );
+      }
+
+      // تسجيل محاولة بدء المكالمة — canonical event: callattempt
       await logCallEvent({
-        eventType: 'call_attempt',
+        eventType: 'callattempt',
         appointmentId: appointmentId,
         userId: doctorId,
+        actorRole: 'doctor',
         deviceInfo: deviceInfo || null,
       });
 
@@ -575,7 +1124,7 @@ exports.startAgoraCall = functions
       // Log the exact document path being queried
       console.log('🔍 [ID TRACE] Preparing Firestore query...');
       console.log('🔍 [ID TRACE] Collection: appointments');
-      console.log('🔍 [ID TRACE] Document ID: ', appointmentId);
+      safeLog('🔍 [ID TRACE] Document ID', appointmentId);
 
       // ============================================================================
       // DATABASE VERIFICATION BEFORE QUERY
@@ -588,7 +1137,7 @@ exports.startAgoraCall = functions
       const appointmentRef = db.collection('appointments').doc(appointmentId);
 
       console.log('🔍 [ID TRACE] Document path:', appointmentRef.path);
-      console.log('🔍 [ID TRACE] Full path: /appointments/' + appointmentId);
+      safeLog('🔍 [ID TRACE] Full path', '/appointments/' + appointmentId);
       console.log('🔍 [ID TRACE] Executing Firestore query...');
 
       const appointmentDoc = await appointmentRef.get();
@@ -604,8 +1153,8 @@ exports.startAgoraCall = functions
       if (appointmentDoc.exists) {
         const data = appointmentDoc.data();
         console.log('🔍 [ID TRACE] Document data keys:', Object.keys(data || {}));
-        console.log('🔍 [ID TRACE] Document doctorId:', data?.doctorId);
-        console.log('🔍 [ID TRACE] Document patientId:', data?.patientId);
+        safeLog('🔍 [ID TRACE] Document doctorId', data?.doctorId);
+        safeLog('🔍 [ID TRACE] Document patientId', data?.patientId);
         console.log('🔍 [ID TRACE] Document status:', data?.status);
       }
 
@@ -627,11 +1176,13 @@ exports.startAgoraCall = functions
         // ============================================================================
         // QUERY ALL DOCTOR APPOINTMENTS FOR COMPARISON
         // ============================================================================
-        console.log('🔍 [ID TRACE] Querying all appointments for doctor:', doctorId);
+        safeLog('🔍 [ID TRACE] Querying all appointments for doctor', doctorId);
         console.log('🔍 [ID TRACE] This will help identify ID format mismatches...');
 
+        let doctorAppointmentsQuery = null;
+
         try {
-          const doctorAppointmentsQuery = await db.collection('appointments')
+          doctorAppointmentsQuery = await db.collection('appointments')
             .where('doctorId', '==', doctorId)
             .limit(10)
             .get();
@@ -651,15 +1202,15 @@ exports.startAgoraCall = functions
               console.log(`🔍 [ID TRACE]   - Document ID: ${existingId}`);
               console.log(`🔍 [ID TRACE]   - ID length: ${existingId.length}`);
               console.log(`🔍 [ID TRACE]   - ID type: ${typeof existingId}`);
-              console.log(`🔍 [ID TRACE]   - Patient ID: ${data.patientId}`);
+              safeLog('🔍 [ID TRACE]   - Patient ID', data.patientId);
               console.log(`🔍 [ID TRACE]   - Status: ${data.status}`);
               console.log(`🔍 [ID TRACE]   - Created: ${data.createdAt?.toDate?.() || 'N/A'}`);
 
               // Compare with requested ID
-              console.log(`🔍 [ID TRACE]   - Exact match: ${existingId === appointmentId}`);
-              console.log(`🔍 [ID TRACE]   - Case-insensitive match: ${existingId.toLowerCase() === appointmentId.toLowerCase()}`);
-              console.log(`🔍 [ID TRACE]   - Contains requested ID: ${existingId.includes(appointmentId)}`);
-              console.log(`🔍 [ID TRACE]   - Requested ID contains this: ${appointmentId.includes(existingId)}`);
+              safeLog('🔍 [ID TRACE]   - Exact match', existingId === appointmentId);
+              safeLog('🔍 [ID TRACE]   - Case-insensitive match', existingId.toLowerCase() === appointmentId.toLowerCase());
+              safeLog('🔍 [ID TRACE]   - Contains requested ID', existingId.includes(appointmentId));
+              safeLog('🔍 [ID TRACE]   - Requested ID contains this', appointmentId.includes(existingId));
 
               // Check for common ID format differences
               const trimmedExisting = existingId.trim();
@@ -669,11 +1220,11 @@ exports.startAgoraCall = functions
               // Check for prefix/suffix differences
               if (existingId.startsWith(appointmentId)) {
                 console.log(`🔍 [ID TRACE]   - ⚠️ Existing ID starts with requested ID (possible prefix issue)`);
-                console.log(`🔍 [ID TRACE]   - Extra suffix: "${existingId.substring(appointmentId.length)}"`);
+                safeLog('🔍 [ID TRACE]   - Extra suffix', existingId.substring(appointmentId.length));
               }
               if (appointmentId.startsWith(existingId)) {
                 console.log(`🔍 [ID TRACE]   - ⚠️ Requested ID starts with existing ID (possible prefix issue)`);
-                console.log(`🔍 [ID TRACE]   - Extra prefix: "${appointmentId.substring(existingId.length)}"`);
+                safeLog('🔍 [ID TRACE]   - Extra prefix', appointmentId.substring(existingId.length));
               }
 
               console.log(`🔍 [ID TRACE]   ---`);
@@ -729,6 +1280,13 @@ exports.startAgoraCall = functions
 
       const appointment = appointmentDoc.data();
 
+      if (ACTIVE_CALL_STATUSES.has(appointment.status) || TERMINAL_APPOINTMENT_STATUSES.has(appointment.status)) {
+        throw new functions.https.HttpsError(
+          'failed-precondition',
+          'لا يمكن بدء مكالمة جديدة لأن الموعد في حالة اتصال نشطة أو نهائية'
+        );
+      }
+
       // التحقق من أن المستخدم هو الطبيب المسؤول
       if (appointment.doctorId !== doctorId) {
         // تسجيل الخطأ مع سياق قاعدة البيانات
@@ -759,11 +1317,11 @@ exports.startAgoraCall = functions
       const doctorUid = Math.floor(Math.random() * 1000000) + 1;
       const patientUid = Math.floor(Math.random() * 1000000) + 1000001;
 
-      // توليد Tokens (صلاحية ساعة واحدة)
+      // توليد Tokens (صلاحية 5 دقائق)
       let doctorToken, patientToken;
       try {
-        doctorToken = generateAgoraToken(channelName, doctorUid, 'publisher', 3600);
-        patientToken = generateAgoraToken(channelName, patientUid, 'publisher', 3600);
+        doctorToken = generateAgoraToken(channelName, doctorUid, 'publisher', 300);
+        patientToken = generateAgoraToken(channelName, patientUid, 'publisher', 300);
       } catch (tokenError) {
         // تسجيل خطأ توليد Token
         await logCallEvent({
@@ -781,15 +1339,33 @@ exports.startAgoraCall = functions
 
       // تحديث بيانات الموعد في Firestore
       try {
-        await appointmentRef.update({
-          agoraChannelName: channelName,
-          agoraToken: patientToken, // Token for patient
-          agoraUid: patientUid,
-          doctorAgoraToken: doctorToken, // Token for doctor
-          doctorAgoraUid: doctorUid,
-          meetingProvider: 'agora',
-          callStartedAt: admin.firestore.FieldValue.serverTimestamp(),
-          status: 'scheduled',
+        await db.runTransaction(async (transaction) => {
+          const latestDoc = await transaction.get(appointmentRef);
+
+          if (!latestDoc.exists) {
+            throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+          }
+
+          const latestAppointment = latestDoc.data();
+          if (ACTIVE_CALL_STATUSES.has(latestAppointment.status) || TERMINAL_APPOINTMENT_STATUSES.has(latestAppointment.status)) {
+            throw new functions.https.HttpsError(
+              'failed-precondition',
+              'لا يمكن بدء مكالمة جديدة لأن الموعد في حالة اتصال نشطة أو نهائية'
+            );
+          }
+
+          transaction.update(appointmentRef, {
+            agoraChannelName: channelName,
+            agoraToken: patientToken, // Token for patient
+            agoraUid: patientUid,
+            doctorAgoraToken: doctorToken, // Token for doctor
+            doctorAgoraUid: doctorUid,
+            meetingProvider: 'agora',
+            callSessionId: channelName,
+            callStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+            callStatus: 'ringing',
+            status: 'calling',
+          });
         });
       } catch (firestoreError) {
         // تسجيل خطأ Firestore update
@@ -841,11 +1417,14 @@ exports.startAgoraCall = functions
         },
       });
 
-      console.log(`✅ Agora call started successfully for appointment ${appointmentId}`);
+      safeLog('✅ Agora call started successfully for appointment', appointmentId);
 
       return {
         success: true,
         message: 'تم بدء المكالمة بنجاح',
+        appointmentId: appointmentId,
+        callerName: appointment.doctorName,
+        channelName: channelName,
         agoraChannelName: channelName,
         agoraToken: doctorToken, // Return doctor's token
         agoraUid: doctorUid,
@@ -853,6 +1432,10 @@ exports.startAgoraCall = functions
 
     } catch (error) {
       console.error('❌ Error starting Agora call:', error);
+
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
 
       // تسجيل الخطأ العام إذا لم يتم تسجيله مسبقاً
       if (data && data.appointmentId && data.doctorId) {
@@ -867,10 +1450,6 @@ exports.startAgoraCall = functions
         });
       }
 
-      if (error instanceof functions.https.HttpsError) {
-        throw error;
-      }
-
       throw new functions.https.HttpsError(
         'internal',
         'حدث خطأ أثناء بدء المكالمة',
@@ -880,19 +1459,71 @@ exports.startAgoraCall = functions
   });
 
 /**
+ * Send a direct APNs VoIP push using PushKit token (iOS only).
+ *
+ * FCM cannot route apns-push-type:voip — this helper bypasses FCM and sends
+ * directly to Apple's APNs VoIP topic using the node-apn library.
+ *
+ * Requires env vars: APNS_KEY (p8 content), APNS_KEY_ID, APNS_TEAM_ID.
+ *
+ * @param {string} voipToken - Device PushKit token (hex string)
+ * @param {object} payload - Data payload forwarded to AppDelegate.swift
+ */
+async function sendApnsVoipPush(voipToken, payload) {
+  const apn = require('node-apn');
+
+  const keyRaw = process.env.APNS_KEY;
+  const keyId = process.env.APNS_KEY_ID;
+  const teamId = process.env.APNS_TEAM_ID;
+
+  if (!keyRaw || !keyId || !teamId) {
+    console.warn('⚠️ [APNs VoIP] Missing APNS_KEY / APNS_KEY_ID / APNS_TEAM_ID — skipping direct APNs push');
+    return;
+  }
+
+  const provider = new apn.Provider({
+    token: {
+      key: keyRaw,
+      keyId: keyId,
+      teamId: teamId,
+    },
+    production: process.env.NODE_ENV === 'production',
+  });
+
+  const note = new apn.Notification();
+  note.topic = 'com.example.elajtech.voip';
+  note.pushType = 'voip';
+  note.priority = 10;
+  note.expiry = Math.floor(Date.now() / 1000) + 3600;
+  note.payload = payload;
+
+  try {
+    const result = await provider.send(note, voipToken);
+    if (result.failed && result.failed.length > 0) {
+      console.error('❌ [APNs VoIP] Push failed:', JSON.stringify(result.failed));
+    } else {
+      console.log('✅ [APNs VoIP] Direct VoIP push sent successfully');
+    }
+  } finally {
+    provider.shutdown();
+  }
+}
+
+/**
  * دالة إرسال VoIP Notification للمريض
- * 
+ *
  * ترسل إشعار VoIP عبر FCM لتنبيه المريض بمكالمة واردة
- * 
+ *
  * Enhanced with comprehensive logging for debugging and monitoring.
  * All logs include database context and detailed metadata.
  */
 async function sendVoIPNotification(data) {
   const { patientId, doctorName, appointmentId, agoraChannelName, agoraToken, agoraUid } = data;
+  const channelName = agoraChannelName;
 
   try {
     // ✅ LOG: FCM token retrieval attempt
-    console.log(`📱 Retrieving FCM token for patient: ${patientId}`);
+    safeLog('📱 Retrieving FCM token for patient', patientId);
 
     // ============================================================================
     // DATABASE VERIFICATION BEFORE QUERY
@@ -926,12 +1557,13 @@ async function sendVoIPNotification(data) {
 
     const patient = patientDoc.data();
     const fcmToken = patient.fcmToken;
+    const voipToken = patient.voipToken; // PushKit token for direct APNs VoIP (iOS)
 
-    if (!fcmToken) {
-      const errorMessage = `[DB: elajtech] FCM token missing for patient: ${patientId}`;
-      console.error(`❌ FCM token missing`);
+    if (!fcmToken && !voipToken) {
+      const errorMessage = `[DB: elajtech] Both FCM and VoIP tokens missing for patient: ${patientId}`;
+      console.error(`❌ FCM and VoIP tokens both missing`);
 
-      // ✅ LOG: FCM token missing error with specific error code
+      // ✅ LOG: token missing error
       await logCallEvent({
         eventType: 'call_error',
         appointmentId: appointmentId,
@@ -943,6 +1575,7 @@ async function sendVoIPNotification(data) {
           patientId: patientId,
           hasPatientDocument: true,
           fcmTokenField: 'null or undefined',
+          voipTokenField: 'null or undefined',
         },
       });
 
@@ -953,70 +1586,104 @@ async function sendVoIPNotification(data) {
     console.log(`✅ FCM token retrieved successfully`);
 
     // إعداد رسالة FCM بصيغة VoIP مع دعم CallKit
+    // IMPORTANT: This MUST be a data-only message (no android.notification).
+    // Adding android.notification makes FCM treat it as a "notification message":
+    // Android delivers it directly to the system tray and the Dart background
+    // handler (_firebaseMessagingBackgroundHandler) is NOT invoked →
+    // showCallkitIncoming() is never called → no native ring UI.
+    // flutter_callkit_incoming manages its own notification channel internally.
     const message = {
       token: fcmToken,
-      // ✅ إضافة notification object لإظهار الإشعار
-      notification: {
-        title: `مكالمة واردة من ${doctorName}`,
-        body: 'اضغط للرد على الاستشارة',
-      },
       data: {
         type: 'incoming_call',
         appointmentId: appointmentId,
         doctorName: doctorName,
+        callerName: doctorName,
         patientId: patientId,
+        channelName: channelName,
         agoraChannelName: agoraChannelName,
         agoraToken: agoraToken,
         agoraUid: String(agoraUid),
       },
       android: {
-        priority: 'high',
-        notification: {
-          channelId: 'incoming_calls',
-          priority: 'max',
-          sound: 'default',
-          tag: appointmentId,
-        },
+        priority: 'high', // wake device — do NOT add notification here
       },
-      // ✅ إضافة APNS configuration لـ iOS
+      // iOS: background push so FCM can deliver it (FCM cannot route apns-push-type:voip).
+      // The Flutter background handler fires and calls showCallkitIncoming() from Dart.
+      // For iOS PushKit/CallKit native handling, Path B below sends the true VoIP push.
       apns: {
         headers: {
-          'apns-priority': '10', // أعلى أولوية
+          'apns-priority': '5',
+          'apns-push-type': 'background',
         },
         payload: {
           aps: {
-            'content-available': 1, // ✅ إيقاظ التطبيق في الخلفية
-            sound: 'default',
+            'content-available': 1,
           },
         },
       },
     };
 
-    // ✅ LOG: FCM notification send attempt
-    console.log(`📤 Sending VoIP notification`, {
+    // Shared VoIP payload for direct APNs push (Path B)
+    const voipPayload = {
+      type: 'incoming_call',
+      appointmentId: appointmentId,
+      doctorName: doctorName,
+      callerName: doctorName,
+      channelName: channelName,
+      agoraChannelName: agoraChannelName,
+      agoraToken: agoraToken,
+      agoraUid: String(agoraUid),
+    };
+
+    // ✅ LOG: notification send attempt
+    console.log(`📤 Sending VoIP notification (dual-path)`, {
       appointmentId: appointmentId,
       doctorName: doctorName,
       channelName: agoraChannelName,
       patientId: patientId,
+      hasFcmToken: !!fcmToken,
+      hasVoipToken: !!voipToken,
     });
 
-    // إرسال الإشعار
-    const response = await admin.messaging().send(message);
+    const sendTasks = [];
 
-    // ✅ LOG: FCM notification sent successfully
-    console.log(`✅ VoIP notification sent successfully: ${response}`);
+    // Path A: FCM background push (Android + iOS fallback via Dart handler)
+    if (fcmToken) {
+      sendTasks.push(
+        admin.messaging().send(message).then((response) => {
+          console.log(`✅ [Path A] FCM notification sent: ${response}`);
+          return { path: 'fcm', messageId: response };
+        })
+      );
+    }
 
-    // ✅ LOG: Successful notification send event
+    // Path B: Direct APNs VoIP push via PushKit token (iOS native CallKit screen)
+    if (voipToken) {
+      sendTasks.push(
+        sendApnsVoipPush(voipToken, voipPayload).then(() => {
+          return { path: 'apns_voip' };
+        })
+      );
+    }
+
+    const results = await Promise.allSettled(sendTasks);
+    const fcmResult = results.find((r) => r.status === 'fulfilled' && r.value?.path === 'fcm');
+    const fcmMessageId = fcmResult?.value?.messageId || null;
+
+    // ✅ LOG: Successful notification dispatch
     await logCallEvent({
-      eventType: 'voip_notification_sent',
+      eventType: 'notification_dispatched',
       appointmentId: appointmentId,
       userId: patientId,
       metadata: {
         databaseId: 'elajtech',
-        fcmMessageId: response,
+        fcmMessageId: fcmMessageId,
         doctorName: doctorName,
-        agoraChannelName: agoraChannelName,
+        channelName: channelName,
         notificationSentAt: new Date().toISOString(),
+        pathFcm: !!fcmToken,
+        pathApnsVoip: !!voipToken,
       },
     });
 
@@ -1036,7 +1703,7 @@ async function sendVoIPNotification(data) {
         databaseId: 'elajtech',
         errorType: error.code || 'unknown',
         doctorName: doctorName,
-        agoraChannelName: agoraChannelName,
+        channelName: channelName,
       },
     });
 
@@ -1049,8 +1716,56 @@ async function sendVoIPNotification(data) {
  * 
  * تُستدعى عند إنهاء أي طرف للمكالمة
  */
+// ============================================================================
+// notifyPatientAnswered — sets callStatus:'patient_answered' + patientAnsweredAt
+// Called by client the moment the patient taps Accept, before Agora join starts.
+// This is read by endAgoraCall to enforce a 40-second join grace period.
+// ============================================================================
+exports.notifyPatientAnswered = functions
+  .region('europe-west1')
+  // TODO(security): Add .runWith({ enforceAppCheck: true }) after App Check console setup.
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'يجب تسجيل الدخول');
+    }
+
+    const { appointmentId } = data;
+    if (!appointmentId) {
+      throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+    }
+
+    verifyDatabaseConfig('notifyPatientAnswered');
+
+    const appointmentRef = db.collection('appointments').doc(appointmentId);
+    const appointmentDoc = await appointmentRef.get();
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    const appointment = appointmentDoc.data();
+    if (appointment.patientId !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', 'غير مصرح لك');
+    }
+
+    await appointmentRef.update({
+      callStatus: 'patient_answered',
+      patientAnsweredAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    await logCallEvent({
+      eventType: 'answer_accepted',
+      appointmentId,
+      userId: context.auth.uid,
+      actorRole: 'patient',
+      metadata: { source: 'notifyPatientAnswered' },
+    });
+
+    return { success: true };
+  });
+
 exports.endAgoraCall = functions
   .region('europe-west1')
+  // TODO(security): Add .runWith({ enforceAppCheck: true }) after App Check console setup.
   .https.onCall(async (data, context) => {
     try {
       if (!context.auth) {
@@ -1072,12 +1787,113 @@ exports.endAgoraCall = functions
       // تحديث وقت انتهاء المكالمة فقط
       // ✅ لا نحدث الحالة إلى 'completed' هنا
       // ✅ الحالة تبقى 'on_call' حتى يضغط الطبيب على زر "إكمال الموعد"
-      await db.collection('appointments').doc(appointmentId).update({
+      const appointmentRef = db.collection('appointments').doc(appointmentId);
+      const appointmentDoc = await appointmentRef.get();
+
+      if (!appointmentDoc.exists) {
+        throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+      }
+
+      const appointment = appointmentDoc.data();
+      const callerId = context.auth.uid;
+      const isParticipant =
+        appointment.doctorId === callerId || appointment.patientId === callerId;
+
+      if (!isParticipant) {
+        throw new functions.https.HttpsError(
+          'permission-denied',
+          'غير مصرح لك بإنهاء هذه المكالمة'
+        );
+      }
+
+      if (TERMINAL_APPOINTMENT_STATUSES.has(appointment.status)) {
+        await logCallEvent({
+          eventType: 'call_end_ignored',
+          appointmentId,
+          userId: callerId,
+          metadata: {
+            actorRole: appointment.doctorId === callerId ? 'doctor' : 'patient',
+            reason: 'terminal_state',
+            currentStatus: appointment.status,
+          },
+        });
+
+        return {
+          success: true,
+          message: 'تم تجاهل إنهاء المكالمة لأن الموعد في حالة نهائية',
+        };
+      }
+
+      // ── Join grace period: if the patient just answered, give them 40 seconds
+      // to join Agora before allowing the doctor to end the call.
+      const JOIN_GRACE_MS = 40_000;
+      if (
+        appointment.doctorId === callerId &&
+        appointment.callStatus === 'patient_answered' &&
+        appointment.patientAnsweredAt
+      ) {
+        const answeredMs = appointment.patientAnsweredAt.toMillis();
+        const elapsedMs = Date.now() - answeredMs;
+        if (elapsedMs < JOIN_GRACE_MS) {
+          await logCallEvent({
+            eventType: 'call_end_ignored',
+            appointmentId,
+            userId: callerId,
+            metadata: {
+              actorRole: 'doctor',
+              reason: 'patient_join_grace_period',
+              elapsedMs,
+              remainingMs: JOIN_GRACE_MS - elapsedMs,
+            },
+          });
+          return {
+            success: false,
+            message: 'المريض يلتحق بالمكالمة. انتظر لحظة.',
+          };
+        }
+      }
+
+      const updateData = {
         callEndedAt: admin.firestore.FieldValue.serverTimestamp(),
-        // ❌ تم إزالة: status: 'completed',
+        callStatus: 'ended',
+        callSessionActive: false,
+      };
+
+      if (
+        (appointment.status === 'calling' || appointment.status === 'missed') &&
+        appointment.callStatus !== 'joining' &&
+        appointment.callStatus !== 'patient_answered'
+      ) {
+        updateData.status = 'missed';
+      } else {
+        updateData.status = 'ended_pending_confirmation';
+        updateData.confirmationDeadlineAt = admin.firestore.Timestamp.fromMillis(
+          Date.now() + 24 * 60 * 60 * 1000
+        );
+      }
+
+      await appointmentRef.update(updateData);
+
+      // Log end_agora_call_invoked then callended — canonical events
+      await logCallEvent({
+        eventType: 'end_agora_call_invoked',
+        appointmentId,
+        userId: callerId,
+        actorRole: appointment.doctorId === callerId ? 'doctor' : 'patient',
+        metadata: { endedBy: data.endedBy || 'unknown', reasonCode: data.reasonCode || null },
       });
 
-      console.log(`✅ Call ended for appointment ${appointmentId}`);
+      await logCallEvent({
+        eventType: 'callended',
+        appointmentId,
+        userId: callerId,
+        metadata: {
+          actorRole: appointment.doctorId === callerId ? 'doctor' : 'patient',
+          transition: updateData.status,
+        },
+      });
+
+      safeLog('✅ Call ended for appointment', appointmentId);
 
       return {
         success: true,
@@ -1086,6 +1902,11 @@ exports.endAgoraCall = functions
 
     } catch (error) {
       console.error('❌ Error ending call:', error);
+
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
       throw new functions.https.HttpsError('internal', 'حدث خطأ أثناء إنهاء المكالمة');
     }
   });
@@ -1103,94 +1924,10 @@ exports.completeAppointment = functions
   .region('europe-west1')
   .https.onCall(async (data, context) => {
     try {
-      // التحقق من المصادقة
-      if (!context.auth) {
-        throw new functions.https.HttpsError(
-          'unauthenticated',
-          'يجب تسجيل الدخول لإكمال الموعد'
-        );
-      }
-
-      const { appointmentId, doctorId } = data;
-
-      // التحقق من المدخلات
-      if (!appointmentId || !doctorId) {
-        throw new functions.https.HttpsError(
-          'invalid-argument',
-          'appointmentId and doctorId are required'
-        );
-      }
-
-      // ============================================================================
-      // DATABASE VERIFICATION BEFORE QUERY
-      // ============================================================================
-      // Task 1.7: Verify database configuration before appointment query
-      verifyDatabaseConfig('completeAppointment - appointment query');
-
-      // جلب بيانات الموعد
-      const appointmentRef = db.collection('appointments').doc(appointmentId);
-      const appointmentDoc = await appointmentRef.get();
-
-      if (!appointmentDoc.exists) {
-        // ✅ Enhanced: Log error with database context
-        await logCallEvent({
-          eventType: 'call_error',
-          appointmentId: appointmentId,
-          userId: doctorId,
-          errorCode: 'appointment_not_found_on_complete',
-          errorMessage: 'الموعد غير موجود في قاعدة البيانات elajtech عند محاولة الإكمال',
-          metadata: {
-            queriedDatabase: 'elajtech',
-            queriedCollection: 'appointments',
-            queriedDocumentId: appointmentId,
-            operation: 'completeAppointment',
-          },
-        });
-
-        throw new functions.https.HttpsError(
-          'not-found',
-          'الموعد غير موجود في قاعدة البيانات'
-        );
-      }
-
-      const appointment = appointmentDoc.data();
-
-      // التحقق من أن المستخدم هو الطبيب المسؤول
-      if (appointment.doctorId !== doctorId) {
-        // ✅ Enhanced: Log error with database context
-        await logCallEvent({
-          eventType: 'call_error',
-          appointmentId: appointmentId,
-          userId: doctorId,
-          errorCode: 'permission_denied_on_complete',
-          errorMessage: 'غير مصرح لك بإكمال هذا الموعد',
-          metadata: {
-            queriedDatabase: 'elajtech',
-            expectedDoctorId: appointment.doctorId,
-            providedDoctorId: doctorId,
-            operation: 'completeAppointment',
-          },
-        });
-
-        throw new functions.https.HttpsError(
-          'permission-denied',
-          'غير مصرح لك بإكمال هذا الموعد'
-        );
-      }
-
-      // تحديث حالة الموعد إلى completed
-      await appointmentRef.update({
-        status: 'completed',
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      console.log(`✅ Appointment ${appointmentId} marked as completed by doctor ${doctorId}`);
-
-      return {
-        success: true,
-        message: 'تم إكمال الموعد بنجاح',
-      };
-
+      return await confirmAppointmentCompletionInternal({
+        ...data,
+        completed: true,
+      }, context);
     } catch (error) {
       console.error('❌ Error completing appointment:', error);
 
@@ -1201,6 +1938,387 @@ exports.completeAppointment = functions
       throw new functions.https.HttpsError(
         'internal',
         'حدث خطأ أثناء إكمال الموعد',
+        error.message
+      );
+    }
+  });
+
+exports.confirmAppointmentCompletion = functions
+  .region('europe-west1')
+  .https.onCall(async (data, context) => {
+    try {
+      return await confirmAppointmentCompletionInternal(data, context);
+    } catch (error) {
+      console.error('❌ Error confirming appointment completion:', error);
+
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'حدث خطأ أثناء تأكيد حالة الموعد',
+        error.message
+      );
+    }
+  });
+
+exports.markCallInProgress = functions
+  .region('europe-west1')
+  // TODO(security): Add .runWith({ enforceAppCheck: true }) after App Check console setup.
+  .https.onCall(async (data, context) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'يجب تسجيل الدخول');
+      }
+
+      const { appointmentId } = data;
+      if (!appointmentId) {
+        throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+      }
+
+      verifyDatabaseConfig('markCallInProgress - appointment update');
+
+      const appointmentRef = db.collection('appointments').doc(appointmentId);
+      const callerId = context.auth.uid;
+      let appointment;
+      let currentStatus;
+
+      await db.runTransaction(async (transaction) => {
+        const appointmentDoc = await transaction.get(appointmentRef);
+
+        if (!appointmentDoc.exists) {
+          throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+        }
+
+        appointment = appointmentDoc.data();
+        currentStatus = appointment.status;
+        const isParticipant = appointment.doctorId === callerId || appointment.patientId === callerId;
+
+        if (!isParticipant) {
+          throw new functions.https.HttpsError('permission-denied', 'غير مصرح لك بتحديث حالة المكالمة');
+        }
+
+        if (currentStatus === 'in_progress' || TERMINAL_APPOINTMENT_STATUSES.has(currentStatus)) {
+          return;
+        }
+
+        if (currentStatus !== 'calling' && currentStatus !== 'missed') {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            'لا يمكن تحويل الموعد إلى قيد الجلسة من حالته الحالية'
+          );
+        }
+
+        transaction.update(appointmentRef, {
+          status: 'in_progress',
+        });
+      });
+
+      if (currentStatus === 'in_progress' || TERMINAL_APPOINTMENT_STATUSES.has(currentStatus)) {
+        return { success: true, status: currentStatus };
+      }
+
+      await logCallEvent({
+        eventType: 'call_in_progress',
+        appointmentId,
+        userId: callerId,
+        metadata: {
+          actorRole: appointment.doctorId === callerId ? 'doctor' : 'patient',
+          transition: 'in_progress',
+        },
+      });
+
+      return { success: true, status: 'in_progress' };
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'حدث خطأ أثناء تحديث حالة المكالمة',
+        error.message
+      );
+    }
+  });
+
+/**
+ * Cloud Function: تسجيل المكالمة الفائتة
+ */
+exports.handleMissedCall = functions
+  .region('europe-west1')
+  .https.onCall(async (data, context) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'يجب تسجيل الدخول');
+      }
+
+      const { appointmentId } = data;
+      if (!appointmentId) {
+        throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+      }
+
+      verifyDatabaseConfig('handleMissedCall - appointment update');
+
+      const appointmentRef = db.collection('appointments').doc(appointmentId);
+      const appointmentDoc = await appointmentRef.get();
+
+      if (!appointmentDoc.exists) {
+        throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+      }
+
+      const appointment = appointmentDoc.data();
+      const callerId = context.auth.uid;
+
+      const currentCallStatus = appointment.callStatus;
+      const currentAppointmentStatus = appointment.status;
+      const isAlreadyTerminal =
+        currentAppointmentStatus === 'completed' ||
+        currentAppointmentStatus === 'not_completed' ||
+        currentAppointmentStatus === 'cancelled' ||
+        currentCallStatus === 'ended' ||
+        currentCallStatus === 'declined' ||
+        currentCallStatus === 'missed';
+
+      if (appointment.patientId !== callerId && appointment.doctorId !== callerId) {
+        throw new functions.https.HttpsError(
+          'permission-denied',
+          'غير مصرح لك بتحديث هذه المكالمة'
+        );
+      }
+
+      if (currentAppointmentStatus === 'missed') {
+        return {
+          success: true,
+          message: 'تم تسجيل المكالمة الفائتة مسبقاً',
+        };
+      }
+
+      if (isAlreadyTerminal) {
+        await logCallEvent({
+          eventType: 'call_missed_ignored',
+          appointmentId,
+          userId: callerId,
+          metadata: {
+            actorRole: appointment.patientId === callerId ? 'patient' : 'doctor',
+            transition: 'ignored',
+            reason: 'state_already_terminal',
+            currentCallStatus: currentCallStatus || null,
+            currentAppointmentStatus: currentAppointmentStatus || null,
+          },
+        });
+
+        return {
+          success: true,
+          message: 'تم تجاهل المكالمة الفائتة لأن الحالة النهائية مسجلة بالفعل',
+        };
+      }
+
+      await appointmentRef.update({
+        status: 'missed',
+        callStatus: 'missed',
+        callSessionActive: true,
+        missedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      await sendMissedCallNotification({
+        appointmentId,
+        appointment,
+      });
+
+      await logCallEvent({
+        eventType: 'call_missed',
+        appointmentId,
+        userId: callerId,
+        metadata: {
+          actorRole: appointment.patientId === callerId ? 'patient' : 'doctor',
+          transition: 'missed',
+          reason: 'timeout',
+        },
+      });
+
+      return {
+        success: true,
+        message: 'تم تسجيل المكالمة الفائتة',
+      };
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'حدث خطأ أثناء تسجيل المكالمة الفائتة',
+        error.message
+      );
+    }
+  });
+
+/**
+ * Cloud Function: تسجيل رفض المكالمة
+ */
+exports.handleCallDeclined = functions
+  .region('europe-west1')
+  .https.onCall(async (data, context) => {
+    try {
+      return await handleCallDeclinedInternal(data, context);
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'حدث خطأ أثناء تسجيل رفض المكالمة',
+        error.message
+      );
+    }
+  });
+
+exports.cancelCall = functions
+  .region('europe-west1')
+  .https.onCall(async (data, context) => {
+    try {
+      return await cancelCallInternal(data, context);
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'حدث خطأ أثناء إلغاء المكالمة',
+        error.message
+      );
+    }
+  });
+
+exports.patientJoinCall = functions
+  .region('europe-west1')
+  // TODO(security): Add .runWith({ enforceAppCheck: true }) after App Check console setup.
+  .https.onCall(async (data, context) => {
+    try {
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'يجب تسجيل الدخول');
+      }
+
+      const { appointmentId, patientId } = data;
+      if (!appointmentId || !patientId) {
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'appointmentId and patientId are required'
+        );
+      }
+
+      if (context.auth.uid !== patientId) {
+        throw new functions.https.HttpsError(
+          'permission-denied',
+          'You are not authorized to join this meeting'
+        );
+      }
+
+      verifyDatabaseConfig('patientJoinCall - appointment query');
+
+      const appointmentRef = db.collection('appointments').doc(appointmentId);
+      let appointment;
+      let shouldUpdateStatus = false;
+
+      await db.runTransaction(async (transaction) => {
+        const appointmentDoc = await transaction.get(appointmentRef);
+
+        if (!appointmentDoc.exists) {
+          throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+        }
+
+        appointment = appointmentDoc.data();
+
+        if (appointment.patientId !== patientId) {
+          throw new functions.https.HttpsError(
+            'permission-denied',
+            'You are not authorized to join this meeting'
+          );
+        }
+
+        if (!appointment.callSessionId) {
+          throw new functions.https.HttpsError(
+            'not-found',
+            'No active session found for this appointment'
+          );
+        }
+
+        if (appointment.callSessionActive === false) {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            'This meeting is no longer available'
+          );
+        }
+
+        const appointmentStatus = appointment.status;
+        if (!['calling', 'in_progress', 'missed'].includes(appointmentStatus)) {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            'This meeting is no longer available'
+          );
+        }
+
+        const callStartedAt = appointment.callStartedAt?.toDate
+          ? appointment.callStartedAt.toDate()
+          : appointment.callStartedAt
+            ? new Date(appointment.callStartedAt)
+            : null;
+
+        if (!callStartedAt || (callStartedAt.getTime() + 3600 * 1000) < Date.now()) {
+          throw new functions.https.HttpsError(
+            'deadline-exceeded',
+            'This meeting session has expired'
+          );
+        }
+
+        if (appointmentStatus !== 'in_progress') {
+          shouldUpdateStatus = true;
+          transaction.update(appointmentRef, {
+            status: 'in_progress',
+            callSessionActive: true,
+          });
+        }
+      });
+
+      const patientUid = Math.floor(Math.random() * 1000000) + 1000001;
+      const agoraToken = generateAgoraToken(
+        appointment.callSessionId,
+        patientUid,
+        'publisher',
+        3600
+      );
+
+      if (shouldUpdateStatus) {
+        await logCallEvent({
+          eventType: 'patient_rejoined_call',
+          appointmentId,
+          userId: patientId,
+          metadata: {
+            actorRole: 'patient',
+            transition: 'in_progress',
+          },
+        });
+      }
+
+      return {
+        success: true,
+        agoraToken,
+        channelName: appointment.callSessionId,
+        agoraChannelName: appointment.callSessionId,
+        uid: patientUid,
+      };
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      throw new functions.https.HttpsError(
+        'internal',
+        'حدث خطأ أثناء الانضمام إلى المكالمة',
         error.message
       );
     }
@@ -1218,7 +2336,8 @@ exports.completeAppointment = functions
  */
 exports.setAccountStatus = functions
   .region('europe-west1')
-  .runWith({ enforceAppCheck: false })
+  // TODO(security): Add .runWith({ enforceAppCheck: true }) after App Check is
+  // configured in Firebase Console (Play Integrity for Android, DeviceCheck for iOS).
   .https.onCall(async (data, context) => {
     // 1. التحقق من المصادقة
     if (!context.auth) {
@@ -1421,7 +2540,7 @@ exports.checkDoctorAppointments = functions
         );
       }
 
-      console.log(`🔍 [CONFLICT CHECK] Checking appointments for doctor: ${doctorId}`);
+      safeLog('🔍 [CONFLICT CHECK] Checking appointments for doctor', doctorId);
       console.log(`🔍 [CONFLICT CHECK] Range: ${new Date(startTimeMs).toISOString()} - ${new Date(endTimeMs).toISOString()}`);
 
       // التحقق من قاعدة البيانات
@@ -1498,7 +2617,7 @@ exports.onAppointmentCreated = functions
     const appointmentId = context.params.appointmentId;
     const appointment = snapshot.data();
 
-    console.log(`📅 New appointment created: ${appointmentId}`);
+    safeLog('📅 New appointment created', appointmentId);
 
     try {
       verifyDatabaseConfig('onAppointmentCreated');
@@ -1599,6 +2718,304 @@ exports.checkAppointmentReminders = functions
     }
   });
 
+exports.autoCompleteExpiredConfirmations = functions
+  .region('europe-west1')
+  .pubsub.schedule('every 30 minutes')
+  .onRun(async () => {
+    console.log('⏰ Running autoCompleteExpiredConfirmations scheduler...');
+
+    try {
+      const result = await autoCompleteExpiredConfirmationsInternal(new Date());
+      console.log(
+        `✅ autoCompleteExpiredConfirmations complete. Processed: ${result.processed}`
+      );
+      return result;
+    } catch (error) {
+      console.error('❌ Error in autoCompleteExpiredConfirmations:', error);
+      return { processed: 0, error: error.message };
+    }
+  });
+
+exports.runAutoCompleteExpiredConfirmationsForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data, context) => {
+    assertEmulatorOnlyTestHook();
+
+    const nowValue = data?.now;
+    const now = nowValue ? new Date(nowValue) : new Date();
+    if (Number.isNaN(now.getTime())) {
+      throw new functions.https.HttpsError('invalid-argument', 'Invalid now timestamp');
+    }
+
+    return autoCompleteExpiredConfirmationsInternal(now);
+  });
+
+exports.startAgoraCallForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const { appointmentId, doctorId } = data || {};
+    if (!appointmentId || !doctorId) {
+      throw new functions.https.HttpsError('invalid-argument', 'appointmentId and doctorId are required');
+    }
+
+    const appointmentRef = db.collection('appointments').doc(appointmentId);
+    const appointmentDoc = await appointmentRef.get();
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    const appointment = appointmentDoc.data();
+    const channelName = `appointment_${appointmentId}_${Date.now()}`;
+    const doctorUid = Math.floor(Math.random() * 1000000) + 1;
+    const patientUid = Math.floor(Math.random() * 1000000) + 1000001;
+    const doctorToken = generateAgoraToken(channelName, doctorUid, 'publisher', 300);
+    const patientToken = generateAgoraToken(channelName, patientUid, 'publisher', 300);
+
+    await appointmentRef.update({
+      agoraChannelName: channelName,
+      agoraToken: patientToken,
+      agoraUid: patientUid,
+      doctorAgoraToken: doctorToken,
+      doctorAgoraUid: doctorUid,
+      meetingProvider: 'agora',
+      callSessionId: channelName,
+      callStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+      callStatus: 'ringing',
+      status: 'calling',
+      callSessionActive: true,
+    });
+
+    return {
+      success: true,
+      channelName,
+      agoraChannelName: channelName,
+      agoraToken: doctorToken,
+      agoraUid: doctorUid,
+      appointmentId,
+      callerName: appointment.doctorName,
+      patientId: appointment.patientId,
+    };
+  });
+
+exports.markCallInProgressForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const { appointmentId } = data || {};
+    if (!appointmentId) {
+      throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+    }
+
+    await db.collection('appointments').doc(appointmentId).update({
+      status: 'in_progress',
+      callSessionActive: true,
+    });
+
+    return { success: true, status: 'in_progress' };
+  });
+
+exports.endAgoraCallForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const { appointmentId } = data || {};
+    if (!appointmentId) {
+      throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+    }
+
+    const appointmentRef = db.collection('appointments').doc(appointmentId);
+    const appointmentDoc = await appointmentRef.get();
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    const appointment = appointmentDoc.data();
+    const updateData = {
+      callEndedAt: admin.firestore.FieldValue.serverTimestamp(),
+      callStatus: 'ended',
+      callSessionActive: false,
+    };
+
+    if (
+      (appointment.status === 'calling' || appointment.status === 'missed') &&
+      appointment.callStatus !== 'joining' &&
+      appointment.callStatus !== 'patient_answered'
+    ) {
+      updateData.status = 'missed';
+    } else {
+      updateData.status = 'ended_pending_confirmation';
+      updateData.confirmationDeadlineAt = admin.firestore.Timestamp.fromMillis(
+        Date.now() + 24 * 60 * 60 * 1000
+      );
+    }
+
+    await appointmentRef.update(updateData);
+    return { success: true, status: updateData.status };
+  });
+
+exports.confirmAppointmentCompletionForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const doctorId = data?.doctorId;
+    return confirmAppointmentCompletionInternal(data, {
+      auth: doctorId ? { uid: doctorId } : null,
+    });
+  });
+
+exports.handleCallDeclinedForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const patientId = data?.patientId;
+    if (!patientId) {
+      throw new functions.https.HttpsError('invalid-argument', 'patientId is required');
+    }
+
+    return handleCallDeclinedInternal(data, {
+      auth: { uid: patientId },
+    });
+  });
+
+exports.cancelCallForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const doctorId = data?.doctorId;
+    if (!doctorId) {
+      throw new functions.https.HttpsError('invalid-argument', 'doctorId is required');
+    }
+
+    return cancelCallInternal(data, {
+      auth: { uid: doctorId },
+    });
+  });
+
+exports.completeAppointmentForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const doctorId = data?.doctorId;
+    if (!doctorId) {
+      throw new functions.https.HttpsError('invalid-argument', 'doctorId is required');
+    }
+
+    return confirmAppointmentCompletionInternal(
+      { ...data, completed: true },
+      { auth: { uid: doctorId } },
+    );
+  });
+
+exports.handleMissedCallForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const patientId = data?.patientId;
+    if (!patientId) {
+      throw new functions.https.HttpsError('invalid-argument', 'patientId is required');
+    }
+
+    const appointmentId = data?.appointmentId;
+    if (!appointmentId) {
+      throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+    }
+
+    const appointmentRef = db.collection('appointments').doc(appointmentId);
+    const appointmentDoc = await appointmentRef.get();
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    const appointment = appointmentDoc.data();
+
+    const currentCallStatus = appointment.callStatus;
+    const currentAppointmentStatus = appointment.status;
+    const isAlreadyTerminal =
+      currentAppointmentStatus === 'completed' ||
+      currentAppointmentStatus === 'not_completed' ||
+      currentAppointmentStatus === 'cancelled' ||
+      currentCallStatus === 'ended' ||
+      currentCallStatus === 'declined';
+
+    if (currentAppointmentStatus === 'missed') {
+      return { success: true, message: 'تم تسجيل المكالمة الفائتة مسبقاً' };
+    }
+
+    if (isAlreadyTerminal) {
+      return { success: true, message: 'تم تجاهل تسجيل المكالمة الفائتة' };
+    }
+
+    await appointmentRef.update({
+      status: 'missed',
+      callStatus: 'missed',
+      callSessionActive: true,
+      missedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { success: true, status: 'missed' };
+  });
+
+exports.patientJoinCallForTest = functions
+  .region('europe-west1')
+  .https.onCall(async (data) => {
+    assertEmulatorOnlyTestHook();
+
+    const patientId = data?.patientId;
+    if (!patientId) {
+      throw new functions.https.HttpsError('invalid-argument', 'patientId is required');
+    }
+
+    const appointmentId = data?.appointmentId;
+    if (!appointmentId) {
+      throw new functions.https.HttpsError('invalid-argument', 'appointmentId is required');
+    }
+
+    const appointmentRef = db.collection('appointments').doc(appointmentId);
+    const appointmentDoc = await appointmentRef.get();
+    if (!appointmentDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'الموعد غير موجود');
+    }
+
+    const appointment = appointmentDoc.data();
+    if (appointment.patientId !== patientId) {
+      throw new functions.https.HttpsError('permission-denied', 'You are not authorized to join this meeting');
+    }
+
+    if (!appointment.callSessionId || appointment.callSessionActive === false) {
+      throw new functions.https.HttpsError('failed-precondition', 'This meeting is no longer available');
+    }
+
+    const patientUid = Math.floor(Math.random() * 1000000) + 1000001;
+    const agoraToken = generateAgoraToken(
+      appointment.callSessionId,
+      patientUid,
+      'publisher',
+      3600,
+    );
+
+    await appointmentRef.update({
+      status: 'in_progress',
+      callSessionActive: true,
+    });
+
+    return {
+      success: true,
+      agoraToken,
+      channelName: appointment.callSessionId,
+      agoraChannelName: appointment.callSessionId,
+      uid: patientUid,
+    };
+  });
+
 /**
  * مساعد للتعامل مع تذكير موعد محدد
  */
@@ -1688,17 +3105,37 @@ if (process.env.NODE_ENV === 'test' || process.env.FUNCTIONS_EMULATOR === 'true'
     generateAgoraToken,
     logCallEvent,
     sendVoIPNotification,
+    sendConfirmationExpiredNotifications,
     logNotificationEvent,
     handleAppointmentReminder,
+    autoCompleteExpiredConfirmationsInternal,
 
     // Cloud Functions for integration testing
     startAgoraCall: exports.startAgoraCall,
     endAgoraCall: exports.endAgoraCall,
     completeAppointment: exports.completeAppointment,
+    confirmAppointmentCompletion: exports.confirmAppointmentCompletion,
+    markCallInProgress: exports.markCallInProgress,
+    patientJoinCall: exports.patientJoinCall,
+    handleMissedCall: exports.handleMissedCall,
+    handleCallDeclined: exports.handleCallDeclined,
+    cancelCall: exports.cancelCall,
     getFunctionsVersion: exports.getFunctionsVersion,
     checkDoctorAppointments: exports.checkDoctorAppointments,
     onAppointmentCreated: exports.onAppointmentCreated,
     checkAppointmentReminders: exports.checkAppointmentReminders,
+    runAutoCompleteExpiredConfirmationsForTest: exports.runAutoCompleteExpiredConfirmationsForTest,
+    startAgoraCallForTest: exports.startAgoraCallForTest,
+    markCallInProgressForTest: exports.markCallInProgressForTest,
+    endAgoraCallForTest: exports.endAgoraCallForTest,
+    confirmAppointmentCompletionForTest: exports.confirmAppointmentCompletionForTest,
+    handleCallDeclinedForTest: exports.handleCallDeclinedForTest,
+    cancelCallForTest: exports.cancelCallForTest,
+    completeAppointmentForTest: exports.completeAppointmentForTest,
+    handleMissedCallForTest: exports.handleMissedCallForTest,
+    patientJoinCallForTest: exports.patientJoinCallForTest,
+    autoCompleteExpiredConfirmations: exports.autoCompleteExpiredConfirmations,
+    notifyPatientAnswered: exports.notifyPatientAnswered,
   };
 }
 

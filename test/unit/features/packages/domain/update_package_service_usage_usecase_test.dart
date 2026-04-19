@@ -92,8 +92,9 @@ void main() {
     ).thenReturn(mockClinicPackageDoc);
 
     when(mockFirestore.runTransaction<void>(any)).thenAnswer((inv) async {
-      final action = inv.positionalArguments[0] as Function;
-      return await action(mockTransaction);
+      final action =
+          inv.positionalArguments[0] as Future<void> Function(Transaction);
+      return action(mockTransaction);
     });
 
     // Mock gets
@@ -142,8 +143,9 @@ void main() {
 
         final usages = updates['servicesUsage'] as List<dynamic>;
         expect(usages.length, 1);
-        expect(usages[0]['serviceId'], serviceId);
-        expect(usages[0]['usedCount'], 1); // incremented from 0 to 1
+        final firstUsage = usages[0] as Map<String, dynamic>;
+        expect(firstUsage['serviceId'], serviceId);
+        expect(firstUsage['usedCount'], 1); // incremented from 0 to 1
         expect(updates['usedServicesCount'], 0); // Need 2 to reach quantity
       },
     );
@@ -176,7 +178,8 @@ void main() {
       final updates = captured.first as Map<String, dynamic>;
 
       final usages = updates['servicesUsage'] as List<dynamic>;
-      expect(usages[0]['usedCount'], 2); // 1 -> 2
+      final firstUsage = usages[0] as Map<String, dynamic>;
+      expect(firstUsage['usedCount'], 2); // 1 -> 2
       expect(updates['usedServicesCount'], 0); // 2 < 3, still 0
     });
 
@@ -208,7 +211,8 @@ void main() {
       final updates = captured.first as Map<String, dynamic>;
 
       final usages = updates['servicesUsage'] as List<dynamic>;
-      expect(usages[0]['usedCount'], 2); // 1 -> 2
+      final firstUsage = usages[0] as Map<String, dynamic>;
+      expect(firstUsage['usedCount'], 2); // 1 -> 2
       expect(
         updates['usedServicesCount'],
         1,

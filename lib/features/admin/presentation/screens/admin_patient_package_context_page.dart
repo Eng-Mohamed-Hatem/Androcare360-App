@@ -6,6 +6,7 @@ import 'package:elajtech/features/admin/presentation/widgets/admin_document_uplo
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:url_launcher/url_launcher.dart';
 
 /// Admin Screen: Detailed management view for a specific patient package.
 ///
@@ -355,8 +356,22 @@ class _AdminPatientPackageContextPageState
                                   style: const TextStyle(fontSize: 12),
                                 ),
                                 trailing: const Icon(Icons.download, size: 20),
-                                onTap: () {
-                                  // TODO(elajtech): View or download document.
+                                onTap: () async {
+                                  final uri = Uri.tryParse(doc.fileUrl);
+                                  if (uri == null) return;
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  } else {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('تعذر فتح المستند'),
+                                      ),
+                                    );
+                                  }
                                 },
                               ),
                             ),

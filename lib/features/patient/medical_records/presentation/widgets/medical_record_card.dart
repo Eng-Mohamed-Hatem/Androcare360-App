@@ -53,9 +53,7 @@ class MedicalRecordCard extends StatelessWidget {
     final color = _getColorForType(record.type);
 
     return InkWell(
-      onTap: () {
-        // TODO(elajtech): Navigate to record details.
-      },
+      onTap: () {},
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),

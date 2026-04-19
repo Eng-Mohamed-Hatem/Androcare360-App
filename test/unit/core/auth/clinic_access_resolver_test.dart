@@ -223,5 +223,6 @@ void main() {
   MockSpec<DocumentSnapshot<Map<String, dynamic>>>(),
   MockSpec<CollectionReference<Map<String, dynamic>>>(),
 ])
-// ignore: unused_element
+// Reason: the helper exists only to anchor generated Mockito declarations.
+// ignore: unused_element, generated mock declarations above require this anchor
 void _unused() {}

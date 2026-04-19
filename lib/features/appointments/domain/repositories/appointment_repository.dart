@@ -30,6 +30,13 @@ abstract class AppointmentRepository {
     String doctorId,
   );
 
+  /// Get doctor's appointments for a specific date via Cloud Function.
+  Future<Either<Failure, List<Map<String, dynamic>>>>
+  getDoctorAppointmentsViaCloudFunction({
+    required String doctorId,
+    required DateTime date,
+  });
+
   /// Check Appointment Conflict
   ///
   /// [patientId] معرف المريض
@@ -59,4 +66,15 @@ abstract class AppointmentRepository {
   Future<Either<Failure, List<AppointmentModel>>> getActiveAppointmentsForDate(
     DateTime date,
   );
+
+  /// مراقبة مواعيد المريض في الوقت الفعلي
+  /// Real-time stream of all appointments for the given patient.
+  ///
+  /// Emits a new list whenever any appointment document changes in Firestore.
+  /// Used by the patient's appointments tab to reactively enable the
+  /// "Join Meeting" button when the doctor starts a call
+  /// (Firestore sets status:'calling', agoraToken, callStartedAt).
+  ///
+  /// The stream does not complete — callers must cancel the subscription.
+  Stream<List<AppointmentModel>> watchAppointmentsForPatient(String patientId);
 }

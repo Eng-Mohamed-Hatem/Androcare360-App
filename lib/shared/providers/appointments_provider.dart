@@ -2,6 +2,7 @@ import 'package:elajtech/features/appointments/domain/repositories/appointment_r
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:elajtech/shared/models/notification_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 
@@ -13,12 +14,24 @@ class AppointmentsNotifier extends StateNotifier<List<AppointmentModel>> {
   final NotificationRepository _notificationRepository; // Start with empty list
 
   /// Load appointments for patient
-  Future<void> loadForPatient(String patientId) async {
+  ///
+  /// Returns `true` on success, `false` on failure.
+  /// Callers that use `unawaited(...)` are unaffected by the new return type.
+  Future<bool> loadForPatient(String patientId) async {
     final result = await _repository.getAppointmentsForPatient(patientId);
-    state = result.fold(
-      (failure) =>
-          [], // Handle error state appropriately if needed, for now empty list
-      (appointments) => appointments,
+    return result.fold(
+      (failure) {
+        if (kDebugMode) {
+          debugPrint(
+            '❌ [AppointmentsProvider] loadForPatient failed: ${failure.message}',
+          );
+        }
+        return false;
+      },
+      (appointments) {
+        state = appointments;
+        return true;
+      },
     );
   }
 
@@ -110,6 +123,71 @@ class AppointmentsNotifier extends StateNotifier<List<AppointmentModel>> {
     } on Exception catch (_) {
       rethrow;
     }
+  }
+
+  Future<List<TimeSlot>> getAvailableSlotsForDoctor({
+    required AppointmentModel appointment,
+    required DateTime date,
+  }) async {
+    final result = await _repository.getDoctorAppointmentsViaCloudFunction(
+      doctorId: appointment.doctorId,
+      date: date,
+    );
+    final rawAppointments = result.fold(
+      (failure) => throw Exception(failure.message),
+      (data) => data,
+    );
+
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final now = DateTime.now();
+    final unavailableTimes = rawAppointments
+        .where((item) => item['id'] != appointment.id)
+        .where((item) {
+          final status = item['status'] as String? ?? '';
+          return status != 'cancelled' &&
+              status != 'completed' &&
+              status != 'notCompleted' &&
+              status != 'declined';
+        })
+        .map((item) => item['timeSlot'] as String? ?? '')
+        .where((time) => time.isNotEmpty)
+        .toSet();
+
+    final slots = <TimeSlot>[];
+    var current = DateTime(date.year, date.month, date.day, 8);
+    final end = DateTime(date.year, date.month, date.day, 20);
+
+    while (current.isBefore(end)) {
+      final hour = current.hour;
+      final minute = current.minute;
+      final label = hour < 12
+          ? '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} ص'
+          : hour == 12
+          ? '12:${minute.toString().padLeft(2, '0')} م'
+          : '${(hour - 12).toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} م';
+
+      slots.add(
+        TimeSlot(
+          time: label,
+          isAvailable:
+              current.isAfter(now) &&
+              current != appointment.fullDateTime &&
+              !unavailableTimes.contains(label),
+          slotId:
+              '${appointment.doctorId}_${DateTime(date.year, date.month, date.day, current.hour, current.minute).millisecondsSinceEpoch}',
+        ),
+      );
+
+      current = current.add(const Duration(minutes: 30));
+    }
+
+    if (kDebugMode) {
+      debugPrint(
+        '📅 [AppointmentsProvider] Loaded slots for doctor=${appointment.doctorId} date=$normalizedDate available=${slots.where((slot) => slot.isAvailable).length}',
+      );
+    }
+
+    return slots;
   }
 
   /// Cancel appointment - إلغاء موعد
@@ -258,3 +336,22 @@ final pastAppointmentsProvider = Provider<List<AppointmentModel>>((ref) {
   ref.watch(appointmentsProvider); // Watch for changes
   return notifier.getPastAppointments();
 });
+
+/// مزود مراقبة مواعيد المريض في الوقت الفعلي
+/// Real-time stream provider for patient appointments.
+///
+/// Listens to Firestore snapshots so the patient's appointments tab
+/// automatically reflects changes made by the doctor (e.g. starting a call
+/// updates status to 'calling', sets agoraToken / callStartedAt).
+///
+/// Usage:
+/// ```dart
+/// final appointmentsAsync = ref.watch(patientAppointmentsStreamProvider(patientId));
+/// appointmentsAsync.when(data: ..., loading: ..., error: ...);
+/// ```
+final AutoDisposeStreamProviderFamily<List<AppointmentModel>, String>
+    patientAppointmentsStreamProvider = StreamProvider.autoDispose
+        .family<List<AppointmentModel>, String>(
+  (ref, patientId) =>
+      GetIt.I<AppointmentRepository>().watchAppointmentsForPatient(patientId),
+);

@@ -180,13 +180,13 @@ class TestHelpers {
   /// // ... trigger callback
   /// TestHelpers.expectCallbackCalled(called);
   /// ```
-  static void expectCallbackCalled(bool called) {
-    expect(called, isTrue, reason: 'Callback should have been called');
+  static void expectCallbackCalled({required bool wasCalled}) {
+    expect(wasCalled, isTrue, reason: 'Callback should have been called');
   }
 
   /// Verifies that a callback was not called
-  static void expectCallbackNotCalled(bool called) {
-    expect(called, isFalse, reason: 'Callback should not have been called');
+  static void expectCallbackNotCalled({required bool wasCalled}) {
+    expect(wasCalled, isFalse, reason: 'Callback should not have been called');
   }
 
   /// Creates a test error message

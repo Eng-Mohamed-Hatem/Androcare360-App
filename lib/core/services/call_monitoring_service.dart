@@ -625,6 +625,207 @@ class CallMonitoringService {
     }
   }
 
+  /// Log join meeting tap event — تسجيل حدث الضغط على "انضم للاجتماع"
+  ///
+  /// Records when a patient taps "Join Meeting" and what happened next.
+  /// يسجل وقت قيام المريض بالضغط على "انضم للاجتماع" والنتيجة التي حدثت.
+  ///
+  /// Outcome values / قيم النتيجة:
+  /// `"navigated"` | `"session_not_started"` | `"session_expired"`
+  ///
+  /// Errors are swallowed to avoid disrupting the call flow.
+  /// يتم تجاهل الأخطاء حتى لا يتم تعطيل تدفق المكالمة.
+  Future<void> logJoinMeetingTap({
+    required String appointmentId,
+    required String userId,
+    required String outcome,
+  }) async {
+    try {
+      if (kDebugMode) {
+        debugPrint(
+          '📝 [CallMonitoringService] logJoinMeetingTap: $appointmentId outcome=$outcome',
+        );
+      }
+
+      final id = _uuid.v4();
+      await _firestore.collection(_collectionName).doc(id).set({
+        'id': id,
+        'eventType': 'join_meeting_tapped',
+        'appointmentId': appointmentId,
+        'userId': userId,
+        'outcome': outcome,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [CallMonitoringService] logJoinMeetingTap saved successfully',
+        );
+      }
+    } on FirebaseException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] Firestore Error in logJoinMeetingTap: ${e.code} - ${e.message}',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    } on SocketException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] Network Error in logJoinMeetingTap: ${e.message}',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    } on Exception catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] Unexpected error in logJoinMeetingTap: $e',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    }
+  }
+
+  /// Log reschedule submitted event — تسجيل حدث إعادة الجدولة
+  ///
+  /// Records when a patient submits a reschedule request.
+  /// يسجل وقت قيام المريض بتقديم طلب إعادة جدولة.
+  ///
+  /// Outcome values / قيم النتيجة:
+  /// `"confirmed"` | `"failed"` | `"conflict"`
+  ///
+  /// Dates stored as ISO 8601 strings — no PHI included.
+  /// يتم تخزين التواريخ كسلاسل ISO 8601 — لا يتم تضمين معلومات صحية شخصية.
+  ///
+  /// Errors are swallowed to avoid disrupting the reschedule flow.
+  /// يتم تجاهل الأخطاء حتى لا يتم تعطيل تدفق إعادة الجدولة.
+  Future<void> logRescheduleSubmitted({
+    required String appointmentId,
+    required String userId,
+    required DateTime originalDateTime,
+    required DateTime newDateTime,
+    required String outcome,
+  }) async {
+    try {
+      if (kDebugMode) {
+        debugPrint(
+          '📝 [CallMonitoringService] logRescheduleSubmitted: $appointmentId outcome=$outcome',
+        );
+      }
+
+      final id = _uuid.v4();
+      await _firestore.collection(_collectionName).doc(id).set({
+        'id': id,
+        'eventType': 'reschedule_submitted',
+        'appointmentId': appointmentId,
+        'userId': userId,
+        'originalDateTime': originalDateTime.toIso8601String(),
+        'newDateTime': newDateTime.toIso8601String(),
+        'outcome': outcome,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
+      if (kDebugMode) {
+        debugPrint(
+          '✅ [CallMonitoringService] logRescheduleSubmitted saved successfully',
+        );
+      }
+    } on FirebaseException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] Firestore Error in logRescheduleSubmitted: ${e.code} - ${e.message}',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    } on SocketException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] Network Error in logRescheduleSubmitted: ${e.message}',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    } on Exception catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] Unexpected error in logRescheduleSubmitted: $e',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    }
+  }
+
+  Future<void> logStructuredEvent({
+    required String appointmentId,
+    required String userId,
+    required String eventType,
+    Map<String, dynamic>? metadata,
+    String? errorCode,
+    String? errorMessage,
+  }) async {
+    try {
+      final logId = _uuid.v4();
+      final sanitizedMetadata = _sanitizeMetadata(metadata);
+
+      await _firestore.collection(_collectionName).doc(logId).set({
+        'id': logId,
+        'appointmentId': appointmentId,
+        'userId': userId,
+        'eventType': eventType,
+        'timestamp': DateTime.now().toIso8601String(),
+        'errorCode': errorCode,
+        'errorMessage': errorMessage,
+        'metadata': sanitizedMetadata,
+      });
+    } on FirebaseException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] logStructuredEvent Firebase error: ${e.code} - ${e.message}',
+        );
+        debugPrint(
+          '❌ [CallMonitoringService] eventType=$eventType appointmentId=$appointmentId',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    } on SocketException catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] logStructuredEvent network error: ${e.message}',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    } on Exception catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ [CallMonitoringService] logStructuredEvent unexpected error: $e',
+        );
+        debugPrint('❌ [CallMonitoringService] Stack trace: $stackTrace');
+      }
+    }
+  }
+
+  Map<String, dynamic>? _sanitizeMetadata(Map<String, dynamic>? metadata) {
+    if (metadata == null) {
+      return null;
+    }
+
+    const blockedKeys = {
+      'agoraToken',
+      'fcmToken',
+      'token',
+      'rawPayload',
+      'payload',
+    };
+
+    final sanitized = <String, dynamic>{};
+    metadata.forEach((key, value) {
+      if (!blockedKeys.contains(key) && value is! Map && value is! List) {
+        sanitized[key] = value;
+      }
+    });
+
+    return sanitized;
+  }
+
   /// Save log to Firestore
   ///
   /// Internal method to persist call log to Firestore 'call_logs' collection.

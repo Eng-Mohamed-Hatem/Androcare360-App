@@ -179,6 +179,67 @@ class MockCallMonitoringService extends _i1.Mock
           as _i4.Future<void>);
 
   @override
+  _i4.Future<void> logJoinMeetingTap({
+    required String? appointmentId,
+    required String? userId,
+    required String? outcome,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#logJoinMeetingTap, [], {
+              #appointmentId: appointmentId,
+              #userId: userId,
+              #outcome: outcome,
+            }),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> logRescheduleSubmitted({
+    required String? appointmentId,
+    required String? userId,
+    required DateTime? originalDateTime,
+    required DateTime? newDateTime,
+    required String? outcome,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#logRescheduleSubmitted, [], {
+              #appointmentId: appointmentId,
+              #userId: userId,
+              #originalDateTime: originalDateTime,
+              #newDateTime: newDateTime,
+              #outcome: outcome,
+            }),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> logStructuredEvent({
+    required String? appointmentId,
+    required String? userId,
+    required String? eventType,
+    Map<String, dynamic>? metadata,
+    String? errorCode,
+    String? errorMessage,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#logStructuredEvent, [], {
+              #appointmentId: appointmentId,
+              #userId: userId,
+              #eventType: eventType,
+              #metadata: metadata,
+              #errorCode: errorCode,
+              #errorMessage: errorMessage,
+            }),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
   _i4.Future<List<_i6.CallLogModel>> getLogsForAppointment(
     String? appointmentId,
   ) =>

@@ -62,27 +62,30 @@ void main() {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      seedDb = FirebaseFirestore.instanceFor(
-        app: seedApp,
-        databaseId: FirebaseEmulatorHelper.databaseId,
-      )..useFirestoreEmulator(
-          FirebaseEmulatorHelper.firestoreHost,
-          FirebaseEmulatorHelper.firestorePort,
-        );
-      adminDbA = FirebaseFirestore.instanceFor(
-        app: adminAppA,
-        databaseId: FirebaseEmulatorHelper.databaseId,
-      )..useFirestoreEmulator(
-          FirebaseEmulatorHelper.firestoreHost,
-          FirebaseEmulatorHelper.firestorePort,
-        );
-      adminDbB = FirebaseFirestore.instanceFor(
-        app: adminAppB,
-        databaseId: FirebaseEmulatorHelper.databaseId,
-      )..useFirestoreEmulator(
-          FirebaseEmulatorHelper.firestoreHost,
-          FirebaseEmulatorHelper.firestorePort,
-        );
+      seedDb =
+          FirebaseFirestore.instanceFor(
+            app: seedApp,
+            databaseId: FirebaseEmulatorHelper.databaseId,
+          )..useFirestoreEmulator(
+            FirebaseEmulatorHelper.firestoreHost,
+            FirebaseEmulatorHelper.firestorePort,
+          );
+      adminDbA =
+          FirebaseFirestore.instanceFor(
+            app: adminAppA,
+            databaseId: FirebaseEmulatorHelper.databaseId,
+          )..useFirestoreEmulator(
+            FirebaseEmulatorHelper.firestoreHost,
+            FirebaseEmulatorHelper.firestorePort,
+          );
+      adminDbB =
+          FirebaseFirestore.instanceFor(
+            app: adminAppB,
+            databaseId: FirebaseEmulatorHelper.databaseId,
+          )..useFirestoreEmulator(
+            FirebaseEmulatorHelper.firestoreHost,
+            FirebaseEmulatorHelper.firestorePort,
+          );
 
       approvalRepositoryA = AdminApprovalRepositoryImpl(adminDbA);
       approvalRepositoryB = AdminApprovalRepositoryImpl(adminDbB);
@@ -101,17 +104,17 @@ void main() {
 
         final results =
             await Future.wait<Either<Failure, DoctorApplicationActionResult>>([
-          approvalRepositoryA.approveDoctor(
-            doctorId: doctorId,
-            adminId: 'admin_a',
-            adminName: 'Admin A',
-          ),
-          approvalRepositoryB.rejectDoctor(
-            doctorId: doctorId,
-            adminId: 'admin_b',
-            adminName: 'Admin B',
-          ),
-        ]);
+              approvalRepositoryA.approveDoctor(
+                doctorId: doctorId,
+                adminId: 'admin_a',
+                adminName: 'Admin A',
+              ),
+              approvalRepositoryB.rejectDoctor(
+                doctorId: doctorId,
+                adminId: 'admin_b',
+                adminName: 'Admin B',
+              ),
+            ]);
 
         expect(results.every((result) => result.isRight()), isTrue);
 
@@ -129,7 +132,10 @@ void main() {
           isTrue,
         );
 
-        final doctorSnapshot = await seedDb.collection('users').doc(doctorId).get();
+        final doctorSnapshot = await seedDb
+            .collection('users')
+            .doc(doctorId)
+            .get();
 
         if (doctorSnapshot.exists) {
           final data = doctorSnapshot.data();
@@ -160,7 +166,8 @@ Future<void> _deleteNamedApps() async {
     'admin-approval-admin-b',
   };
 
-  for (final app in Firebase.apps.where((app) => appNames.contains(app.name)).toList()) {
+  for (final app
+      in Firebase.apps.where((app) => appNames.contains(app.name)).toList()) {
     await app.delete();
   }
 }
@@ -176,7 +183,6 @@ Future<void> _seedPendingDoctor(
     userType: UserType.doctor,
     phoneNumber: '+201234567892',
     specialty: 'عيادة السمنة والتغذية العلاجية',
-    isApproved: false,
     isActive: false,
     createdAt: DateTime.now(),
   );

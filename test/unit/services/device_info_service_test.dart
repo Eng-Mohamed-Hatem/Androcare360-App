@@ -21,10 +21,7 @@ void main() {
 
   setUp(() {
     // Get singleton instance
-    deviceInfoService = DeviceInfoService();
-
-    // Clear cache before each test
-    deviceInfoService.clearCache();
+    deviceInfoService = DeviceInfoService()..clearCache();
   });
 
   tearDown(() {
@@ -343,8 +340,7 @@ void main() {
       await instance1.getDeviceInfo();
 
       // Act
-      final instance2 = DeviceInfoService();
-      instance2.clearCache();
+      final instance2 = DeviceInfoService()..clearCache();
 
       // Assert - cache should be cleared for both
       expect(identical(instance1, instance2), isTrue);

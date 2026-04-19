@@ -9,7 +9,13 @@
  */
 
 const admin = require('firebase-admin');
+const net = require('net');
 const test = require('firebase-functions-test');
+
+const PROJECT_ID = 'elajtech-test';
+const DATABASE_ID = 'elajtech';
+const FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+const AUTH_EMULATOR_HOST = 'localhost:9099';
 
 // ============================================================================
 // FIREBASE ADMIN INITIALIZATION
@@ -22,8 +28,8 @@ const test = require('firebase-functions-test');
  */
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: 'elajtech-test',
-    databaseId: 'elajtech',
+    projectId: PROJECT_ID,
+    databaseId: DATABASE_ID,
   });
 }
 
@@ -39,9 +45,9 @@ if (!admin.apps.length) {
  */
 const db = admin.firestore();
 db.settings({
-  host: 'localhost:8080',
+  host: FIRESTORE_EMULATOR_HOST,
   ssl: false,
-  databaseId: 'elajtech', // ✅ CRITICAL: Explicit database ID
+  databaseId: DATABASE_ID, // ✅ CRITICAL: Explicit database ID
 });
 
 // ============================================================================
@@ -51,7 +57,7 @@ db.settings({
 /**
  * Configure Firebase Auth to use local emulator
  */
-process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
+process.env.FIREBASE_AUTH_EMULATOR_HOST = AUTH_EMULATOR_HOST;
 
 // ============================================================================
 // ENVIRONMENT VARIABLES
@@ -60,9 +66,9 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
 /**
  * Set environment variables for emulator mode
  */
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST;
 process.env.FUNCTIONS_EMULATOR = 'true';
-process.env.GCLOUD_PROJECT = 'elajtech-test';
+process.env.GCLOUD_PROJECT = PROJECT_ID;
 
 /**
  * Mock Agora credentials for testing
@@ -80,13 +86,82 @@ process.env.AGORA_APP_CERTIFICATE = 'test_certificate_67890';
  * This provides utilities for testing Cloud Functions
  */
 const functionsTest = test({
-  projectId: 'elajtech-test',
-  databaseId: 'elajtech',
+  projectId: PROJECT_ID,
+  databaseId: DATABASE_ID,
 }, './service-account-key.json'); // Optional: path to service account key
+
+let emulatorSetupComplete = false;
 
 // ============================================================================
 // TEST UTILITIES
 // ============================================================================
+
+jest.setTimeout(30000);
+
+function isPortOpen(host, port, timeoutMs = 1000) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    let settled = false;
+
+    const finish = (result) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      socket.destroy();
+      resolve(result);
+    };
+
+    socket.setTimeout(timeoutMs);
+    socket.once('connect', () => finish(true));
+    socket.once('timeout', () => finish(false));
+    socket.once('error', () => finish(false));
+    socket.connect(port, host);
+  });
+}
+
+async function ensureEmulatorsAvailable() {
+  const [firestoreReady, authReady] = await Promise.all([
+    isPortOpen('127.0.0.1', 8080),
+    isPortOpen('127.0.0.1', 9099),
+  ]);
+
+  if (!firestoreReady || !authReady) {
+    const missing = [];
+    if (!firestoreReady) {
+      missing.push('Firestore emulator on localhost:8080');
+    }
+    if (!authReady) {
+      missing.push('Auth emulator on localhost:9099');
+    }
+
+    throw new Error(
+      `Firebase emulators are not running: ${missing.join(', ')}. ` +
+      'Start them before running `npm run test:emulator`.'
+    );
+  }
+}
+
+async function flushFirestoreEmulator() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(
+      `http://${FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents`,
+      {
+        method: 'DELETE',
+        signal: controller.signal,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Flush failed with status ${response.status}`);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 /**
  * Clear all data from Firestore emulator
@@ -97,18 +172,15 @@ const functionsTest = test({
  * @returns {Promise<void>}
  */
 async function clearFirestoreData() {
-  const collections = ['appointments', 'users', 'call_logs'];
-  
-  for (const collectionName of collections) {
-    const snapshot = await db.collection(collectionName).get();
-    
-    if (snapshot.empty) {
-      continue;
-    }
-    
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
+  try {
+    await flushFirestoreEmulator();
+    return;
+  } catch (error) {
+    throw new Error(
+      'Failed to clear Firestore emulator state. ' +
+      `Expected reachable emulator at ${FIRESTORE_EMULATOR_HOST} for database ${DATABASE_ID}. ` +
+      `Original error: ${error.message}`
+    );
   }
 }
 
@@ -150,12 +222,15 @@ function wait(ms) {
  */
 beforeAll(async () => {
   console.log('🔧 Setting up test environment...');
-  console.log('📊 Firestore Emulator: localhost:8080');
-  console.log('🔐 Auth Emulator: localhost:9099');
-  console.log('💾 Database ID: elajtech');
+  console.log(`📊 Firestore Emulator: ${FIRESTORE_EMULATOR_HOST}`);
+  console.log(`🔐 Auth Emulator: ${AUTH_EMULATOR_HOST}`);
+  console.log(`💾 Database ID: ${DATABASE_ID}`);
+
+  await ensureEmulatorsAvailable();
   
   // Clear any existing data
   await clearFirestoreData();
+  emulatorSetupComplete = true;
   
   console.log('✅ Test environment ready');
 });
@@ -165,6 +240,9 @@ beforeAll(async () => {
  * Ensures tests don't interfere with each other
  */
 afterEach(async () => {
+  if (!emulatorSetupComplete) {
+    return;
+  }
   await clearFirestoreData();
 });
 
@@ -177,8 +255,10 @@ afterAll(async () => {
   // Cleanup firebase-functions-test
   functionsTest.cleanup();
   
-  // Delete the Firebase app
-  await admin.app().delete();
+  // Delete the Firebase app if still available
+  if (emulatorSetupComplete && admin.apps.length > 0) {
+    await admin.app().delete();
+  }
   
   console.log('✅ Test environment cleaned up');
 });

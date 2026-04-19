@@ -214,7 +214,6 @@ void main() {
             specializations: <String>[
               ClinicTypes.arabicLabel(ClinicTypes.values.first),
             ],
-            isApproved: false,
             isActive: false,
             createdAt: DateTime(2026, 3, 15),
           ),

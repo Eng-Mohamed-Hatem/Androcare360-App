@@ -6157,6 +6157,12 @@ class MockFCMService extends _i1.Mock implements _i15.FCMService {
           as _i5.Future<void>);
 
   @override
+  void resetCallDeduplication() => super.noSuchMethod(
+    Invocation.method(#resetCallDeduplication, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
@@ -6178,6 +6184,52 @@ class MockVoIPCallService extends _i1.Mock implements _i16.VoIPCallService {
             returnValue: _i5.Stream<_i16.VoIPCallEvent>.empty(),
           )
           as _i5.Stream<_i16.VoIPCallEvent>);
+
+  @override
+  bool get isCleanupBlocked =>
+      (super.noSuchMethod(
+            Invocation.getter(#isCleanupBlocked),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
+  _i5.Future<_i16.PendingCallData?> refreshPendingCallData() =>
+      (super.noSuchMethod(
+            Invocation.method(#refreshPendingCallData, []),
+            returnValue: _i5.Future<_i16.PendingCallData?>.value(),
+          )
+          as _i5.Future<_i16.PendingCallData?>);
+
+  @override
+  void markAnswerAccepted() => super.noSuchMethod(
+    Invocation.method(#markAnswerAccepted, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void markJoinStarted() => super.noSuchMethod(
+    Invocation.method(#markJoinStarted, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void markJoinSucceeded() => super.noSuchMethod(
+    Invocation.method(#markJoinSucceeded, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void markJoinFailed() => super.noSuchMethod(
+    Invocation.method(#markJoinFailed, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void markCallEnded() => super.noSuchMethod(
+    Invocation.method(#markCallEnded, []),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i5.Future<void> initialize() =>
@@ -6386,6 +6438,67 @@ class MockCallMonitoringService extends _i1.Mock
               #userId: userId,
               #duration: duration,
               #metadata: metadata,
+            }),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logJoinMeetingTap({
+    required String? appointmentId,
+    required String? userId,
+    required String? outcome,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#logJoinMeetingTap, [], {
+              #appointmentId: appointmentId,
+              #userId: userId,
+              #outcome: outcome,
+            }),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logRescheduleSubmitted({
+    required String? appointmentId,
+    required String? userId,
+    required DateTime? originalDateTime,
+    required DateTime? newDateTime,
+    required String? outcome,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#logRescheduleSubmitted, [], {
+              #appointmentId: appointmentId,
+              #userId: userId,
+              #originalDateTime: originalDateTime,
+              #newDateTime: newDateTime,
+              #outcome: outcome,
+            }),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> logStructuredEvent({
+    required String? appointmentId,
+    required String? userId,
+    required String? eventType,
+    Map<String, dynamic>? metadata,
+    String? errorCode,
+    String? errorMessage,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#logStructuredEvent, [], {
+              #appointmentId: appointmentId,
+              #userId: userId,
+              #eventType: eventType,
+              #metadata: metadata,
+              #errorCode: errorCode,
+              #errorMessage: errorMessage,
             }),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),

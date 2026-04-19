@@ -4,9 +4,11 @@
 /// all repository methods using the `Either<Failure, T>` pattern.
 library;
 
+import 'dart:async';
 import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:elajtech/core/errors/exceptions.dart';
 import 'package:elajtech/core/errors/failures.dart';
@@ -155,6 +157,16 @@ void logError({
     debugPrint('=============');
   }
 
-  // TODO(dev): Send to Firebase Crashlytics in production
-  // FirebaseCrashlytics.instance.recordError(error, stackTrace);
+  if (!kDebugMode) {
+    unawaited(
+      FirebaseCrashlytics.instance.recordError(
+        error,
+        stackTrace,
+        information: [
+          'operation: $operation',
+          if (context != null) 'context: $context',
+        ],
+      ),
+    );
+  }
 }

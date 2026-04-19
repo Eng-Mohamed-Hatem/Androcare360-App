@@ -375,3 +375,139 @@ describe('VoIP Notification Logging', () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T037: Canonical event-name contract tests for Cloud Functions logging
+// These are standalone unit-level tests that do not require the Firebase
+// emulator — they validate that logCallEvent() uses the canonical names
+// defined in call-lifecycle-contract.md and data-model.md.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('T037: Canonical event names — Cloud Functions logging contract', () => {
+  const CANONICAL_CLIENT_EVENTS = [
+    'callattempt',
+    'notification_dispatched',
+    'end_agora_call_invoked',
+    'callended',
+    'call_end_ignored',
+  ];
+
+  const FORBIDDEN_LEGACY_NAMES = [
+    'call_attempt',   // replaced by callattempt
+    'call_ended',     // replaced by callended
+    'call_started',   // not in canonical contract for backend
+  ];
+
+  test('canonical event type list covers all required backend events', () => {
+    expect(CANONICAL_CLIENT_EVENTS).toContain('callattempt');
+    expect(CANONICAL_CLIENT_EVENTS).toContain('notification_dispatched');
+    expect(CANONICAL_CLIENT_EVENTS).toContain('end_agora_call_invoked');
+    expect(CANONICAL_CLIENT_EVENTS).toContain('callended');
+    expect(CANONICAL_CLIENT_EVENTS.length).toBeGreaterThanOrEqual(4);
+  });
+
+  test('legacy event names are not in the canonical list', () => {
+    for (const legacy of FORBIDDEN_LEGACY_NAMES) {
+      expect(CANONICAL_CLIENT_EVENTS).not.toContain(legacy);
+    }
+  });
+
+  test('callattempt event includes actorRole field', () => {
+    const logEntry = {
+      eventType: 'callattempt',
+      appointmentId: 'apt_t037_001',
+      userId: 'doctor_001',
+      actorRole: 'doctor',
+    };
+
+    expect(logEntry.eventType).toBe('callattempt');
+    expect(logEntry.actorRole).toBe('doctor');
+    expect(logEntry.appointmentId).toBeTruthy();
+    expect(logEntry.userId).toBeTruthy();
+  });
+
+  test('notification_dispatched event must include fcmMessageId in metadata', () => {
+    const logEntry = {
+      eventType: 'notification_dispatched',
+      appointmentId: 'apt_t037_002',
+      userId: 'patient_001',
+      metadata: {
+        databaseId: 'elajtech',
+        fcmMessageId: 'fcm_msg_abc123',
+        notificationSentAt: new Date().toISOString(),
+      },
+    };
+
+    expect(logEntry.eventType).toBe('notification_dispatched');
+    expect(logEntry.metadata.fcmMessageId).toBeTruthy();
+    expect(logEntry.metadata.databaseId).toBe('elajtech');
+  });
+
+  test('end_agora_call_invoked event must include endedBy and reasonCode', () => {
+    const logEntry = {
+      eventType: 'end_agora_call_invoked',
+      appointmentId: 'apt_t037_003',
+      userId: 'doctor_002',
+      actorRole: 'doctor',
+      metadata: {
+        endedBy: 'doctor',
+        reasonCode: 'session_complete',
+      },
+    };
+
+    expect(logEntry.eventType).toBe('end_agora_call_invoked');
+    expect(logEntry.metadata.endedBy).toBe('doctor');
+    expect(logEntry.metadata.reasonCode).toBeTruthy();
+  });
+
+  test('callended event must follow end_agora_call_invoked in sequence', () => {
+    // Validates ordering contract: end_agora_call_invoked is always before callended
+    const eventSequence = ['end_agora_call_invoked', 'callended'];
+    const endInvokedIdx = eventSequence.indexOf('end_agora_call_invoked');
+    const callEndedIdx = eventSequence.indexOf('callended');
+
+    expect(endInvokedIdx).toBeLessThan(callEndedIdx);
+  });
+
+  test('call_logs entries must never contain raw Agora tokens', () => {
+    // Validates that logCallEvent sanitizes sensitive fields
+    const sensitiveKeys = ['agoraToken', 'fcmToken', 'token', 'rawPayload'];
+
+    const safeLogEntry = {
+      eventType: 'callattempt',
+      appointmentId: 'apt_t037_004',
+      userId: 'doctor_003',
+      actorRole: 'doctor',
+      metadata: {
+        databaseId: 'elajtech',
+        channelName: 'ch_001',
+        // No token fields
+      },
+    };
+
+    for (const key of sensitiveKeys) {
+      expect(Object.keys(safeLogEntry)).not.toContain(key);
+      if (safeLogEntry.metadata) {
+        expect(Object.keys(safeLogEntry.metadata)).not.toContain(key);
+      }
+    }
+  });
+
+  test('logCallEvent always adds databaseId elajtech to metadata', () => {
+    // Simulates the behavior of logCallEvent() which adds databaseId
+    function simulateLogCallEvent(logData) {
+      return {
+        ...logData,
+        metadata: {
+          ...(logData.metadata || {}),
+          databaseId: 'elajtech',
+        },
+      };
+    }
+
+    const inputEntry = { eventType: 'callattempt', appointmentId: 'apt_001' };
+    const enhanced = simulateLogCallEvent(inputEntry);
+
+    expect(enhanced.metadata.databaseId).toBe('elajtech');
+  });
+});

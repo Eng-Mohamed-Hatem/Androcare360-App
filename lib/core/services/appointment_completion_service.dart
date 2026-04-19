@@ -153,15 +153,27 @@ class AppointmentCompletionService {
   Future<CompletionResult> completeAppointment({
     required String appointmentId,
     required String doctorId,
+  }) => confirmCompletion(
+    appointmentId: appointmentId,
+    doctorId: doctorId,
+    completed: true,
+  );
+
+  /// Confirms whether the session completed successfully.
+  Future<CompletionResult> confirmCompletion({
+    required String appointmentId,
+    required String doctorId,
+    required bool completed,
   }) async {
     try {
-      debugPrint('✅ Completing appointment: $appointmentId');
+      debugPrint('✅ Confirming appointment completion: $appointmentId');
 
-      final callable = _functions.httpsCallable('completeAppointment');
+      final callable = _functions.httpsCallable('confirmAppointmentCompletion');
 
       final result = await callable.call<Map<String, dynamic>?>({
         'appointmentId': appointmentId,
         'doctorId': doctorId,
+        'completed': completed,
       });
 
       final data = result.data;
@@ -169,17 +181,22 @@ class AppointmentCompletionService {
         throw Exception('لم يتم استلام بيانات من الخادم');
       }
 
-      debugPrint('✅ Appointment completed successfully');
+      debugPrint('✅ Appointment completion confirmed successfully');
 
       return CompletionResult(
         success: true,
-        message: data['message'] as String? ?? 'تم إكمال الموعد بنجاح',
+        status: data['status'] as String?,
+        message:
+            data['message'] as String? ??
+            (completed
+                ? 'تم تأكيد اكتمال الجلسة بنجاح'
+                : 'تم تسجيل الجلسة كغير مكتملة'),
       );
     } on FirebaseFunctionsException catch (e) {
       debugPrint('❌ Firebase Functions Error: ${e.code} - ${e.message}');
       return CompletionResult(
         success: false,
-        error: e.message ?? 'حدث خطأ أثناء إكمال الموعد',
+        error: e.message ?? 'حدث خطأ أثناء تأكيد حالة الموعد',
       );
     } on FirestoreException catch (e) {
       debugPrint('❌ Firestore Error: ${e.message}');
@@ -194,7 +211,7 @@ class AppointmentCompletionService {
         error: e.message,
       );
     } on Exception catch (e) {
-      debugPrint('❌ Error completing appointment: $e');
+      debugPrint('❌ Error confirming appointment completion: $e');
       return CompletionResult(
         success: false,
         error: 'حدث خطأ غير متوقع: $e',
@@ -233,6 +250,7 @@ class CompletionResult {
   /// - [error]: Error message (required for failure case)
   CompletionResult({
     required this.success,
+    this.status,
     this.message,
     this.error,
   });
@@ -240,6 +258,9 @@ class CompletionResult {
   /// Whether the appointment was completed successfully.
   /// هل تم إكمال الموعد بنجاح.
   final bool success;
+
+  /// Final backend status returned by the completion callable.
+  final String? status;
 
   /// Success message in Arabic.
   /// رسالة النجاح بالعربية / رسالة نجاح.

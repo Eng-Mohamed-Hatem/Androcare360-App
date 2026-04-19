@@ -5,11 +5,14 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:elajtech/core/di/injection_container.dart';
 import 'package:elajtech/core/services/call_monitoring_service.dart';
 import 'package:elajtech/core/services/notification_service.dart';
 import 'package:elajtech/core/services/voip_call_service.dart';
+import 'package:elajtech/features/patient/appointments/presentation/screens/patient_appointments_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:elajtech/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:elajtech/core/constants/notification_type.dart';
@@ -48,15 +51,15 @@ import 'package:injectable/injectable.dart';
 ///   'callerAvatar': 'https://...',
 ///   'appointmentId': 'appt123',
 ///   'agoraToken': 'token...',
-///   'agoraChannelName': 'channel123',
+///   'channelName': 'channel123',
 ///   'agoraUid': '12345'
 /// }
 /// ```
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('📨 Background message received: ${message.messageId}');
-  debugPrint('📨 Message data: ${message.data}');
+  debugPrint('📨 Message keys: ${message.data.keys.toList()}');
 
   // التحقق من نوع الرسالة - هل هي مكالمة واردة؟
   final messageType = message.data['type'] as String?;
@@ -68,7 +71,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     debugPrint('📞 Incoming call detected in background!');
 
     // استخراج بيانات المكالمة
-    final callerName = message.data['callerName'] as String? ?? 'طبيب';
+    // ✅ اقرأ 'doctorName' أولاً (الاسم الذي يُرسَله Cloud Function)
+    // ثم 'callerName' كـ fallback للتوافق مع الإصدارات القديمة
+    final callerName =
+        message.data['doctorName'] as String? ??
+        message.data['callerName'] as String? ??
+        'طبيب';
     final callerAvatar = message.data['callerAvatar'] as String? ?? '';
     final appointmentId = message.data['appointmentId'] as String? ?? '';
 
@@ -77,49 +85,41 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       '📱 Incoming call notification received for appointment: $appointmentId',
     );
 
-    // ✅ NEW: Log notification receipt to Firestore
-    try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId != null && appointmentId.isNotEmpty) {
-        final firestore = FirebaseFirestore.instanceFor(
-          app: Firebase.app(),
-          databaseId: 'elajtech',
-        );
-
-        await firestore.collection('call_logs').add({
-          'appointmentId': appointmentId,
-          'userId': userId,
-          'eventType': 'fcm_notification_received',
-          'timestamp': FieldValue.serverTimestamp(),
-          'metadata': {
-            'messageType': messageType,
-            'callerName': callerName,
-            'receivedInBackground': true,
-          },
-        });
-
-        debugPrint('✅ FCM notification receipt logged to Firestore');
-      }
-    } on Exception catch (e) {
-      debugPrint('❌ Error logging FCM notification receipt: $e');
-    }
-
     // بيانات Agora للمكالمة
     final agoraToken = message.data['agoraToken'] as String?;
-    final agoraChannelName = message.data['agoraChannelName'] as String?;
+    final agoraChannelName =
+        message.data['channelName'] as String? ??
+        message.data['agoraChannelName'] as String?;
     final agoraUid = message.data['agoraUid'] != null
         ? int.tryParse(message.data['agoraUid'].toString())
         : null;
 
     // عرض شاشة المكالمة الواردة
-    await getIt<VoIPCallService>().showIncomingCall(
-      callerName: callerName,
-      callerAvatar: callerAvatar,
-      appointmentId: appointmentId,
-      agoraToken: agoraToken,
-      agoraChannelName: agoraChannelName,
-      agoraUid: agoraUid,
+    // Construct the object graph directly — GetIt is not available in a
+    // background isolate (it was never initialized here).
+    final bgFirestore = FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: 'elajtech',
     );
+    final bgCallMonitoring = CallMonitoringService(bgFirestore);
+    final bgVoipService = VoIPCallService(bgCallMonitoring, bgFirestore);
+    try {
+      await bgVoipService.showIncomingCall(
+        callerName: callerName,
+        callerAvatar: callerAvatar,
+        appointmentId: appointmentId,
+        agoraToken: agoraToken,
+        agoraChannelName: agoraChannelName,
+        agoraUid: agoraUid,
+      );
+    } on Object catch (e, stackTrace) {
+      // on Object catches both Exception and Error (e.g. MissingPluginException
+      // extends Error, not Exception — bare catch is disallowed by linter).
+      if (kDebugMode) {
+        debugPrint('❌ [BGHandler] showIncomingCall failed: $e');
+        debugPrint('❌ [BGHandler] Stack: $stackTrace');
+      }
+    }
   }
 }
 
@@ -203,6 +203,15 @@ class FCMService {
   final VoIPCallService _voipCallService;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
+  // Subscriptions stored for idempotent initialize() and proper disposal.
+  StreamSubscription<RemoteMessage>? _onMessageSub;
+  StreamSubscription<RemoteMessage>? _onMessageOpenedAppSub;
+  StreamSubscription<VoIPCallEvent>? _callEventSub;
+
+  // Duplicate-call deduplication: tracks the last processed call key
+  // to drop repeated push deliveries for the same active call attempt.
+  String? _lastProcessedCallKey;
+
   /// Stream controller for incoming call events
   final StreamController<IncomingCallData> _incomingCallController =
       StreamController<IncomingCallData>.broadcast();
@@ -240,14 +249,31 @@ class FCMService {
       return;
     }
 
+    // Guard: prevent duplicate listener registration on repeated initialize() calls
+    if (_onMessageSub != null) {
+      debugPrint('⚠️ [FCMService] Already initialized — skipping listener registration');
+      return;
+    }
+
     // 2. تسجيل معالج الخلفية
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // 3. معالج المقدمة (التطبيق مفتوح)
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _onMessageSub = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     // 4. معالج فتح التطبيق من الإشعار
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+    _onMessageOpenedAppSub =
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+
+    // 5. Reset dedup key when a call ends/declines/times out so the next retry
+    //    from the same appointment is not silently dropped.
+    _callEventSub = _voipCallService.callEventStream.listen((event) {
+      if (event.type == VoIPCallEventType.declined ||
+          event.type == VoIPCallEventType.ended ||
+          event.type == VoIPCallEventType.missed) {
+        resetCallDeduplication();
+      }
+    });
 
     // 5. التحقق من وجود رسالة أولية (التطبيق فُتح من إشعار)
     final initialMessage = await _messaging.getInitialMessage();
@@ -303,7 +329,7 @@ class FCMService {
   /// معالجة الرسائل في المقدمة
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('📨 Foreground message received!');
-    debugPrint('📨 Message data: ${message.data}');
+    debugPrint('📨 Message keys: ${message.data.keys.toList()}');
 
     final messageType = message.data['type'] as String?;
 
@@ -325,14 +351,17 @@ class FCMService {
       if (userId != null && appointmentId.isNotEmpty) {
         // Intentionally not awaited - logging happens in background
         unawaited(
-          _callMonitoring.logCallSuccess(
+          _callMonitoring.logStructuredEvent(
             appointmentId: appointmentId,
             userId: userId,
-            channelName: 'fcm_notification',
+            eventType: 'incoming_call_received',
             metadata: {
-              'eventType': 'fcm_notification_received',
               'messageType': messageType,
-              'receivedInForeground': true,
+              'appState': 'foreground',
+              'callerName': message.data['callerName'],
+              'channelName':
+                  message.data['channelName'] ??
+                  message.data['agoraChannelName'],
             },
           ),
         );
@@ -362,19 +391,44 @@ class FCMService {
 
   /// معالجة المكالمة الواردة
   Future<void> _handleIncomingCall(RemoteMessage message) async {
-    final callerName = message.data['callerName'] as String? ?? 'طبيب';
+    // ✅ اقرأ 'doctorName' أولاً (الاسم الذي يُرسَله Cloud Function)
+    // ثم 'callerName' كـ fallback للتوافق مع الإصدارات القديمة
+    final callerName =
+        message.data['doctorName'] as String? ??
+        message.data['callerName'] as String? ??
+        'طبيب';
     final callerAvatar = message.data['callerAvatar'] as String? ?? '';
     final appointmentId = message.data['appointmentId'] as String? ?? '';
+    final channelName =
+        message.data['channelName'] as String? ??
+        message.data['agoraChannelName'] as String? ??
+        '';
+    final callKey = '$appointmentId::$channelName';
+
+    // Duplicate-call guard: drop repeated pushes for the same active call
+    if (appointmentId.isNotEmpty &&
+        channelName.isNotEmpty &&
+        callKey == _lastProcessedCallKey) {
+      debugPrint(
+        '⚠️ [FCMService] Duplicate incoming_call push dropped'
+        ' | appointmentId=$appointmentId | channelName=$channelName',
+      );
+      return;
+    }
+    if (appointmentId.isNotEmpty && channelName.isNotEmpty) {
+      _lastProcessedCallKey = callKey;
+    }
 
     // بيانات Agora للمكالمة
     final agoraToken = message.data['agoraToken'] as String?;
-    final agoraChannelName = message.data['agoraChannelName'] as String?;
+    final agoraChannelName =
+        message.data['channelName'] as String? ??
+        message.data['agoraChannelName'] as String?;
     final agoraUid = message.data['agoraUid'] != null
         ? int.tryParse(message.data['agoraUid'].toString())
         : null;
 
     debugPrint('📞 Showing incoming call from: $callerName');
-    debugPrint('📞 Agora channel: $agoraChannelName');
 
     // عرض شاشة المكالمة الواردة
     await _voipCallService.showIncomingCall(
@@ -399,15 +453,22 @@ class FCMService {
   /// معالجة فتح التطبيق من الإشعار
   void _handleMessageOpenedApp(RemoteMessage message) {
     debugPrint('📨 App opened from notification');
-    debugPrint('📨 Message data: ${message.data}');
+    debugPrint('📨 Message type: ${message.data['type']}');
 
     final type = NotificationType.fromString(message.data['type'] as String?);
 
     if (type == NotificationType.incomingCall) {
-      // المستخدم ضغط على إشعار المكالمة
-      debugPrint('📞 User tapped on call notification');
+      // المستخدم ضغط على إشعار المكالمة — إعادة تعيين مفتاح إزالة التكرار
+      // حتى لا يُحجب إظهار واجهة المكالمة مجددًا
+      debugPrint('📞 User tapped on call notification — resetting dedup key');
+      // Reset dedup so the duplicate guard does not block re-showing the ring UI
+      _lastProcessedCallKey = null;
       // Intentionally not awaited - call handling happens in background
       unawaited(_handleIncomingCall(message));
+    } else if (type == NotificationType.missedCall) {
+      final appointmentId = message.data['appointmentId'] as String?;
+      debugPrint('📞 User tapped on missed call notification: $appointmentId');
+      _navigateToAppointments();
     } else if (type == NotificationType.chatMessage) {
       // المستخدم ضغط على إشعار رسالة
       final chatId = message.data['chatId'] as String?;
@@ -429,17 +490,46 @@ class FCMService {
     }
   }
 
+  void _navigateToAppointments() {
+    final navigatorKey = getIt<GlobalKey<NavigatorState>>();
+    final navigatorState = navigatorKey.currentState;
+    if (navigatorState == null) {
+      debugPrint('⚠️ Navigator state is null, cannot navigate to appointments');
+      return;
+    }
+
+    unawaited(
+      navigatorState.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const PatientAppointmentsScreen(),
+        ),
+      ),
+    );
+  }
+
   /// التنقل لتفاصيل الموعد
+  ///
+  /// Navigates to [PatientAppointmentsScreen] and highlights [appointmentId].
+  /// A dedicated AppointmentDetailsScreen does not exist yet; the appointments
+  /// list is the correct landing page for appointment deep links.
   void _navigateToAppointmentDetails(String appointmentId) {
     final navigatorKey = getIt<GlobalKey<NavigatorState>>();
-    if (navigatorKey.currentState != null) {
-      debugPrint('🚀 Deep linking to appointment: $appointmentId');
-      // TODO(elajtech): Implement navigation to AppointmentDetailsScreen.
-      // For now, we'll just log it. In a real scenario, you'd push the route.
-      // Example: navigatorKey.currentState!.pushNamed('/appointment_details', arguments: appointmentId);
-    } else {
-      debugPrint('⚠️ Navigator state is null, cannot perform deep linking');
+    final navigatorState = navigatorKey.currentState;
+    if (navigatorState == null) {
+      debugPrint(
+        '⚠️ Navigator state is null, cannot deep link to appointment $appointmentId',
+      );
+      return;
     }
+
+    debugPrint('🚀 Deep linking to appointment: $appointmentId');
+    unawaited(
+      navigatorState.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const PatientAppointmentsScreen(),
+        ),
+      ),
+    );
   }
 
   /// الحصول على FCM Token
@@ -477,11 +567,25 @@ class FCMService {
     debugPrint('📢 Unsubscribed from topic: $topic');
   }
 
+  /// Reset the duplicate-call deduplication state.
+  ///
+  /// Call this after a call ends so a new call to the same appointment
+  /// (e.g. doctor retries) is not silently dropped.
+  void resetCallDeduplication() {
+    _lastProcessedCallKey = null;
+  }
+
   /// التخلص من الموارد
   ///
   /// Disposes of resources used by FCMService.
-  /// Closes the incoming call stream controller.
+  /// Cancels message subscriptions and closes the incoming call stream controller.
   void dispose() {
+    unawaited(_onMessageSub?.cancel());
+    unawaited(_onMessageOpenedAppSub?.cancel());
+    unawaited(_callEventSub?.cancel());
+    _onMessageSub = null;
+    _onMessageOpenedAppSub = null;
+    _callEventSub = null;
     // Intentionally not awaited - cleanup happens in background
     unawaited(_incomingCallController.close());
   }

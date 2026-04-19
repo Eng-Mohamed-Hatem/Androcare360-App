@@ -497,6 +497,13 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Left(AuthFailure('فشل تسجيل الدخول'));
       }
 
+      if (kDebugMode) {
+        debugPrint(
+          '✅ AuthRepositoryImpl.signIn: FirebaseAuth login succeeded'
+          ' | uid=${user.uid}',
+        );
+      }
+
       final doc = await _firestore
           .collection(AppConstants.collections.users)
           .doc(user.uid)

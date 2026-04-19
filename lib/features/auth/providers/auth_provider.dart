@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
 import 'package:elajtech/core/services/background_service.dart';
@@ -135,7 +135,8 @@ class AuthState {
 
 /// Auth Provider - مزود المصادقة
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._authRepository) : super(AuthState()) {
+  AuthNotifier(this._authRepository)
+    : super(AuthState(isLoading: _isFirebaseAvailable)) {
     // Check if user is already logged in (only on supported platforms)
     if (_isFirebaseAvailable) {
       unawaited(_checkCurrentUser());
@@ -149,10 +150,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     final result = await _authRepository.getCurrentUser();
     result.fold(
-      (Failure failure) =>
-          debugPrint('Error checking current user: ${failure.message}'),
-      (UserModel user) =>
-          state = state.copyWith(user: user, isAuthenticated: true),
+      (Failure failure) {
+        debugPrint('Error checking current user: ${failure.message}');
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: false,
+          clearError: true,
+        );
+      },
+      (UserModel user) => state = state.copyWith(
+        user: user,
+        isLoading: false,
+        isAuthenticated: true,
+        clearError: true,
+      ),
     );
   }
 
@@ -256,6 +267,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         },
         (UserModel user) async {
           try {
+            if (kDebugMode) {
+              debugPrint(
+                '✅ [AuthProvider] signIn success'
+                ' | userId=${user.id}'
+                ' | userType=${user.userType.name}'
+                ' | isActive=${user.isActive}',
+              );
+            }
+
             // Save credentials for biometric login
             try {
               await _saveCredentials(email, password);
@@ -372,6 +392,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     UserModel user,
     UserType requestedType,
   ) async {
+    if (kDebugMode) {
+      debugPrint(
+        '🔍 [AuthProvider] evaluating navigation eligibility'
+        ' | userId=${user.id}'
+        ' | userType=${user.userType.name}'
+        ' | requestedType=${requestedType.name}'
+        ' | isApproved=${user.isApproved}'
+        ' | isActive=${user.isActive}',
+      );
+    }
+
     // 1. Pending doctor approval check (must run before isActive check)
     if (user.userType == UserType.doctor && !user.isApproved) {
       if (kDebugMode) {
@@ -397,6 +428,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (!user.isActive) {
       if (kDebugMode) {
         debugPrint('🚫 [AuthProvider] Account inactive');
+        debugPrint(
+          '🚫 [AuthProvider] patient redirect blocked reason=inactive-account',
+        );
         debugPrint(
           '   userId=${user.id} | userType=${user.userType.name} | '
           'isApproved=${user.isApproved} | isActive=${user.isActive}',
@@ -458,6 +492,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       clearError: true,
       clearPhoneError: true,
     );
+
+    if (kDebugMode) {
+      debugPrint(
+        '🔄 [AuthProvider] auth state update'
+        ' | isAuthenticated=${state.isAuthenticated}'
+        ' | userType=${state.user?.userType.name}'
+        ' | isActive=${state.user?.isActive}',
+      );
+    }
   }
 
   // ── Phone Linking Methods ───────────────────────────────────────────────

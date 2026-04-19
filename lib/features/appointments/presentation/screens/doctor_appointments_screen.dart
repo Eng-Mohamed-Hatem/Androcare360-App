@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:elajtech/core/constants/app_colors.dart';
+import 'package:elajtech/core/services/appointment_completion_service.dart';
 import 'package:elajtech/core/services/video_consultation_service.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
 import 'package:elajtech/features/medical_records/presentation/screens/patient_medical_record_screen.dart';
@@ -15,11 +16,22 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:elajtech/features/patient/consultation/presentation/screens/agora_video_call_screen.dart';
 
 /// Doctor Appointments Screen - شاشة مواعيد الطبيب
-class DoctorAppointmentsScreen extends ConsumerWidget {
+class DoctorAppointmentsScreen extends ConsumerStatefulWidget {
   const DoctorAppointmentsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DoctorAppointmentsScreen> createState() =>
+      _DoctorAppointmentsScreenState();
+}
+
+class _DoctorAppointmentsScreenState
+    extends ConsumerState<DoctorAppointmentsScreen> {
+  bool _isPromptVisible = false;
+  String? _lastPromptedAppointmentId;
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final authState = ref.watch(authProvider);
     final user = authState.user;
     final allAppointments = ref.watch(appointmentsProvider);
@@ -33,15 +45,45 @@ class DoctorAppointmentsScreen extends ConsumerWidget {
     final upcomingAppointments = myAppointments.where((apt) {
       return apt.status == AppointmentStatus.pending ||
           apt.status == AppointmentStatus.confirmed ||
-          apt.status == AppointmentStatus.scheduled;
+          apt.status == AppointmentStatus.scheduled ||
+          apt.status == AppointmentStatus.declined ||
+          apt.status == AppointmentStatus.calling ||
+          apt.status == AppointmentStatus.inProgress ||
+          apt.status == AppointmentStatus.endedPendingConfirmation;
     }).toList()..sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
     // 2. Past Appointments (completed, cancelled, missed) - DESC
     final pastAppointments = myAppointments.where((apt) {
       return apt.status == AppointmentStatus.completed ||
+          apt.status == AppointmentStatus.notCompleted ||
           apt.status == AppointmentStatus.cancelled ||
           apt.status == AppointmentStatus.missed;
     }).toList()..sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
+
+    final pendingConfirmationAppointment = upcomingAppointments
+        .cast<AppointmentModel?>()
+        .firstWhere(
+          (appointment) =>
+              appointment?.status == AppointmentStatus.endedPendingConfirmation,
+          orElse: () => null,
+        );
+
+    if (pendingConfirmationAppointment == null) {
+      _lastPromptedAppointmentId = null;
+    } else if (!_isPromptVisible &&
+        _lastPromptedAppointmentId != pendingConfirmationAppointment.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        _isPromptVisible = true;
+        _lastPromptedAppointmentId = pendingConfirmationAppointment.id;
+        await _showAppointmentCompletionDialog(
+          context,
+          ref,
+          pendingConfirmationAppointment,
+        );
+        _isPromptVisible = false;
+      });
+    }
 
     return DefaultTabController(
       length: 2,
@@ -111,6 +153,7 @@ class _AppointmentsList extends StatelessWidget {
         final appointment = appointments[index];
         final isPast =
             appointment.status == AppointmentStatus.completed ||
+            appointment.status == AppointmentStatus.notCompleted ||
             appointment.status == AppointmentStatus.cancelled ||
             appointment.status == AppointmentStatus.missed;
 
@@ -118,6 +161,119 @@ class _AppointmentsList extends StatelessWidget {
       },
     );
   }
+}
+
+Future<void> _showAppointmentCompletionDialog(
+  BuildContext context,
+  WidgetRef ref,
+  AppointmentModel appointment,
+) async {
+  AppointmentStatus? statusFromResult(String? status) {
+    switch (status) {
+      case 'completed':
+        return AppointmentStatus.completed;
+      case 'not_completed':
+        return AppointmentStatus.notCompleted;
+      case 'ended_pending_confirmation':
+        return AppointmentStatus.endedPendingConfirmation;
+      default:
+        return null;
+    }
+  }
+
+  final doctorId = ref.read(authProvider).user?.id;
+  if (doctorId == null) {
+    return;
+  }
+
+  await showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('تأكيد نتيجة الجلسة'),
+      content: const Text('هل اكتملت الجلسة الطبية مع المريض؟'),
+      actions: [
+        OutlinedButton(
+          onPressed: () async {
+            final result = await AppointmentCompletionService()
+                .confirmCompletion(
+                  appointmentId: appointment.id,
+                  doctorId: doctorId,
+                  completed: false,
+                );
+
+            if (!context.mounted) return;
+
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  result.message ?? result.error ?? 'تم تحديث حالة الموعد',
+                ),
+                backgroundColor: result.success
+                    ? AppColors.primary
+                    : AppColors.error,
+              ),
+            );
+
+            if (result.success) {
+              final nextStatus =
+                  statusFromResult(result.status) ??
+                  AppointmentStatus.notCompleted;
+              ref
+                  .read(appointmentsProvider.notifier)
+                  .updateAppointment(
+                    appointment.copyWith(
+                      status: nextStatus,
+                    ),
+                  );
+            }
+          },
+          child: const Text('لا، غير مكتملة'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final result = await AppointmentCompletionService()
+                .confirmCompletion(
+                  appointmentId: appointment.id,
+                  doctorId: doctorId,
+                  completed: true,
+                );
+
+            if (!context.mounted) return;
+
+            Navigator.pop(context);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  result.message ?? result.error ?? 'تم تحديث حالة الموعد',
+                ),
+                backgroundColor: result.success
+                    ? AppColors.success
+                    : AppColors.error,
+              ),
+            );
+
+            if (result.success) {
+              final nextStatus =
+                  statusFromResult(result.status) ??
+                  AppointmentStatus.completed;
+              ref
+                  .read(appointmentsProvider.notifier)
+                  .updateAppointment(
+                    appointment.copyWith(status: nextStatus),
+                  );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('نعم، مكتملة'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _AppointmentCard extends ConsumerWidget {
@@ -132,6 +288,13 @@ class _AppointmentCard extends ConsumerWidget {
     // Determine if this appointment is tappable (completed status only)
     final isCompletedAndTappable =
         isPast && appointment.status == AppointmentStatus.completed;
+    final canStartVideoCall =
+        appointment.status == AppointmentStatus.pending ||
+        appointment.status == AppointmentStatus.confirmed ||
+        appointment.status == AppointmentStatus.scheduled ||
+        appointment.status == AppointmentStatus.declined;
+    final requiresCompletionConfirmation =
+        appointment.status == AppointmentStatus.endedPendingConfirmation;
 
     final cardContent = Padding(
       padding: const EdgeInsets.all(16),
@@ -244,6 +407,35 @@ class _AppointmentCard extends ConsumerWidget {
               ],
             ),
           ],
+          if (requiresCompletionConfirmation) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: () async {
+                  await _showCompleteDialog(context, ref);
+                },
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'Confirmation Required',
+                    style: TextStyle(
+                      color: Colors.amber.shade900,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (appointment.notes != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -291,12 +483,16 @@ class _AppointmentCard extends ConsumerWidget {
 
             // Start Call Button (Doctor initiates VoIP call)
             // يظهر فقط إذا لم يكن هناك رابط حقيقي للاجتماع بعد
-            if (appointment.meetingLink == null ||
-                appointment.meetingLink!.isEmpty ||
-                appointment.meetingLink == 'pending' ||
-                !appointment.meetingLink!.startsWith('https://')) ...[
+            if (canStartVideoCall &&
+                (appointment.meetingLink == null ||
+                    appointment.meetingLink!.isEmpty ||
+                    appointment.meetingLink == 'pending' ||
+                    !appointment.meetingLink!.startsWith('https://'))) ...[
               _StartCallButton(appointment: appointment),
-            ] else ...[
+            ] else if (appointment.meetingLink != null &&
+                appointment.meetingLink!.isNotEmpty &&
+                appointment.meetingLink != 'pending' &&
+                appointment.meetingLink!.startsWith('https://')) ...[
               // Join Meeting Button (Link exists)
               SizedBox(
                 width: double.infinity,
@@ -334,17 +530,19 @@ class _AppointmentCard extends ConsumerWidget {
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
                   child: const Text('إلغاء الموعد'),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    await _showCompleteDialog(context, ref);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                if (requiresCompletionConfirmation) ...[
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _showCompleteDialog(context, ref);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('تأكيد الجلسة'),
                   ),
-                  child: const Text('إكمال الموعد'),
-                ),
+                ],
               ],
             ),
           ],
@@ -376,12 +574,19 @@ class _AppointmentCard extends ConsumerWidget {
   }
 
   Future<void> _showCancelDialog(BuildContext context, WidgetRef ref) async {
+    final doctorId = ref.read(authProvider).user?.id;
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('إلغاء الموعد'),
-        content: const Text(
-          'هل أنت متأكد من إلغاء هذا الموعد؟ سيتم إشعار المريض بذلك.',
+        title: Text(
+          appointment.status == AppointmentStatus.calling
+              ? 'إلغاء المكالمة'
+              : 'إلغاء الموعد',
+        ),
+        content: Text(
+          appointment.status == AppointmentStatus.calling
+              ? 'هل أنت متأكد من إلغاء المكالمة الجارية وإعادة الموعد إلى الحالة المجدولة؟'
+              : 'هل أنت متأكد من إلغاء هذا الموعد؟ سيتم إشعار المريض بذلك.',
         ),
         actions: [
           TextButton(
@@ -389,7 +594,30 @@ class _AppointmentCard extends ConsumerWidget {
             child: const Text('تراجع'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              if (appointment.status == AppointmentStatus.calling &&
+                  doctorId != null) {
+                await VideoConsultationService().cancelCall(
+                  appointmentId: appointment.id,
+                  doctorId: doctorId,
+                );
+
+                if (!context.mounted) return;
+                ref
+                    .read(appointmentsProvider.notifier)
+                    .updateAppointment(
+                      appointment.copyWith(
+                        status: AppointmentStatus.scheduled,
+                        callSessionActive: false,
+                      ),
+                    );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم إلغاء المكالمة')),
+                );
+                return;
+              }
+
               // Intentionally not awaited - state update happens in background
               unawaited(
                 ref
@@ -407,37 +635,7 @@ class _AppointmentCard extends ConsumerWidget {
   }
 
   Future<void> _showCompleteDialog(BuildContext context, WidgetRef ref) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('إكمال الموعد'),
-        content: const Text(
-          'هل تمت الزيارة بنجاح؟ سيتم تغيير حالة الموعد إلى مكتمل.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('تراجع'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Intentionally not awaited - state update happens in background
-              unawaited(
-                ref
-                    .read(appointmentsProvider.notifier)
-                    .completeAppointment(appointment.id),
-              );
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('نعم، مكتمل'),
-          ),
-        ],
-      ),
-    );
+    await _showAppointmentCompletionDialog(context, ref, appointment);
   }
 
   Color _getStatusColor(AppointmentStatus status) {
@@ -448,8 +646,18 @@ class _AppointmentCard extends ConsumerWidget {
         return AppColors.primary;
       case AppointmentStatus.scheduled:
         return Colors.purple;
+      case AppointmentStatus.calling:
+        return AppColors.primary;
+      case AppointmentStatus.inProgress:
+        return Colors.teal;
+      case AppointmentStatus.declined:
+        return Colors.deepOrange;
+      case AppointmentStatus.endedPendingConfirmation:
+        return Colors.amber.shade700;
       case AppointmentStatus.completed:
         return AppColors.success;
+      case AppointmentStatus.notCompleted:
+        return Colors.brown;
       case AppointmentStatus.cancelled:
         return Colors.red;
       case AppointmentStatus.missed:
@@ -465,8 +673,18 @@ class _AppointmentCard extends ConsumerWidget {
         return 'مؤكد';
       case AppointmentStatus.scheduled:
         return 'مجدول';
+      case AppointmentStatus.calling:
+        return 'جارٍ الاتصال';
+      case AppointmentStatus.inProgress:
+        return 'في الجلسة';
+      case AppointmentStatus.declined:
+        return 'تم الرفض';
+      case AppointmentStatus.endedPendingConfirmation:
+        return 'بانتظار التأكيد';
       case AppointmentStatus.completed:
         return 'مكتمل';
+      case AppointmentStatus.notCompleted:
+        return 'غير مكتمل';
       case AppointmentStatus.cancelled:
         return 'ملغي';
       case AppointmentStatus.missed:
@@ -603,9 +821,9 @@ class _StartCallButtonState extends ConsumerState<_StartCallButton> {
       }
 
       // البيانات كاملة - الانتقال لشاشة الفيديو
-      await Navigator.push<void>(
+      final navigationResult = await Navigator.push<Map<String, dynamic>>(
         context,
-        MaterialPageRoute<void>(
+        MaterialPageRoute<Map<String, dynamic>>(
           builder: (context) => AgoraVideoCallScreen(
             appointment: widget.appointment.copyWith(
               agoraToken: result.agoraToken,
@@ -615,6 +833,24 @@ class _StartCallButtonState extends ConsumerState<_StartCallButton> {
           ),
         ),
       );
+
+      if (!mounted) return;
+
+      if (navigationResult?['showCompletionDialog'] == true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(
+            _showAppointmentCompletionDialog(
+              context,
+              ref,
+              widget.appointment.copyWith(
+                status: AppointmentStatus.endedPendingConfirmation,
+              ),
+            ),
+          );
+        });
+        return;
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -16,6 +16,7 @@ library;
 
 import 'package:dartz/dartz.dart';
 import 'package:elajtech/core/error/failures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:elajtech/features/packages/domain/adapters/package_payment_adapter.dart';
 import 'package:elajtech/features/packages/domain/entities/package_entity.dart';
 import 'package:elajtech/features/packages/domain/entities/patient_package_entity.dart';
@@ -144,10 +145,15 @@ class PurchasePackageUseCase {
     final expiryDate = now.add(Duration(days: package.validityDays));
     String transactionId;
 
-    // TODO(Elajtech): Replace with real check for test environment when applicable
+    // Test-purchase bypass: only permitted in debug/profile builds.
+    // In release, isTestPurchase must always be false — the real payment
+    // adapter path below handles all production flows.
+    assert(
+      !params.isTestPurchase || !kReleaseMode,
+      'isTestPurchase must not be true in release builds.',
+    );
     if (params.isTestPurchase) {
-      // ⚠️ SIMULATED FLOW (R6 bypass)
-      // TODO(Elajtech): Integrate real payment gateway logic here once providers are ready.
+      // Simulated flow for QA / development only (gated by assert above).
       transactionId = 'TEST_TXN_${now.millisecondsSinceEpoch}';
     } else {
       final paymentResult = await _paymentAdapter.initiatePayment(

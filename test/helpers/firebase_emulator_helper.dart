@@ -53,12 +53,10 @@ class FirebaseEmulatorHelper {
       }
 
       // Connect to Firestore emulator with elajtech database
-      final firestore = FirebaseFirestore.instanceFor(
+      FirebaseFirestore.instanceFor(
         app: Firebase.app(),
         databaseId: databaseId,
-      );
-
-      firestore.useFirestoreEmulator(firestoreHost, firestorePort);
+      ).useFirestoreEmulator(firestoreHost, firestorePort);
 
       // Connect to Auth emulator
       await FirebaseAuth.instance.useAuthEmulator(authHost, authPort);

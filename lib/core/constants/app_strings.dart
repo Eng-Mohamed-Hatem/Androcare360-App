@@ -109,6 +109,8 @@ class AppStrings {
   // New Patient Home Features
   static const String myLabTests = 'تحاليلي';
   static const String myLabTestsEnglish = 'My Lab Tests';
+  static const String testYourSexualHealth = 'اختبر صحتك الجنسية';
+  static const String testYourSexualHealthEnglish = 'Test Your Sexual Health';
   static const String labTestRequestBtn = 'طلب تحليل';
   static const String labTestRequestBtnEnglish = 'Lab Tests';
   static const String labTestsComingSoon =

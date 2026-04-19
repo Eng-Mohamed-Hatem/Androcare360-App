@@ -4,12 +4,14 @@
 *.pyc
 *.swp
 .DS_Store
+Thumbs.db
 .atom/
 .build/
 .buildlog/
 .history
 .svn/
 .swiftpm/
+*.tmp
 migrate_working_dir/
 
 # IntelliJ related
@@ -21,7 +23,7 @@ migrate_working_dir/
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
-#.vscode/
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -57,8 +59,13 @@ functions/.env.*.local
 !.env.example
 !functions/.env.example
 node_modules
+dist/
 
 
 jdk17/
 .tmp.driveupload/
 android/*.hprof
+
+# Claude local overrides (personal — not for team)
+CLAUDE.local.md
+.claude/settings.local.json

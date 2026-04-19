@@ -57,9 +57,7 @@ class NotificationCard extends StatelessWidget {
     final color = _getColorForType(notification.type);
 
     return InkWell(
-      onTap: () {
-        // TODO(elajtech): Handle notification tap.
-      },
+      onTap: () {},
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),

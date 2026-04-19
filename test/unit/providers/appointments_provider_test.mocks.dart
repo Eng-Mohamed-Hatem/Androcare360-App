@@ -7,12 +7,13 @@ import 'dart:async' as _i4;
 
 import 'package:dartz/dartz.dart' as _i2;
 import 'package:elajtech/core/error/failures.dart' as _i5;
+import 'package:elajtech/core/models/paginated_result.dart' as _i7;
 import 'package:elajtech/features/appointments/domain/repositories/appointment_repository.dart'
     as _i3;
 import 'package:elajtech/features/notifications/domain/repositories/notification_repository.dart'
-    as _i7;
+    as _i8;
 import 'package:elajtech/shared/models/appointment_model.dart' as _i6;
-import 'package:elajtech/shared/models/notification_model.dart' as _i8;
+import 'package:elajtech/shared/models/notification_model.dart' as _i9;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -92,6 +93,39 @@ class MockAppointmentRepository extends _i1.Mock
           as _i4.Future<_i2.Either<_i5.Failure, List<_i6.AppointmentModel>>>);
 
   @override
+  _i4.Future<_i2.Either<_i5.Failure, _i7.PaginatedResult<_i6.AppointmentModel>>>
+  getAppointmentsForPatientPage(String? patientId, {int? limit = 10}) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #getAppointmentsForPatientPage,
+              [patientId],
+              {#limit: limit},
+            ),
+            returnValue:
+                _i4.Future<
+                  _i2.Either<
+                    _i5.Failure,
+                    _i7.PaginatedResult<_i6.AppointmentModel>
+                  >
+                >.value(
+                  _FakeEither_0<
+                    _i5.Failure,
+                    _i7.PaginatedResult<_i6.AppointmentModel>
+                  >(
+                    this,
+                    Invocation.method(
+                      #getAppointmentsForPatientPage,
+                      [patientId],
+                      {#limit: limit},
+                    ),
+                  ),
+                ),
+          )
+          as _i4.Future<
+            _i2.Either<_i5.Failure, _i7.PaginatedResult<_i6.AppointmentModel>>
+          >);
+
+  @override
   _i4.Future<_i2.Either<_i5.Failure, List<_i6.AppointmentModel>>>
   getAppointmentsForDoctor(String? doctorId) =>
       (super.noSuchMethod(
@@ -107,6 +141,33 @@ class MockAppointmentRepository extends _i1.Mock
                 ),
           )
           as _i4.Future<_i2.Either<_i5.Failure, List<_i6.AppointmentModel>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<Map<String, dynamic>>>>
+  getDoctorAppointmentsViaCloudFunction({
+    required String? doctorId,
+    required DateTime? date,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getDoctorAppointmentsViaCloudFunction, [], {
+              #doctorId: doctorId,
+              #date: date,
+            }),
+            returnValue:
+                _i4.Future<
+                  _i2.Either<_i5.Failure, List<Map<String, dynamic>>>
+                >.value(
+                  _FakeEither_0<_i5.Failure, List<Map<String, dynamic>>>(
+                    this,
+                    Invocation.method(
+                      #getDoctorAppointmentsViaCloudFunction,
+                      [],
+                      {#doctorId: doctorId, #date: date},
+                    ),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, List<Map<String, dynamic>>>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, bool>> checkAppointmentConflict({
@@ -171,14 +232,14 @@ class MockAppointmentRepository extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockNotificationRepository extends _i1.Mock
-    implements _i7.NotificationRepository {
+    implements _i8.NotificationRepository {
   MockNotificationRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, _i2.Unit>> saveNotification(
-    _i8.NotificationModel? notification,
+    _i9.NotificationModel? notification,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#saveNotification, [notification]),
@@ -192,31 +253,31 @@ class MockNotificationRepository extends _i1.Mock
           as _i4.Future<_i2.Either<_i5.Failure, _i2.Unit>>);
 
   @override
-  _i4.Future<_i2.Either<_i5.Failure, List<_i8.NotificationModel>>>
+  _i4.Future<_i2.Either<_i5.Failure, List<_i9.NotificationModel>>>
   getNotificationsForUser(String? userId) =>
       (super.noSuchMethod(
             Invocation.method(#getNotificationsForUser, [userId]),
             returnValue:
                 _i4.Future<
-                  _i2.Either<_i5.Failure, List<_i8.NotificationModel>>
+                  _i2.Either<_i5.Failure, List<_i9.NotificationModel>>
                 >.value(
-                  _FakeEither_0<_i5.Failure, List<_i8.NotificationModel>>(
+                  _FakeEither_0<_i5.Failure, List<_i9.NotificationModel>>(
                     this,
                     Invocation.method(#getNotificationsForUser, [userId]),
                   ),
                 ),
           )
-          as _i4.Future<_i2.Either<_i5.Failure, List<_i8.NotificationModel>>>);
+          as _i4.Future<_i2.Either<_i5.Failure, List<_i9.NotificationModel>>>);
 
   @override
-  _i4.Stream<List<_i8.NotificationModel>> getNotificationsStream(
+  _i4.Stream<List<_i9.NotificationModel>> getNotificationsStream(
     String? userId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getNotificationsStream, [userId]),
-            returnValue: _i4.Stream<List<_i8.NotificationModel>>.empty(),
+            returnValue: _i4.Stream<List<_i9.NotificationModel>>.empty(),
           )
-          as _i4.Stream<List<_i8.NotificationModel>>);
+          as _i4.Stream<List<_i9.NotificationModel>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, _i2.Unit>> markAllNotificationsAsRead(

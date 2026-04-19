@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:elajtech/core/constants/app_colors.dart';
 // import 'package:elajtech/core/services/firestore_service.dart'; // Unused
+import 'package:elajtech/core/services/assessment_referral_tracking_service.dart';
 import 'package:elajtech/core/services/notification_service.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
+import 'package:elajtech/features/patient/self_assessment/data/models/quiz_models.dart';
 import 'package:elajtech/shared/models/appointment_model.dart';
 import 'package:elajtech/shared/models/user_model.dart';
 import 'package:elajtech/shared/providers/appointments_provider.dart';
@@ -16,9 +20,11 @@ class BookAppointmentScreen extends ConsumerStatefulWidget {
     required this.doctor,
     required this.isVideoConsultation,
     super.key,
+    this.referralContext,
   });
   final UserModel doctor;
   final bool isVideoConsultation;
+  final AssessmentReferralContext? referralContext;
 
   @override
   ConsumerState<BookAppointmentScreen> createState() =>
@@ -31,9 +37,42 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
   String? _selectedTimeSlot;
   final _notesController = TextEditingController();
   bool _isLoading = false;
+  late final AssessmentReferralTrackingService _trackingService;
+  bool _bookingCompleted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _trackingService = AssessmentReferralTrackingService.maybeCreate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final referralContext = widget.referralContext;
+      if (referralContext == null) {
+        return;
+      }
+
+      unawaited(
+        _trackingService.logEvent(
+          context: referralContext,
+          eventName: 'booking_viewed',
+          stage: 'booking',
+        ),
+      );
+    });
+  }
 
   @override
   void dispose() {
+    final referralContext = widget.referralContext;
+    if (referralContext != null && !_bookingCompleted) {
+      unawaited(
+        _trackingService.logEvent(
+          context: referralContext,
+          eventName: 'referral_abandoned',
+          stage: 'booking',
+          status: 'abandoned',
+        ),
+      );
+    }
     _notesController.dispose();
     super.dispose();
   }
@@ -93,6 +132,12 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
         meetingLink:
             meetingLink, // Server-side generation via Cloud Function (Agora)
         createdAt: DateTime.now(),
+        bookingSource: widget.referralContext != null
+            ? 'assessment_referral'
+            : 'direct_booking',
+        assessmentId: widget.referralContext?.assessmentId,
+        assessmentResultBand: widget.referralContext?.resultBand,
+        referralTargetKey: widget.referralContext?.referralTargetKey,
       );
 
       // Check for conflicts with existing appointments (Server-side check)
@@ -118,6 +163,17 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
       await ref
           .read(appointmentsProvider.notifier)
           .createAppointment(newAppointment);
+
+      if (widget.referralContext != null) {
+        _bookingCompleted = true;
+        await _trackingService.logEvent(
+          context: widget.referralContext!,
+          eventName: 'booking_completed',
+          stage: 'booking',
+          status: 'completed',
+          metadata: {'appointmentId': newAppointment.id},
+        );
+      }
 
       // Schedule Notification (2 hours before)
       try {

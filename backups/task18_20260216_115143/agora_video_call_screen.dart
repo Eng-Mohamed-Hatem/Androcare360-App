@@ -138,8 +138,8 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         debugPrint('❌ Agora error: ${event.error}');
         setState(() => _connectionStatus = 'خطأ في الاتصال');
 
-      default:
-        break;
+      case AgoraEventType.cameraSwitched:
+        debugPrint('📷 Camera switched');
     }
   }
 
@@ -238,7 +238,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Padding(
@@ -282,7 +282,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -388,7 +388,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
   Widget _appointmentInfo() => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(8),
     ),
     child: Column(
@@ -471,7 +471,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: backgroundColor ?? Colors.white.withOpacity(0.2),
+          color: backgroundColor ?? Colors.white.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
         child: IconButton(

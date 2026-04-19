@@ -164,7 +164,7 @@ void main() {
 
       try {
         if (file.existsSync()) file.deleteSync();
-      } catch (_) {}
+      } on Object catch (_) {}
     });
 
     test('d) unsupported type -> UploadFailure', () async {

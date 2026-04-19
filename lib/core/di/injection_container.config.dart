@@ -354,7 +354,10 @@ extension GetItInjectableX on _i174.GetIt {
       ),
     );
     gh.lazySingleton<_i15.VoIPCallService>(
-      () => _i15.VoIPCallService(gh<_i748.CallMonitoringService>()),
+      () => _i15.VoIPCallService(
+        gh<_i748.CallMonitoringService>(),
+        gh<_i974.FirebaseFirestore>(),
+      ),
     );
     gh.lazySingleton<_i256.RejectDoctorUseCase>(
       () => _i824.RejectDoctorUseCaseImpl(gh<_i468.AdminApprovalRepository>()),

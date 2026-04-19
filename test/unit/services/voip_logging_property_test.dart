@@ -304,5 +304,132 @@ void main() {
       },
       tags: ['property-test', 'voip-logging', 'task13_1'],
     );
+
+    // ─────────────────────────────────────────────────────────────────────
+    // T036: Canonical event-type validation — all 11 contract event names
+    // ─────────────────────────────────────────────────────────────────────
+
+    test('T036: all canonical event types must be non-empty strings', () {
+      // Contract §4 canonical event types (data-model.md + call-lifecycle-contract.md)
+      const canonicalEvents = [
+        'callattempt',
+        'notification_dispatched',
+        'incoming_call_received',
+        'answer_accepted',
+        'active_call_restored',
+        'join_started',
+        'join_success',
+        'join_failure',
+        'cleanup_triggered',
+        'end_agora_call_invoked',
+        'callended',
+      ];
+
+      for (final eventType in canonicalEvents) {
+        expect(eventType, isA<String>());
+        expect(eventType, isNotEmpty);
+        expect(eventType.contains(' '), isFalse,
+            reason: 'Event type $eventType must not contain spaces');
+      }
+      expect(canonicalEvents.length, equals(11));
+    });
+
+    test('T036: logStructuredEvent with canonical answer_accepted writes to call_logs', () async {
+      const appointmentId = 'apt_canonical_001';
+      const userId = 'user_canonical_001';
+
+      when(mockFirestore.collection('call_logs')).thenReturn(mockCollection);
+      when(mockCollection.doc(any)).thenReturn(mockDocument);
+      when(mockDocument.set(any)).thenAnswer((_) async => {});
+
+      await service.logStructuredEvent(
+        appointmentId: appointmentId,
+        userId: userId,
+        eventType: 'answer_accepted',
+        metadata: {'callId': 'call_001'},
+      );
+
+      final captured = verify(mockDocument.set(captureAny)).captured;
+      expect(captured, isNotEmpty);
+      final logData = captured.first as Map<String, dynamic>;
+      expect(logData['eventType'], equals('answer_accepted'));
+      expect(logData['appointmentId'], equals(appointmentId));
+      expect(logData['userId'], equals(userId));
+    });
+
+    test('T036: logStructuredEvent sanitizes agoraToken from metadata', () async {
+      const appointmentId = 'apt_sanitize_001';
+      const userId = 'user_sanitize_001';
+
+      when(mockFirestore.collection('call_logs')).thenReturn(mockCollection);
+      when(mockCollection.doc(any)).thenReturn(mockDocument);
+      when(mockDocument.set(any)).thenAnswer((_) async => {});
+
+      await service.logStructuredEvent(
+        appointmentId: appointmentId,
+        userId: userId,
+        eventType: 'incoming_call_received',
+        metadata: {
+          'appState': 'foreground',
+          'agoraToken': 'secret_token', // must be stripped
+          'callerName': 'Dr. Test',
+        },
+      );
+
+      final captured = verify(mockDocument.set(captureAny)).captured;
+      final logData = captured.first as Map<String, dynamic>;
+      final savedMetadata = logData['metadata'] as Map<String, dynamic>?;
+
+      expect(savedMetadata, isNotNull);
+      expect(savedMetadata!.containsKey('agoraToken'), isFalse,
+          reason: 'agoraToken must be stripped from metadata');
+      expect(savedMetadata['appState'], equals('foreground'));
+      expect(savedMetadata['callerName'], equals('Dr. Test'));
+    });
+
+    test('T036: cleanup_triggered log must include reason in metadata', () async {
+      const appointmentId = 'apt_cleanup_001';
+      const userId = 'user_cleanup_001';
+
+      when(mockFirestore.collection('call_logs')).thenReturn(mockCollection);
+      when(mockCollection.doc(any)).thenReturn(mockDocument);
+      when(mockDocument.set(any)).thenAnswer((_) async => {});
+
+      await service.logStructuredEvent(
+        appointmentId: appointmentId,
+        userId: userId,
+        eventType: 'cleanup_triggered',
+        metadata: {'reason': 'lifecycle_resumed'},
+      );
+
+      final captured = verify(mockDocument.set(captureAny)).captured;
+      final logData = captured.first as Map<String, dynamic>;
+      expect(logData['eventType'], equals('cleanup_triggered'));
+      final meta = logData['metadata'] as Map<String, dynamic>?;
+      expect(meta, isNotNull);
+      expect(meta!['reason'], equals('lifecycle_resumed'));
+    });
+
+    test('T036: join_failure log must include errorCode or reasonCode', () async {
+      const appointmentId = 'apt_join_fail_001';
+      const userId = 'user_join_fail_001';
+
+      when(mockFirestore.collection('call_logs')).thenReturn(mockCollection);
+      when(mockCollection.doc(any)).thenReturn(mockDocument);
+      when(mockDocument.set(any)).thenAnswer((_) async => {});
+
+      await service.logStructuredEvent(
+        appointmentId: appointmentId,
+        userId: userId,
+        eventType: 'join_failure',
+        errorCode: 'agora_join_timeout',
+        metadata: {'elapsedMs': '14980'},
+      );
+
+      final captured = verify(mockDocument.set(captureAny)).captured;
+      final logData = captured.first as Map<String, dynamic>;
+      expect(logData['eventType'], equals('join_failure'));
+      expect(logData['errorCode'], equals('agora_join_timeout'));
+    });
   });
 }

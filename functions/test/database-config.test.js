@@ -47,8 +47,9 @@ describe('Database Configuration', () => {
     test('should connect to emulator host', () => {
       // Validates: Requirement 7.1 (test environment)
       const settings = db._settings;
-      
-      expect(settings.host).toBe('localhost:8080');
+      const emulatorHost = settings.host || `${settings.servicePath}:${settings.port}`;
+
+      expect(['localhost:8080', '127.0.0.1:8080']).toContain(emulatorHost);
       expect(settings.ssl).toBe(false);
     });
 

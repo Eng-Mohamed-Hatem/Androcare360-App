@@ -68,13 +68,17 @@ void main() {
           specialty: 'عيادة الباطنة وطب الأسرة',
         );
 
-        final pendingBeforeAction = await approvalRepository.getPendingDoctors();
+        final pendingBeforeAction = await approvalRepository
+            .getPendingDoctors();
         expect(pendingBeforeAction.isRight(), isTrue);
         final pendingIds = pendingBeforeAction
             .getOrElse(() => const [])
             .map((doctor) => doctor.doctorId)
             .toSet();
-        expect(pendingIds, containsAll(<String>{approvedDoctorId, rejectedDoctorId}));
+        expect(
+          pendingIds,
+          containsAll(<String>{approvedDoctorId, rejectedDoctorId}),
+        );
 
         final approveResult = await approvalRepository.approveDoctor(
           doctorId: approvedDoctorId,
@@ -90,7 +94,10 @@ void main() {
         );
         expect(rejectResult.isRight(), isTrue);
 
-        final approvedSnapshot = await firestore.collection('users').doc(approvedDoctorId).get();
+        final approvedSnapshot = await firestore
+            .collection('users')
+            .doc(approvedDoctorId)
+            .get();
         expect(approvedSnapshot.exists, isTrue);
         final approvedData = approvedSnapshot.data();
         expect(approvedData, isNotNull);
@@ -98,9 +105,15 @@ void main() {
         expect(approvedData['isApproved'], isTrue);
         expect(approvedData['isActive'], isTrue);
         expect(approvedData['approvedAt'], isNotNull);
-        expect(() => DateTime.parse(approvedData['approvedAt'] as String), returnsNormally);
+        expect(
+          () => DateTime.parse(approvedData['approvedAt'] as String),
+          returnsNormally,
+        );
 
-        final rejectedSnapshot = await firestore.collection('users').doc(rejectedDoctorId).get();
+        final rejectedSnapshot = await firestore
+            .collection('users')
+            .doc(rejectedDoctorId)
+            .get();
         expect(rejectedSnapshot.exists, isFalse);
 
         final pendingAfterAction = await approvalRepository.getPendingDoctors();
@@ -118,7 +131,9 @@ void main() {
             .where('isApproved', isEqualTo: true)
             .where('isActive', isEqualTo: true)
             .get();
-        final visibleDoctorIds = visibleDoctors.docs.map((doc) => doc.id).toList();
+        final visibleDoctorIds = visibleDoctors.docs
+            .map((doc) => doc.id)
+            .toList();
         expect(visibleDoctorIds, contains(approvedDoctorId));
         expect(visibleDoctorIds, isNot(contains(rejectedDoctorId)));
       },
@@ -140,7 +155,6 @@ Future<void> _seedPendingDoctor(
     userType: UserType.doctor,
     phoneNumber: '+201234567890',
     specialty: specialty,
-    isApproved: false,
     isActive: false,
     createdAt: DateTime.now(),
   );

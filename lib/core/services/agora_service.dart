@@ -128,12 +128,31 @@ class AgoraService {
       await _engine!.enableVideo();
       await _engine!.enableAudio();
 
+      // ✅ Audio profile مُحسَّن للمكالمات الطبية
+      // audioProfileSpeechStandard: 16kHz mono مُحسَّن للكلام
+      // audioScenarioMeeting: تقليل الضوضاء + تحسين وضوح الصوت في الاجتماعات
+      await _engine!.setAudioProfile(
+        profile: AudioProfileType.audioProfileSpeechStandard,
+        scenario: AudioScenarioType.audioScenarioChatroom,
+      );
+
+      await _engine!.setAINSMode(
+        enabled: true,
+        mode: AudioAinsMode.ainsModeBalanced,
+      );
+
+      await _engine!.enableAudioVolumeIndication(
+        interval: 200,
+        smooth: 3,
+        reportVad: true,
+      );
+
       // Set video configuration
       await _engine!.setVideoEncoderConfiguration(
         const VideoEncoderConfiguration(
-          dimensions: VideoDimensions(width: 640, height: 480),
-          frameRate: 15,
-          bitrate: 0,
+          dimensions: VideoDimensions(width: 1280, height: 720),
+          frameRate: 24,
+          bitrate: 0, // auto — Agora يختار أفضل bitrate بناءً على الشبكة
           orientationMode: OrientationMode.orientationModeAdaptive,
         ),
       );
@@ -191,7 +210,22 @@ class AgoraService {
   ///
   /// Throws `PermissionException` if permissions are denied.
   Future<void> _requestPermissions() async {
-    await [Permission.camera, Permission.microphone].request();
+    final statuses = await [
+      Permission.camera,
+      Permission.microphone,
+    ].request();
+
+    final allGranted = statuses.values.every((s) => s.isGranted);
+    if (!allGranted) {
+      final denied = statuses.entries
+          .where((e) => !e.value.isGranted)
+          .map((e) => e.key.toString())
+          .join(', ');
+      throw AgoraException(
+        'Camera or microphone permission denied: $denied',
+        code: 'PERMISSION_DENIED',
+      );
+    }
   }
 
   /// Register Agora RTC Engine event handlers
@@ -255,6 +289,23 @@ class AgoraService {
         // عند حدوث خطأ
         onError: (ErrorCodeType err, String msg) {
           debugPrint('❌ Agora error: $err - $msg');
+
+          // ✅ معالجة انتهاء صلاحية التوكن (error code 109)
+          // Token expired mid-call — emit a dedicated event so the UI can
+          // request a fresh token via VideoConsultationService.patientJoinCall()
+          if (err == ErrorCodeType.errTokenExpired) {
+            debugPrint(
+              '⚠️ [AgoraService] Token expired — emitting tokenExpired event',
+            );
+            _eventController.add(
+              AgoraEvent(
+                type: AgoraEventType.tokenExpired,
+                channelId: _currentChannel,
+              ),
+            );
+            return;
+          }
+
           _eventController.add(
             AgoraEvent(
               type: AgoraEventType.error,
@@ -911,6 +962,10 @@ enum AgoraEventType {
 
   /// An error occurred
   error,
+
+  /// Agora token expired mid-call (error code 109)
+  /// The UI should request a fresh token and call renewToken()
+  tokenExpired,
 }
 
 /// Agora event data

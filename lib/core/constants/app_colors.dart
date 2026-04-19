@@ -48,6 +48,10 @@ class AppColors {
   static const Color department4 = Color(0xFFFFF3E0); // برتقالي فاتح
   static const Color department5 = Color(0xFFFCE4EC); // وردي فاتح
 
+  // Feature Colors
+  static const Color sexualHealth = Color(0xFF0F766E);
+  static const Color sexualHealthLight = Color(0xFFD7F3EE);
+
   // Gradient Colors - الألوان المتدرجة
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, primaryLight],

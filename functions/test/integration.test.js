@@ -35,7 +35,14 @@ const {
 } = require('./fixtures');
 
 // Import Cloud Functions
-const { startAgoraCall, endAgoraCall, completeAppointment } = require('../index');
+const {
+  startAgoraCall,
+  endAgoraCall,
+  completeAppointment,
+  confirmAppointmentCompletion,
+  handleMissedCall,
+  handleCallDeclined,
+} = require('../index');
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -186,6 +193,30 @@ describe('Cloud Functions Integration Tests', () => {
       ).rejects.toThrow();
     });
 
+    test('should reject payload doctorId mismatch with authenticated doctor', async () => {
+      const appointment = createAppointmentFixture({
+        id: 'test_apt_auth_mismatch_001',
+        doctorId: 'doctor_auth_match_001',
+        patientId: 'patient_auth_match_001',
+      });
+      const doctor = createDoctorFixture({ id: appointment.doctorId });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await setupTestData(appointment, doctor, patient);
+
+      const context = createMockContext(doctor.id);
+
+      try {
+        await functionsTest.wrap(startAgoraCall)({
+          appointmentId: appointment.id,
+          doctorId: 'doctor_payload_mismatch_001',
+        }, context);
+        throw new Error('Expected startAgoraCall to throw');
+      } catch (error) {
+        expect(error.code).toBe('permission-denied');
+      }
+    });
+
     test('should handle missing authentication context', async () => {
       // Validates: Requirement 2.1 (authentication required)
       
@@ -242,6 +273,8 @@ describe('Cloud Functions Integration Tests', () => {
       const updatedData = updatedDoc.data();
       expect(updatedData.callEndedAt).toBeDefined();
       expect(updatedData.callEndedAt).toBeInstanceOf(Object); // Firestore Timestamp
+      expect(updatedData.callStatus).toBe('ended');
+      expect(updatedData.status).not.toBe('completed');
     });
 
     test('should handle missing appointment', async () => {
@@ -271,6 +304,102 @@ describe('Cloud Functions Integration Tests', () => {
           appointmentId: appointment.id,
         }, context)
       ).rejects.toThrow();
+    });
+
+    test('should reject callers unrelated to the appointment', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_end_auth_001',
+        doctorId: 'doctor_end_auth_001',
+        patientId: 'patient_end_auth_001',
+      });
+      const unrelatedUser = createDoctorFixture({ id: 'doctor_unrelated_001' });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(unrelatedUser.id).set(unrelatedUser);
+
+      const context = createMockContext(unrelatedUser.id);
+
+      await expect(
+        functionsTest.wrap(endAgoraCall)({
+          appointmentId: appointment.id,
+        }, context)
+      ).rejects.toThrow();
+    });
+
+    test('should preserve permission-denied error details for unrelated callers', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_end_auth_code_001',
+        doctorId: 'doctor_end_auth_code_001',
+        patientId: 'patient_end_auth_code_001',
+      });
+      const unrelatedUser = createDoctorFixture({ id: 'doctor_unrelated_code_001' });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(unrelatedUser.id).set(unrelatedUser);
+
+      try {
+        await functionsTest.wrap(endAgoraCall)({
+          appointmentId: appointment.id,
+        }, createMockContext(unrelatedUser.id));
+        throw new Error('Expected endAgoraCall to throw');
+      } catch (error) {
+        expect(error.code).toBe('permission-denied');
+      }
+    });
+
+    test('should keep doctor-side end result terminal and non-restorable for patient join flow', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_end_terminal_001',
+        doctorId: 'doctor_end_terminal_001',
+        patientId: 'patient_end_terminal_001',
+        callStatus: 'joining',
+        status: 'calling',
+      });
+      const doctor = createDoctorFixture({ id: appointment.doctorId });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await setupTestData(appointment, doctor, patient);
+
+      const context = createMockContext(doctor.id);
+      await functionsTest.wrap(endAgoraCall)({ appointmentId: appointment.id }, context);
+
+      const updatedDoc = await db.collection('appointments').doc(appointment.id).get();
+      const updatedData = updatedDoc.data();
+
+      expect(updatedData.callStatus).toBe('ended');
+      expect(updatedData.callSessionActive).toBe(false);
+      expect(updatedData.status).not.toBe('in_progress');
+    });
+
+    test('T030 targeted: joining state ends in ended_pending_confirmation instead of missed', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_t030_joining_terminal_001',
+        doctorId: 'doctor_t030_001',
+        patientId: 'patient_t030_001',
+        status: 'calling',
+        callStatus: 'joining',
+        callSessionActive: true,
+      });
+      const doctor = createDoctorFixture({ id: appointment.doctorId });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await setupTestData(appointment, doctor, patient);
+
+      const context = createMockContext(doctor.id);
+      const result = await functionsTest.wrap(endAgoraCall)({
+        appointmentId: appointment.id,
+      }, context);
+
+      expect(result.success).toBe(true);
+
+      const updatedDoc = await db.collection('appointments').doc(appointment.id).get();
+      expect(updatedDoc.exists).toBe(true);
+      const updatedData = updatedDoc.data();
+
+      expect(updatedData.callStatus).toBe('ended');
+      expect(updatedData.callSessionActive).toBe(false);
+      expect(updatedData.status).toBe('ended_pending_confirmation');
+      expect(updatedData.confirmationDeadlineAt).toBeDefined();
     });
   });
 
@@ -356,6 +485,29 @@ describe('Cloud Functions Integration Tests', () => {
       ).rejects.toThrow();
     });
 
+    test('should reject payload doctorId mismatch with authenticated doctor', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_complete_mismatch_001',
+        doctorId: 'doctor_complete_match_001',
+      });
+      const doctor = createDoctorFixture({ id: appointment.doctorId });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(doctor.id).set(doctor);
+
+      const context = createMockContext(doctor.id);
+
+      try {
+        await functionsTest.wrap(completeAppointment)({
+          appointmentId: appointment.id,
+          doctorId: 'doctor_payload_mismatch_002',
+        }, context);
+        throw new Error('Expected completeAppointment to throw');
+      } catch (error) {
+        expect(error.code).toBe('permission-denied');
+      }
+    });
+
     test('should require authentication', async () => {
       // Validates: Authentication requirement
       
@@ -371,6 +523,129 @@ describe('Cloud Functions Integration Tests', () => {
           doctorId: 'doctor_001',
         }, context)
       ).rejects.toThrow();
+    });
+  });
+
+  describe('Missed and Declined Call Handlers', () => {
+    test('should export handleMissedCall and keep appointment non-completed', async () => {
+      expect(handleMissedCall).toBeDefined();
+
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_missed_001',
+        doctorId: 'doctor_missed_001',
+        patientId: 'patient_missed_001',
+        status: 'scheduled',
+      });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(patient.id).set(patient);
+
+      const result = await functionsTest.wrap(handleMissedCall)({
+        appointmentId: appointment.id,
+      }, createMockContext(patient.id));
+
+      expect(result.success).toBe(true);
+
+      const updatedDoc = await db.collection('appointments').doc(appointment.id).get();
+      const updatedData = updatedDoc.data();
+
+      expect(updatedData.callStatus).toBe('missed');
+      expect(updatedData.missedAt).toBeDefined();
+      expect(updatedData.status).not.toBe('completed');
+
+      await wait(200);
+      const logs = await getCallLogs(appointment.id);
+      expect(logs.find(log => log.eventType === 'call_missed')).toBeDefined();
+    });
+
+    test('should ignore missed callback after call already ended', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_missed_ignored_001',
+        doctorId: 'doctor_missed_ignored_001',
+        patientId: 'patient_missed_ignored_001',
+        status: 'scheduled',
+        callStatus: 'ended',
+      });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(patient.id).set(patient);
+
+      const result = await functionsTest.wrap(handleMissedCall)({
+        appointmentId: appointment.id,
+      }, createMockContext(patient.id));
+
+      expect(result.success).toBe(true);
+
+      const updatedDoc = await db.collection('appointments').doc(appointment.id).get();
+      const updatedData = updatedDoc.data();
+      expect(updatedData.callStatus).toBe('ended');
+
+      await wait(200);
+      const logs = await getCallLogs(appointment.id);
+      expect(logs.find(log => log.eventType === 'call_missed_ignored')).toBeDefined();
+    });
+
+    test('should export handleCallDeclined and keep appointment non-completed', async () => {
+      expect(handleCallDeclined).toBeDefined();
+
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_declined_001',
+        doctorId: 'doctor_declined_001',
+        patientId: 'patient_declined_001',
+        status: 'scheduled',
+      });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(patient.id).set(patient);
+
+      const result = await functionsTest.wrap(handleCallDeclined)({
+        appointmentId: appointment.id,
+      }, createMockContext(patient.id));
+
+      expect(result.success).toBe(true);
+
+      const updatedDoc = await db.collection('appointments').doc(appointment.id).get();
+      const updatedData = updatedDoc.data();
+
+      expect(updatedData.callStatus).toBe('declined');
+      expect(updatedData.declinedAt).toBeDefined();
+      expect(updatedData.status).not.toBe('completed');
+
+      await wait(200);
+      const logs = await getCallLogs(appointment.id);
+      expect(logs.find(log => log.eventType === 'call_declined')).toBeDefined();
+    });
+
+    test('should ignore declined callback after appointment is already completed', async () => {
+      const appointment = createAppointmentWithCallDataFixture({
+        id: 'test_apt_declined_ignored_001',
+        doctorId: 'doctor_declined_ignored_001',
+        patientId: 'patient_declined_ignored_001',
+        status: 'completed',
+        callStatus: 'ended',
+      });
+      const patient = createPatientFixture({ id: appointment.patientId });
+
+      await db.collection('appointments').doc(appointment.id).set(appointment);
+      await db.collection('users').doc(patient.id).set(patient);
+
+      const result = await functionsTest.wrap(handleCallDeclined)({
+        appointmentId: appointment.id,
+      }, createMockContext(patient.id));
+
+      expect(result.success).toBe(true);
+
+      const updatedDoc = await db.collection('appointments').doc(appointment.id).get();
+      const updatedData = updatedDoc.data();
+      expect(updatedData.status).toBe('completed');
+      expect(updatedData.callStatus).toBe('ended');
+
+      await wait(200);
+      const logs = await getCallLogs(appointment.id);
+      expect(logs.find(log => log.eventType === 'call_declined_ignored')).toBeDefined();
     });
   });
 
@@ -523,67 +798,140 @@ describe('Cloud Functions Integration Tests', () => {
   });
 
   // ============================================================================
-  // END-TO-END CALL FLOW TEST
+  // END-TO-END CALL FLOW TESTS
   // ============================================================================
 
   describe('End-to-End Call Flow', () => {
-    test('should complete full call flow: start → end → complete', async () => {
-      // Validates: Complete integration of all functions
-      // Requirements: 2.1, 2.2, 2.3, 2.4, 1.2, 1.3, 4.1, 4.2, 4.5
-      
-      // Arrange
+    // Shared fixture factory
+    function makeE2EFixtures(suffix) {
       const appointment = createAppointmentFixture({
-        id: 'test_apt_e2e_001',
-        doctorId: 'doctor_e2e_001',
-        patientId: 'patient_e2e_001',
+        id: `test_apt_e2e_${suffix}`,
+        doctorId: `doctor_e2e_${suffix}`,
+        patientId: `patient_e2e_${suffix}`,
       });
       const doctor = createDoctorFixture({ id: appointment.doctorId });
       const patient = createPatientFixture({ id: appointment.patientId });
-      
+      return { appointment, doctor, patient };
+    }
+
+    test('should complete full call flow: start → in_progress → ended_pending_confirmation → completed (Yes)', async () => {
+      // Validates: FR-015 (no auto-complete), FR-016 (Yes → completed),
+      //            FR-017 (completedAt stamped), Requirements: 2.1–2.4, 1.2, 1.3, 4.1, 4.2, 4.5
+      const { appointment, doctor, patient } = makeE2EFixtures('001');
       await setupTestData(appointment, doctor, patient);
-      
       const context = createMockContext(doctor.id);
-      
-      // Act 1: Start call
+
+      // Act 1: Doctor starts call
       const startResult = await functionsTest.wrap(startAgoraCall)({
         appointmentId: appointment.id,
         doctorId: doctor.id,
       }, context);
-      
       expect(startResult.success).toBe(true);
       expect(startResult.agoraToken).toBeDefined();
-      
-      // Act 2: End call
+
+      let apptDoc = await db.collection('appointments').doc(appointment.id).get();
+      expect(apptDoc.data().status).toBe('calling');
+      expect(apptDoc.data().callSessionId).toBeDefined();
+
+      // Act 2: Simulate patient joining (mark in_progress)
+      await db.collection('appointments').doc(appointment.id).update({
+        status: 'in_progress',
+        callSessionActive: true,
+      });
+
+      // Act 3: Doctor ends call → must become ended_pending_confirmation (FR-015)
       const endResult = await functionsTest.wrap(endAgoraCall)({
         appointmentId: appointment.id,
       }, context);
-      
       expect(endResult.success).toBe(true);
-      
-      // Act 3: Complete appointment
-      const completeResult = await functionsTest.wrap(completeAppointment)({
+
+      apptDoc = await db.collection('appointments').doc(appointment.id).get();
+      const afterEnd = apptDoc.data();
+      expect(afterEnd.status).toBe('ended_pending_confirmation',
+        'endAgoraCall must NOT auto-complete — FR-015');
+      expect(afterEnd.callEndedAt).toBeDefined();
+      expect(afterEnd.confirmationDeadlineAt).toBeDefined(
+        'confirmationDeadlineAt must be set for 24h auto-transition — FR-038');
+      expect(afterEnd.callSessionActive).toBe(false);
+
+      // Act 4: Doctor confirms Yes → completed (FR-016)
+      const confirmResult = await functionsTest.wrap(confirmAppointmentCompletion)({
         appointmentId: appointment.id,
         doctorId: doctor.id,
+        completed: true,
       }, context);
-      
-      expect(completeResult.success).toBe(true);
-      
-      // Assert: Verify final state
-      const finalDoc = await db.collection('appointments').doc(appointment.id).get();
-      const finalData = finalDoc.data();
-      
-      expect(finalData.agoraChannelName).toBeDefined();
-      expect(finalData.callStartedAt).toBeDefined();
-      expect(finalData.callEndedAt).toBeDefined();
+      expect(confirmResult.success).toBe(true);
+
+      apptDoc = await db.collection('appointments').doc(appointment.id).get();
+      const finalData = apptDoc.data();
       expect(finalData.status).toBe('completed');
       expect(finalData.completedAt).toBeDefined();
-      
-      // Database ID is verified through the db instance configuration
-      
+      expect(finalData.agoraChannelName).toBeDefined();
+      expect(finalData.callStartedAt).toBeDefined();
+
       // Verify call logs
       await wait(500);
       const logs = await getCallLogs(appointment.id);
       expect(logs.length).toBeGreaterThanOrEqual(2);
+    });
+
+    test('should produce not_completed when doctor confirms No (FR-018)', async () => {
+      const { appointment, doctor, patient } = makeE2EFixtures('002');
+      await setupTestData(appointment, doctor, patient);
+      const context = createMockContext(doctor.id);
+
+      // Bring to ended_pending_confirmation
+      await functionsTest.wrap(startAgoraCall)(
+        { appointmentId: appointment.id, doctorId: doctor.id }, context);
+      await db.collection('appointments').doc(appointment.id).update({
+        status: 'in_progress', callSessionActive: true,
+      });
+      await functionsTest.wrap(endAgoraCall)(
+        { appointmentId: appointment.id }, context);
+
+      let apptDoc = await db.collection('appointments').doc(appointment.id).get();
+      expect(apptDoc.data().status).toBe('ended_pending_confirmation');
+
+      // Doctor answers No
+      const confirmResult = await functionsTest.wrap(confirmAppointmentCompletion)({
+        appointmentId: appointment.id,
+        doctorId: doctor.id,
+        completed: false,
+      }, context);
+      expect(confirmResult.success).toBe(true);
+
+      apptDoc = await db.collection('appointments').doc(appointment.id).get();
+      expect(apptDoc.data().status).toBe('not_completed',
+        'confirmAppointmentCompletion(No) must set not_completed — FR-018');
+      expect(apptDoc.data().notCompletedAt).toBeDefined();
+    });
+
+    test('completeAppointment backward-compat still produces completed status (regression T039)', async () => {
+      // Old clients call completeAppointment directly; it must delegate to
+      // confirmCompletion(completed: true) and produce the same outcome.
+      const { appointment, doctor, patient } = makeE2EFixtures('003');
+      await setupTestData(appointment, doctor, patient);
+      const context = createMockContext(doctor.id);
+
+      await functionsTest.wrap(startAgoraCall)(
+        { appointmentId: appointment.id, doctorId: doctor.id }, context);
+      await db.collection('appointments').doc(appointment.id).update({
+        status: 'in_progress', callSessionActive: true,
+      });
+      await functionsTest.wrap(endAgoraCall)(
+        { appointmentId: appointment.id }, context);
+
+      // Old call path
+      const completeResult = await functionsTest.wrap(completeAppointment)({
+        appointmentId: appointment.id,
+        doctorId: doctor.id,
+      }, context);
+      expect(completeResult.success).toBe(true);
+
+      const apptDoc = await db.collection('appointments').doc(appointment.id).get();
+      expect(apptDoc.data().status).toBe('completed',
+        'backward-compat: completeAppointment must still produce completed');
+      expect(apptDoc.data().completedAt).toBeDefined();
     });
   });
 });
