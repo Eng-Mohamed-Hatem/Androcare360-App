@@ -185,6 +185,8 @@ console.log('🔧 [DB CONFIG] ============================================');
 console.log('🔧 [DB CONFIG] DATABASE CONFIGURATION VERIFICATION COMPLETE');
 console.log('🔧 [DB CONFIG] ============================================');
 
+const doctorAnalytics = require('./src/doctor_analytics');
+
 // ============================================================================
 // DATABASE VERIFICATION HELPER FUNCTION
 // ============================================================================
@@ -2289,7 +2291,7 @@ exports.patientJoinCall = functions
         appointment.callSessionId,
         patientUid,
         'publisher',
-        3600
+        300
       );
 
       if (shouldUpdateStatus) {
@@ -3136,6 +3138,25 @@ if (process.env.NODE_ENV === 'test' || process.env.FUNCTIONS_EMULATOR === 'true'
     patientJoinCallForTest: exports.patientJoinCallForTest,
     autoCompleteExpiredConfirmations: exports.autoCompleteExpiredConfirmations,
     notifyPatientAnswered: exports.notifyPatientAnswered,
+    getDoctorsOverview: doctorAnalytics.getDoctorsOverview,
+    getPlatformSummary: doctorAnalytics.getPlatformSummary,
+    getDoctorAnalyticsDetail: doctorAnalytics.getDoctorAnalyticsDetail,
+    exportPayoutReport: doctorAnalytics.exportPayoutReport,
+    recordPayout: doctorAnalytics.recordPayout,
+    checkAdminAlerts: doctorAnalytics.checkAdminAlerts,
+    getAdminAlerts: doctorAnalytics.getAdminAlerts,
+    acknowledgeAlert: doctorAnalytics.acknowledgeAlert,
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Doctor Analytics Dashboard (Feature 010)
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getDoctorsOverview = doctorAnalytics.getDoctorsOverview;
+exports.getPlatformSummary = doctorAnalytics.getPlatformSummary;
+exports.getDoctorAnalyticsDetail = doctorAnalytics.getDoctorAnalyticsDetail;
+exports.exportPayoutReport = doctorAnalytics.exportPayoutReport;
+exports.recordPayout = doctorAnalytics.recordPayout;
+exports.checkAdminAlerts = doctorAnalytics.checkAdminAlerts;
+exports.getAdminAlerts = doctorAnalytics.getAdminAlerts;
+exports.acknowledgeAlert = doctorAnalytics.acknowledgeAlert;

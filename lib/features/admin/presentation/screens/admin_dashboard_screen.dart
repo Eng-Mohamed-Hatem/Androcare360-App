@@ -5,6 +5,7 @@ import 'package:elajtech/features/admin/presentation/screens/admin_audit_log_scr
 import 'package:elajtech/features/admin/presentation/screens/admin_doctor_list_screen.dart';
 import 'package:elajtech/features/admin/presentation/screens/admin_patient_list_screen.dart';
 import 'package:elajtech/features/auth/providers/auth_provider.dart';
+import 'package:elajtech/features/admin/analytics/presentation/screens/analytics_tab_screen.dart';
 import 'package:elajtech/features/packages/presentation/pages/admin_packages_grid_page.dart';
 import 'package:elajtech/main.dart' show AuthWrapper;
 import 'package:flutter/material.dart';
@@ -209,6 +210,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                   ).ignore();
                 },
+              ),
+              const SizedBox(height: 12),
+              _NavCard(
+                icon: Icons.bar_chart_outlined,
+                title: 'إحصائيات الأطباء',
+                subtitle: 'تقارير الأداء والإيرادات ومستحقات الأطباء',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AnalyticsTabScreen(),
+                  ),
+                ),
               ),
               const SizedBox(height: 48),
             ],

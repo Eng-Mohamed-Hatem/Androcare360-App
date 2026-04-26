@@ -1,0 +1,10 @@
+{
+  "workflow": "speckit",
+  "specName": "009-fix-incoming-call",
+  "branch": "009-fix-incoming-call",
+  "selectedAt": "2026-04-25T12:11:21.020Z",
+  "currentStep": "specify",
+  "status": "draft",
+  "stepHistory": {},
+  "transitions": []
+}

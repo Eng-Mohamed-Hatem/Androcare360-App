@@ -493,6 +493,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       clearPhoneError: true,
     );
 
+    // PR-001: persist lastLoginAt — fire-and-forget, never blocks login
+    _authRepository
+        .updateUser(user.copyWith(lastLoginAt: DateTime.now().toUtc()))
+        .ignore();
+
     if (kDebugMode) {
       debugPrint(
         '🔄 [AuthProvider] auth state update'

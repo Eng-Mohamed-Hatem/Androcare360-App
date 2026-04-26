@@ -282,6 +282,8 @@ class AgoraService {
                   type: AgoraEventType.userLeft,
                   channelId: connection.channelId,
                   uid: remoteUid,
+                  isDropped:
+                      reason == UserOfflineReasonType.userOfflineDropped,
                 ),
               );
             },
@@ -994,6 +996,7 @@ class AgoraEvent {
     this.isMuted,
     this.connectionState,
     this.error,
+    this.isDropped,
   });
 
   /// Event type
@@ -1013,4 +1016,8 @@ class AgoraEvent {
 
   /// Error message (for error events)
   final String? error;
+
+  /// Whether the remote user was dropped due to network loss (true) or left
+  /// intentionally (false/null). Only set for [AgoraEventType.userLeft].
+  final bool? isDropped;
 }

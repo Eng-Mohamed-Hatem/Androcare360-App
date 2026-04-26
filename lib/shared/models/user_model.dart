@@ -93,6 +93,9 @@ class UserModel {
     this.certificates,
     this.fcmToken,
     this.fcmTokenUpdatedAt,
+    this.lastLoginAt,
+    this.rating,
+    this.reviewsCount,
   });
 
   /// Creates a UserModel from JSON data.
@@ -184,6 +187,9 @@ class UserModel {
               .toList()
         : null,
     createdAt: JsonHelpers.parseDateTime(json['createdAt']),
+    lastLoginAt: JsonHelpers.parseDateTimeOrNull(json['lastLoginAt']),
+    rating: (json['rating'] as num?)?.toDouble(),
+    reviewsCount: json['reviewsCount'] as int?,
   );
 
   /// Unique identifier for the user (matches Firebase Auth UID)
@@ -339,6 +345,18 @@ class UserModel {
   /// Timestamp when the FCM token was last updated
   final DateTime? fcmTokenUpdatedAt;
 
+  /// Timestamp of the user's most recent successful login (PR-001).
+  /// Used by analytics alerts to detect doctor inactivity.
+  final DateTime? lastLoginAt;
+
+  /// Aggregate star rating for doctors (0.0–5.0).
+  /// Denormalised from review data; used as the sole patient-rating input
+  /// for the analytics performance score calculation.
+  final double? rating;
+
+  /// Total number of reviews that contributed to [rating].
+  final int? reviewsCount;
+
   /// Converts this UserModel to JSON format for Firestore storage.
   ///
   /// This method serializes all user data into a Map suitable for
@@ -377,6 +395,9 @@ class UserModel {
     'education': education,
     'certificates': certificates,
     'createdAt': createdAt.toIso8601String(),
+    'lastLoginAt': lastLoginAt?.toIso8601String(),
+    'rating': rating,
+    'reviewsCount': reviewsCount,
   };
 
   /// Creates a copy of this UserModel with specified fields replaced.
@@ -420,6 +441,9 @@ class UserModel {
     DateTime? createdAt,
     String? fcmToken,
     DateTime? fcmTokenUpdatedAt,
+    DateTime? lastLoginAt,
+    double? rating,
+    int? reviewsCount,
   }) => UserModel(
     id: id ?? this.id,
     fcmToken: fcmToken ?? this.fcmToken,
@@ -451,6 +475,9 @@ class UserModel {
     education: education ?? this.education,
     certificates: certificates ?? this.certificates,
     createdAt: createdAt ?? this.createdAt,
+    lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+    rating: rating ?? this.rating,
+    reviewsCount: reviewsCount ?? this.reviewsCount,
   );
 }
 

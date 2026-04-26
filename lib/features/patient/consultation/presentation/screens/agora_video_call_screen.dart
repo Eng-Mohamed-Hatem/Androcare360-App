@@ -65,6 +65,10 @@ class _AgoraVideoCallScreenState extends ConsumerState<AgoraVideoCallScreen> {
   int _retryCount = 0;
   static const int _maxRetries = 3;
 
+  // Reconnection grace period for network-dropped remote users
+  Timer? _reconnectionTimer;
+  static const Duration _reconnectionGrace = Duration(seconds: 15);
+
   void _showCallMessage(String message) {
     if (!mounted) {
       return;
@@ -160,8 +164,11 @@ class _AgoraVideoCallScreenState extends ConsumerState<AgoraVideoCallScreen> {
           _connectionStatus = 'المستخدم البعيد انضم';
         });
         debugPrint('👤 Remote user joined: ${event.uid}');
-        // ✅ NEW: Cancel timeout timer when remote user joins
+        // Cancel timeout timer when remote user joins
         _cancelTimeoutTimer();
+        // Cancel reconnection timer if doctor rejoined after a network drop
+        _reconnectionTimer?.cancel();
+        _reconnectionTimer = null;
         if (!_didReachInProgress) {
           _didReachInProgress = true;
           unawaited(_markCallInProgress());
@@ -171,14 +178,29 @@ class _AgoraVideoCallScreenState extends ConsumerState<AgoraVideoCallScreen> {
         if (_remoteUid == event.uid) {
           setState(() {
             _remoteUid = null;
-            _connectionStatus = 'المستخدم البعيد غادر';
+            _connectionStatus = (event.isDropped ?? false)
+                ? 'جارٍ إعادة الاتصال...'
+                : 'المستخدم البعيد غادر';
           });
           if (!_isDoctor && mounted) {
-            _showCallMessage('The call has ended.');
-            Navigator.pop(context);
+            if (event.isDropped ?? false) {
+              // Network drop — give the doctor a grace period to reconnect
+              _showCallMessage('Connection lost. Waiting for doctor to reconnect…');
+              _reconnectionTimer?.cancel();
+              _reconnectionTimer = Timer(_reconnectionGrace, () {
+                if (mounted) {
+                  _showCallMessage('The call has ended.');
+                  Navigator.pop(context);
+                }
+              });
+            } else {
+              // Intentional leave — end immediately
+              _showCallMessage('The call has ended.');
+              Navigator.pop(context);
+            }
           }
         }
-        debugPrint('👤 Remote user left: ${event.uid}');
+        debugPrint('👤 Remote user left: ${event.uid} (dropped: ${event.isDropped})');
 
       case AgoraEventType.leftChannel:
         debugPrint('📴 Left channel');
@@ -494,8 +516,9 @@ class _AgoraVideoCallScreenState extends ConsumerState<AgoraVideoCallScreen> {
   @override
   void dispose() {
     unawaited(_agoraEventSub?.cancel() ?? Future<void>.value());
-    // ✅ NEW: Cancel timeout timer
+    // Cancel timeout and reconnection timers
     _cancelTimeoutTimer();
+    _reconnectionTimer?.cancel();
     // Intentionally not awaited - cleanup happens in background
     unawaited(_agoraService.dispose());
     // Dismiss native VoIP notification even if _endCall() was not reached

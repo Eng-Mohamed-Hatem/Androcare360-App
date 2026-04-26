@@ -90,6 +90,8 @@ dependencies:
   table_calendar: ^3.0.9
   pdf: ^3.11.3
   printing: ^5.14.2
+  fl_chart: ^0.69.0
+  syncfusion_flutter_xlsio: ^28.1.33
 
   uuid: ^4.5.3
   timezone: ^0.10.1
@@ -148,6 +150,7 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/animations/
+    - assets/fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

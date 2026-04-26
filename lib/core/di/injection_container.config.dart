@@ -49,6 +49,34 @@ import 'package:elajtech/core/services/fcm_service.dart' as _i990;
 import 'package:elajtech/core/services/storage_service.dart' as _i1028;
 import 'package:elajtech/core/services/token_refresh_service.dart' as _i839;
 import 'package:elajtech/core/services/voip_call_service.dart' as _i15;
+import 'package:elajtech/features/admin/analytics/data/repositories/analytics_repository_impl.dart'
+    as _i85;
+import 'package:elajtech/features/admin/analytics/data/repositories/payout_export_repository_impl.dart'
+    as _i12;
+import 'package:elajtech/features/admin/analytics/domain/repositories/analytics_repository.dart'
+    as _i153;
+import 'package:elajtech/features/admin/analytics/domain/repositories/payout_export_repository.dart'
+    as _i730;
+import 'package:elajtech/features/admin/analytics/domain/usecases/export_payout_report_usecase.dart'
+    as _i694;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_admin_alerts_usecase.dart'
+    as _i174;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_doctor_analytics_detail_usecase.dart'
+    as _i923;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_doctor_time_series_usecase.dart'
+    as _i406;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_doctors_overview_usecase.dart'
+    as _i1008;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_patient_retention_usecase.dart'
+    as _i966;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_performance_score_usecase.dart'
+    as _i967;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_platform_summary_usecase.dart'
+    as _i589;
+import 'package:elajtech/features/admin/analytics/domain/usecases/get_specialty_breakdown_usecase.dart'
+    as _i110;
+import 'package:elajtech/features/admin/analytics/domain/usecases/record_payout_usecase.dart'
+    as _i1020;
 import 'package:elajtech/features/admin/data/repositories/admin_repository_impl.dart'
     as _i423;
 import 'package:elajtech/features/admin/domain/repositories/admin_repository.dart'
@@ -263,6 +291,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i824.PrescriptionRepository>(
       () => _i681.PrescriptionRepositoryImpl(gh<_i974.FirebaseFirestore>()),
     );
+    gh.lazySingleton<_i153.AnalyticsRepository>(
+      () => _i85.AnalyticsRepositoryImpl(gh<_i809.FirebaseFunctions>()),
+    );
     gh.lazySingleton<_i108.CloudFunctionsVersionService>(
       () => _i108.CloudFunctionsVersionService(gh<_i809.FirebaseFunctions>()),
     );
@@ -271,6 +302,32 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i574.DeviceRequestRepository>(
       () => _i75.DeviceRequestRepositoryImpl(gh<_i974.FirebaseFirestore>()),
+    );
+    gh.lazySingleton<_i174.GetAdminAlertsUseCase>(
+      () => _i174.GetAdminAlertsUseCase(gh<_i153.AnalyticsRepository>()),
+    );
+    gh.lazySingleton<_i923.GetDoctorAnalyticsDetailUseCase>(
+      () => _i923.GetDoctorAnalyticsDetailUseCase(
+        gh<_i153.AnalyticsRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i406.GetDoctorTimeSeriesUseCase>(
+      () => _i406.GetDoctorTimeSeriesUseCase(gh<_i153.AnalyticsRepository>()),
+    );
+    gh.lazySingleton<_i1008.GetDoctorsOverviewUseCase>(
+      () => _i1008.GetDoctorsOverviewUseCase(gh<_i153.AnalyticsRepository>()),
+    );
+    gh.lazySingleton<_i966.GetPatientRetentionUseCase>(
+      () => _i966.GetPatientRetentionUseCase(gh<_i153.AnalyticsRepository>()),
+    );
+    gh.lazySingleton<_i967.GetPerformanceScoreUseCase>(
+      () => _i967.GetPerformanceScoreUseCase(gh<_i153.AnalyticsRepository>()),
+    );
+    gh.lazySingleton<_i589.GetPlatformSummaryUseCase>(
+      () => _i589.GetPlatformSummaryUseCase(gh<_i153.AnalyticsRepository>()),
+    );
+    gh.lazySingleton<_i110.GetSpecialtyBreakdownUseCase>(
+      () => _i110.GetSpecialtyBreakdownUseCase(gh<_i153.AnalyticsRepository>()),
     );
     gh.lazySingleton<_i558.LabRequestRepository>(
       () => _i1022.LabRequestRepositoryImpl(gh<_i974.FirebaseFirestore>()),
@@ -322,6 +379,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i809.FirebaseFunctions>(),
       ),
     );
+    gh.lazySingleton<_i730.PayoutExportRepository>(
+      () => _i12.PayoutExportRepositoryImpl(gh<_i809.FirebaseFunctions>()),
+    );
     gh.lazySingleton<_i265.AndrologyPackageRepository>(
       () => _i265.AndrologyPackageRepository(
         gh<_i220.FirestorePackageDatasource>(),
@@ -352,6 +412,12 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i220.FirestorePackageDatasource>(),
         gh<_i958.FirebaseStoragePackageDatasource>(),
       ),
+    );
+    gh.lazySingleton<_i694.ExportPayoutReportUseCase>(
+      () => _i694.ExportPayoutReportUseCase(gh<_i730.PayoutExportRepository>()),
+    );
+    gh.lazySingleton<_i1020.RecordPayoutUseCase>(
+      () => _i1020.RecordPayoutUseCase(gh<_i730.PayoutExportRepository>()),
     );
     gh.lazySingleton<_i15.VoIPCallService>(
       () => _i15.VoIPCallService(

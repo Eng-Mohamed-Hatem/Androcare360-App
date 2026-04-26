@@ -1,0 +1,19 @@
+{
+  "workflow": "speckit",
+  "specName": "010-doctor-analytics-dashboard",
+  "branch": "010-doctor-analytics-dashboard",
+  "selectedAt": "2026-04-25T12:07:07.271Z",
+  "currentStep": "tasks",
+  "status": "draft",
+  "stepHistory": {
+    "specify": {
+      "startedAt": "2026-04-25T15:03:33.181Z",
+      "completedAt": "2026-04-25T16:30:00.000Z"
+    },
+    "tasks": {
+      "startedAt": "2026-04-25T16:30:00.000Z",
+      "completedAt": null
+    }
+  },
+  "transitions": []
+}

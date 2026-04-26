@@ -48,17 +48,14 @@ app.*.map.json
 
 # Environment variables (contains secrets)
 # Never commit .env files as they contain sensitive credentials
-.env
-.env.local
-.env.*.local
-functions/.env
-functions/.env.local
-functions/.env.*.local
+.env*
+functions/.env*
 
 # Keep example files for documentation
 !.env.example
 !functions/.env.example
-node_modules
+node_modules/
+functions/node_modules/
 dist/
 
 

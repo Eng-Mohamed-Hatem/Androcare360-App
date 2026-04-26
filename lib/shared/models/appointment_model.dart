@@ -78,6 +78,8 @@ class AppointmentModel {
     this.assessmentId,
     this.assessmentResultBand,
     this.referralTargetKey,
+    this.completedAt,
+    this.confirmedAt,
   });
 
   /// Creates an AppointmentModel from JSON data.
@@ -138,6 +140,8 @@ class AppointmentModel {
       assessmentId: json['assessmentId'] as String?,
       assessmentResultBand: json['assessmentResultBand'] as String?,
       referralTargetKey: json['referralTargetKey'] as String?,
+      completedAt: JsonHelpers.parseDateTimeOrNull(json['completedAt']),
+      confirmedAt: JsonHelpers.parseDateTimeOrNull(json['confirmedAt']),
     );
   }
 
@@ -264,6 +268,16 @@ class AppointmentModel {
   /// Optional referral group key used to pre-filter specialists.
   final String? referralTargetKey;
 
+  /// Timestamp when this appointment's status transitioned to `completed` (PR-002).
+  /// Set server-side by the confirmAppointmentCompletion Cloud Function.
+  /// Used as the primary time axis for analytics time-series queries.
+  final DateTime? completedAt;
+
+  /// Timestamp when this appointment first moved from `pending` to
+  /// `confirmed` or `scheduled` (PR-005).
+  /// Used by analytics to calculate average doctor response time.
+  final DateTime? confirmedAt;
+
   /// Converts this AppointmentModel to JSON format for Firestore storage.
   ///
   /// This method serializes all appointment data into a Map suitable for
@@ -306,6 +320,8 @@ class AppointmentModel {
       'assessmentId': assessmentId,
       'assessmentResultBand': assessmentResultBand,
       'referralTargetKey': referralTargetKey,
+      'completedAt': completedAt?.toIso8601String(),
+      'confirmedAt': confirmedAt?.toIso8601String(),
     };
   }
 
@@ -465,7 +481,21 @@ class AppointmentModel {
     String? assessmentId,
     String? assessmentResultBand,
     String? referralTargetKey,
+    DateTime? completedAt,
+    DateTime? confirmedAt,
   }) {
+    final nextStatus = status ?? this.status;
+    final now = DateTime.now().toUtc();
+    final shouldStampCompleted =
+        nextStatus == AppointmentStatus.completed &&
+        this.status != AppointmentStatus.completed;
+    final shouldStampConfirmed =
+        this.status == AppointmentStatus.pending &&
+        confirmedAt == null &&
+        this.confirmedAt == null &&
+        (nextStatus == AppointmentStatus.confirmed ||
+            nextStatus == AppointmentStatus.scheduled);
+
     return AppointmentModel(
       id: id ?? this.id,
       patientId: patientId ?? this.patientId,
@@ -477,7 +507,7 @@ class AppointmentModel {
       appointmentDate: appointmentDate ?? this.appointmentDate,
       timeSlot: timeSlot ?? this.timeSlot,
       type: type ?? this.type,
-      status: status ?? this.status,
+      status: nextStatus,
       fee: fee ?? this.fee,
       notes: notes ?? this.notes,
       meetingLink: meetingLink ?? this.meetingLink,
@@ -501,6 +531,10 @@ class AppointmentModel {
       assessmentId: assessmentId ?? this.assessmentId,
       assessmentResultBand: assessmentResultBand ?? this.assessmentResultBand,
       referralTargetKey: referralTargetKey ?? this.referralTargetKey,
+      completedAt:
+          completedAt ?? (shouldStampCompleted ? now : this.completedAt),
+      confirmedAt:
+          confirmedAt ?? (shouldStampConfirmed ? now : this.confirmedAt),
     );
   }
 }

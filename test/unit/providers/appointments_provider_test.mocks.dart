@@ -226,6 +226,16 @@ class MockAppointmentRepository extends _i1.Mock
                 ),
           )
           as _i4.Future<_i2.Either<_i5.Failure, List<_i6.AppointmentModel>>>);
+
+  @override
+  _i4.Stream<List<_i6.AppointmentModel>> watchAppointmentsForPatient(
+    String? patientId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchAppointmentsForPatient, [patientId]),
+            returnValue: _i4.Stream<List<_i6.AppointmentModel>>.empty(),
+          )
+          as _i4.Stream<List<_i6.AppointmentModel>>);
 }
 
 /// A class which mocks [NotificationRepository].

@@ -6186,6 +6186,11 @@ class MockVoIPCallService extends _i1.Mock implements _i16.VoIPCallService {
           as _i5.Stream<_i16.VoIPCallEvent>);
 
   @override
+  bool get isCallActive =>
+      (super.noSuchMethod(Invocation.getter(#isCallActive), returnValue: false)
+          as bool);
+
+  @override
   bool get isCleanupBlocked =>
       (super.noSuchMethod(
             Invocation.getter(#isCleanupBlocked),
@@ -6200,6 +6205,14 @@ class MockVoIPCallService extends _i1.Mock implements _i16.VoIPCallService {
             returnValue: _i5.Future<_i16.PendingCallData?>.value(),
           )
           as _i5.Future<_i16.PendingCallData?>);
+
+  @override
+  _i5.Future<bool> hasActiveCalls() =>
+      (super.noSuchMethod(
+            Invocation.method(#hasActiveCalls, []),
+            returnValue: _i5.Future<bool>.value(false),
+          )
+          as _i5.Future<bool>);
 
   @override
   void markAnswerAccepted() => super.noSuchMethod(
